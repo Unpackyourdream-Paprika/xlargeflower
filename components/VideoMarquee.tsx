@@ -1,8 +1,9 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, useSpring, useMotionValue, useVelocity, useAnimationFrame } from 'framer-motion';
 import { ShowcaseVideo } from '@/lib/supabase';
+import { useCountUp } from './animations/useCountUp';
 
 // wrap 함수: 값을 min과 max 범위 내에서 순환시킴
 function wrap(min: number, max: number, value: number): number {
@@ -108,35 +109,107 @@ function ParallaxRow({ videos, baseVelocity, direction }: ParallaxRowProps) {
   );
 }
 
+// 카운팅 애니메이션 컴포넌트
+interface AnimatedStatProps {
+  value: number;
+  suffix: string;
+  label: string;
+  isVisible: boolean;
+  delay: number;
+}
+
+function AnimatedStat({ value, suffix, label, isVisible, delay }: AnimatedStatProps) {
+  const [shouldAnimate, setShouldAnimate] = useState(false);
+
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(() => {
+        setShouldAnimate(true);
+      }, delay);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, delay]);
+
+  const { displayValue } = useCountUp({
+    end: value,
+    duration: 1800,
+    suffix,
+    enabled: shouldAnimate,
+  });
+
+  return (
+    <div
+      className={`transition-all duration-700 ${
+        shouldAnimate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+      }`}
+    >
+      <div className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight">
+        <span
+          className="bg-clip-text text-transparent animate-gradient"
+          style={{
+            backgroundImage: 'linear-gradient(90deg, #00F5A0, #00D9F5, #00F5A0)',
+            backgroundSize: '200% 100%',
+          }}
+        >
+          {shouldAnimate ? displayValue : '0' + suffix}
+        </span>
+      </div>
+      <div className="text-white/60 text-base sm:text-lg md:text-xl mt-3">{label}</div>
+    </div>
+  );
+}
+
 interface VideoMarqueeProps {
   videos?: ShowcaseVideo[];
 }
 
 export default function VideoMarquee({ videos }: VideoMarqueeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
+  const [statsVisible, setStatsVisible] = useState(false);
 
-  // DB 데이터만 사용 (없으면 섹션 숨김)
+  // 통계 섹션 스크롤 감지
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.3) {
+          setStatsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 }
+    );
+
+    if (statsRef.current) {
+      observer.observe(statsRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  // DB 데이터만 사용
   const videoUrls = videos && videos.length > 0
     ? videos.map(v => v.video_url)
     : [];
 
-  // 영상이 없으면 섹션을 렌더링하지 않음
-  if (videoUrls.length === 0) {
-    return null;
-  }
-
   // Row 1과 Row 2에 다른 순서로 비디오 배분
   const row1Videos = videoUrls;
   const row2Videos = [...videoUrls].reverse();
+
+  const hasVideos = videoUrls.length > 0;
 
   return (
     <section
       ref={containerRef}
       className="py-16 md:py-24 overflow-hidden bg-[#050505] relative"
     >
-      {/* 좌우 그라데이션 오버레이 */}
-      <div className="absolute top-0 bottom-0 left-0 w-40 bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent z-20 pointer-events-none" />
-      <div className="absolute top-0 bottom-0 right-0 w-40 bg-gradient-to-l from-[#050505] via-[#050505]/80 to-transparent z-20 pointer-events-none" />
+      {/* 좌우 그라데이션 오버레이 (비디오 있을 때만) */}
+      {hasVideos && (
+        <>
+          <div className="absolute top-0 bottom-0 left-0 w-16 bg-gradient-to-r from-[#050505] to-transparent z-20 pointer-events-none" />
+          <div className="absolute top-0 bottom-0 right-0 w-16 bg-gradient-to-l from-[#050505] to-transparent z-20 pointer-events-none" />
+        </>
+      )}
 
       {/* 섹션 헤더 */}
       <div className="text-center mb-12 px-6 relative z-30">
@@ -149,33 +222,29 @@ export default function VideoMarquee({ videos }: VideoMarqueeProps) {
         </p>
       </div>
 
-      {/* 비디오 월 - 살짝 기울임 */}
-      <div className="relative -rotate-2 space-y-4">
-        {/* Row 1: 오른쪽으로 이동 */}
-        <div className="overflow-hidden">
-          <ParallaxRow videos={row1Videos} baseVelocity={-2} direction={1} />
-        </div>
+      {/* 비디오 월 - 살짝 기울임 (비디오 있을 때만) */}
+      {hasVideos && (
+        <div className="relative -rotate-2 space-y-4">
+          {/* Row 1: 오른쪽으로 이동 */}
+          <div className="overflow-hidden">
+            <ParallaxRow videos={row1Videos} baseVelocity={-2} direction={1} />
+          </div>
 
-        {/* Row 2: 왼쪽으로 이동 (데스크톱만) */}
-        <div className="overflow-hidden hidden md:block">
-          <ParallaxRow videos={row2Videos} baseVelocity={2} direction={-1} />
+          {/* Row 2: 왼쪽으로 이동 (데스크톱만) */}
+          <div className="overflow-hidden hidden md:block">
+            <ParallaxRow videos={row2Videos} baseVelocity={2} direction={-1} />
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* 통계 */}
-      <div className="mt-16 flex flex-wrap justify-center gap-8 md:gap-16 text-center px-6 relative z-30">
-        <div>
-          <div className="text-2xl md:text-3xl font-bold gradient-text">500+</div>
-          <div className="text-white/50 text-sm mt-1">납품 완료</div>
-        </div>
-        <div>
-          <div className="text-2xl md:text-3xl font-bold gradient-text">48h</div>
-          <div className="text-white/50 text-sm mt-1">평균 제작</div>
-        </div>
-        <div>
-          <div className="text-2xl md:text-3xl font-bold gradient-text">98%</div>
-          <div className="text-white/50 text-sm mt-1">만족도</div>
-        </div>
+      {/* 통계 - 크게 강조 + 카운팅 애니메이션 (항상 표시) */}
+      <div
+        ref={statsRef}
+        className={`${hasVideos ? 'mt-20 md:mt-28' : 'mt-8'} flex flex-wrap justify-center gap-12 sm:gap-16 md:gap-24 lg:gap-32 text-center px-6 relative z-30`}
+      >
+        <AnimatedStat value={500} suffix="+" label="납품 완료" isVisible={statsVisible} delay={0} />
+        <AnimatedStat value={48} suffix="h" label="평균 제작" isVisible={statsVisible} delay={150} />
+        <AnimatedStat value={98} suffix="%" label="만족도" isVisible={statsVisible} delay={300} />
       </div>
     </section>
   );

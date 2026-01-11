@@ -1,11 +1,28 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // 부드러운 스크롤 핸들러 (헤더 높이 고려)
+  const handleSmoothScroll = useCallback((e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+    e.preventDefault();
+    const element = document.getElementById(targetId);
+    if (element) {
+      const headerOffset = 80; // 헤더 높이
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.scrollY - headerOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+    setIsMenuOpen(false);
+  }, []);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#050505]/90 backdrop-blur-md border-b border-[#222222]">
@@ -20,9 +37,13 @@ export default function Header() {
             <Link href="/" className="text-white/70 hover:text-white transition-colors text-sm">
               HOME
             </Link>
-            <Link href="/#why-ai" className="text-white/70 hover:text-white transition-colors text-sm">
+            <a
+              href="#why-ai"
+              className="text-white/70 hover:text-white transition-colors text-sm cursor-pointer"
+              onClick={(e) => handleSmoothScroll(e, 'why-ai')}
+            >
               WHY AI?
-            </Link>
+            </a>
             <Link href="/portfolio" className="text-white/70 hover:text-white transition-colors text-sm">
               MODEL LINEUP
             </Link>
@@ -93,13 +114,13 @@ export default function Header() {
                     }}
                     transition={{ duration: 0.2 }}
                   >
-                    <Link
-                      href="/#why-ai"
-                      className="text-white/70 hover:text-white transition-colors text-sm block"
-                      onClick={() => setIsMenuOpen(false)}
+                    <a
+                      href="#why-ai"
+                      className="text-white/70 hover:text-white transition-colors text-sm block cursor-pointer"
+                      onClick={(e) => handleSmoothScroll(e, 'why-ai')}
                     >
                       WHY AI?
-                    </Link>
+                    </a>
                   </motion.div>
                   <motion.div
                     variants={{

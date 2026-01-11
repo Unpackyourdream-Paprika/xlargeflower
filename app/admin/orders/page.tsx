@@ -132,6 +132,12 @@ function OrdersContent() {
             >
               쇼케이스
             </Link>
+            <Link
+              href="/admin/artists"
+              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
+            >
+              아티스트
+            </Link>
           </div>
         </div>
       </nav>

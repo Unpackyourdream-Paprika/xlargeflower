@@ -5,6 +5,7 @@ import Link from 'next/link';
 import AuroraBackground from '@/components/animations/AuroraBackground';
 import ScrollReveal from '@/components/animations/ScrollReveal';
 import VideoMarquee from '@/components/VideoMarquee';
+import ArtistLineup from '@/components/ArtistLineup';
 import { triggerOpenChat } from '@/components/GlobalChatButton';
 import { getShowcaseVideos, ShowcaseVideo } from '@/lib/supabase';
 
@@ -54,25 +55,6 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* Stats */}
-          <div className="mt-20 flex flex-wrap justify-center gap-12 text-center">
-            <div>
-              <div className="text-3xl sm:text-4xl font-bold gradient-text">+320%</div>
-              <div className="text-sm text-white/60 mt-1">평균 ROAS 상승</div>
-            </div>
-            <div>
-              <div className="text-3xl sm:text-4xl font-bold text-white">영구</div>
-              <div className="text-sm text-white/60 mt-1">소장 라이선스</div>
-            </div>
-            <div>
-              <div className="text-3xl sm:text-4xl font-bold text-white">0%</div>
-              <div className="text-sm text-white/60 mt-1">오너 리스크</div>
-            </div>
-            <div>
-              <div className="text-3xl sm:text-4xl font-bold text-white">48h</div>
-              <div className="text-sm text-white/60 mt-1">납품 완료</div>
-            </div>
-          </div>
         </ScrollReveal>
 
         {/* Scroll Indicator */}
@@ -84,11 +66,14 @@ export default function Home() {
       {/* AI Video Showcase - Video Wall */}
       <VideoMarquee videos={showcaseVideos} />
 
+      {/* AI Artist Lineup Section */}
+      <ArtistLineup />
+
       {/* Before & After Section */}
-      <section className="section-spacing bg-[#050505] spotlight-top">
-        <div className="max-w-6xl mx-auto px-6">
+      <section className="section-spacing bg-[#050505]">
+        <div className="max-w-7xl mx-auto px-6">
           <ScrollReveal>
-            <div className="text-center mb-16">
+            <div className="text-center mb-20">
               <p className="label-tag mb-4">HOW IT WORKS</p>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white">
                 원본 사진이 광고 영상이 된다
@@ -97,102 +82,153 @@ export default function Home() {
           </ScrollReveal>
 
           <ScrollReveal delay={0.2}>
-            <div className="relative max-w-5xl mx-auto">
-              {/* Arrow in the middle (desktop only) */}
+            <div className="relative max-w-6xl mx-auto">
+              {/* Processing Line - 연결 라인 (desktop only) */}
+              <div className="hidden md:block absolute left-1/2 top-1/2 -translate-y-1/2 w-40 -translate-x-1/2 z-10">
+                {/* Dashed line background */}
+                <div className="absolute top-1/2 left-0 right-0 h-[2px] -translate-y-1/2">
+                  <div className="w-full h-full border-t-2 border-dashed border-[#00F5A0]/30"></div>
+                </div>
+                {/* Animated glow line */}
+                <div className="absolute top-1/2 left-0 right-0 h-[2px] -translate-y-1/2 overflow-hidden">
+                  <div className="w-full h-full bg-gradient-to-r from-transparent via-[#00F5A0] to-transparent animate-pulse opacity-60"></div>
+                </div>
+              </div>
+
+              {/* Arrow in the middle (desktop only) - with pulse animation */}
               <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] flex items-center justify-center shadow-lg shadow-[#00F5A0]/30">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-stretch">
-              {/* Input */}
-              <div className="relative">
-                <div className="absolute -top-3 left-4 z-10">
-                  <span className="label-tag px-3 py-1 bg-[#0A0A0A]">RAW INPUT</span>
-                </div>
-                <div className="bg-[#0A0A0A] border border-[#222222] rounded-lg p-6 h-full grayscale">
-                  <div className="aspect-video bg-[#111111] rounded border border-dashed border-[#333333] flex items-center justify-center mb-4">
-                    <div className="text-center">
-                      <div className="w-16 h-16 mx-auto mb-3 bg-[#1a1a1a] rounded flex items-center justify-center">
-                        <svg className="w-8 h-8 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <p className="text-white/40 text-sm">product.jpg</p>
-                    </div>
-                  </div>
-                  <p className="text-white font-bold text-center">원본 사진</p>
-                  <p className="text-white/40 text-sm text-center mt-1">폰 촬영 OK</p>
-                </div>
-              </div>
-
-              {/* Mobile Arrow */}
-              <div className="flex md:hidden justify-center -my-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {/* Outer pulse ring */}
+                <div className="absolute inset-0 w-20 h-20 -m-2 rounded-full bg-gradient-to-r from-[#00F5A0]/20 to-[#00D9F5]/20 animate-ping"></div>
+                {/* Second pulse ring */}
+                <div className="absolute inset-0 w-20 h-20 -m-2 rounded-full bg-gradient-to-r from-[#00F5A0]/10 to-[#00D9F5]/10 animate-pulse"></div>
+                {/* Main button */}
+                <div className="relative w-16 h-16 rounded-full bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] flex items-center justify-center shadow-[0_0_40px_rgba(0,245,160,0.5)]">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
                 </div>
               </div>
 
-              {/* Output */}
-              <div className="relative">
-                <div className="absolute -top-3 left-4 z-10">
-                  <span className="px-3 py-1 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-white text-xs font-bold tracking-wide">
-                    RENDERED OUTPUT
-                  </span>
-                </div>
-                <div className="card-featured h-full">
-                  <div className="aspect-video rounded overflow-hidden relative group">
-                    <video
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                      className="w-full h-full object-cover"
-                    >
-                      <source src="https://assets.mixkit.co/videos/preview/mixkit-pouring-milk-into-a-bowl-with-cereals-seen-up-42017-large.mp4" type="video/mp4" />
-                    </video>
-                    {/* Video indicator */}
-                    <div className="absolute top-3 right-3">
-                      <span className="flex items-center gap-1.5 px-2 py-1 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-white text-xs font-bold rounded">
-                        <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
-                        LIVE
-                      </span>
-                    </div>
-                    <div className="absolute bottom-3 left-3 flex gap-2">
-                      <span className="px-2 py-1 bg-black/70 text-white text-xs rounded">6s</span>
-                      <span className="px-2 py-1 bg-black/70 text-white text-xs rounded">15s</span>
-                      <span className="px-2 py-1 bg-black/70 text-white text-xs rounded">30s</span>
-                    </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-40 items-stretch">
+                {/* Input */}
+                <div className="relative">
+                  <div className="absolute -top-3 left-6 z-10">
+                    <span className="label-tag px-4 py-1.5 bg-[#0A0A0A]">RAW INPUT</span>
                   </div>
-                  <div className="text-center mt-4">
-                    <p className="text-white font-bold">48시간 완성</p>
-                    <p className="text-white/40 text-sm mt-1">바로 광고 송출 가능</p>
+                  <div className="bg-[#0A0A0A] border border-[#222222] rounded-xl p-8 h-full grayscale hover:grayscale-0 transition-all duration-500">
+                    <div className="aspect-video bg-[#111111] rounded-lg border border-dashed border-[#333333] flex items-center justify-center mb-6">
+                      <div className="text-center">
+                        <div className="w-20 h-20 mx-auto mb-4 bg-[#1a1a1a] rounded-lg flex items-center justify-center">
+                          <svg className="w-10 h-10 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                        <p className="text-white/40 text-sm">product.jpg</p>
+                      </div>
+                    </div>
+                    <p className="text-white font-bold text-center text-lg">원본 사진</p>
+                    <p className="text-white/40 text-sm text-center mt-2">폰 촬영 OK</p>
                   </div>
                 </div>
-              </div>
+
+                {/* Mobile Arrow */}
+                <div className="flex md:hidden justify-center -my-2">
+                  <div className="relative">
+                    <div className="absolute inset-0 w-14 h-14 -m-1 rounded-full bg-gradient-to-r from-[#00F5A0]/20 to-[#00D9F5]/20 animate-ping"></div>
+                    <div className="relative w-12 h-12 rounded-full bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] flex items-center justify-center shadow-[0_0_30px_rgba(0,245,160,0.4)]">
+                      <svg className="w-6 h-6 text-white rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Output */}
+                <div className="relative">
+                  <div className="absolute -top-3 left-6 z-10">
+                    <span className="px-4 py-1.5 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-white text-xs font-bold tracking-wide rounded-sm shadow-[0_0_20px_rgba(0,245,160,0.3)]">
+                      RENDERED OUTPUT
+                    </span>
+                  </div>
+                  <div className="relative h-full rounded-xl overflow-hidden">
+                    {/* Glassmorphism background with stronger glow */}
+                    <div className="absolute inset-0 bg-[#0A0A0A]/80 backdrop-blur-sm border-2 border-[#00F5A0]/40 rounded-xl shadow-[0_0_60px_rgba(0,245,160,0.15),inset_0_0_60px_rgba(0,245,160,0.05)]"></div>
+                    <div className="relative p-8">
+                      <div className="aspect-video rounded-lg overflow-hidden relative group shadow-[0_0_40px_rgba(0,245,160,0.2)]">
+                        <video
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                          className="w-full h-full object-cover"
+                        >
+                          <source src="https://assets.mixkit.co/videos/preview/mixkit-pouring-milk-into-a-bowl-with-cereals-seen-up-42017-large.mp4" type="video/mp4" />
+                        </video>
+                        {/* Video indicator */}
+                        <div className="absolute top-3 right-3">
+                          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-white text-xs font-bold rounded shadow-lg">
+                            <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                            LIVE
+                          </span>
+                        </div>
+                        <div className="absolute bottom-3 left-3 flex gap-2">
+                          <span className="px-2.5 py-1 bg-black/70 text-white text-xs rounded backdrop-blur-sm">6s</span>
+                          <span className="px-2.5 py-1 bg-black/70 text-white text-xs rounded backdrop-blur-sm">15s</span>
+                          <span className="px-2.5 py-1 bg-black/70 text-white text-xs rounded backdrop-blur-sm">30s</span>
+                        </div>
+                      </div>
+                      <div className="text-center mt-6">
+                        <p className="text-white font-bold text-lg">48시간 완성</p>
+                        <p className="text-white/40 text-sm mt-2">바로 광고 송출 가능</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </ScrollReveal>
 
-          {/* Features */}
+          {/* Features - 크게 강조 */}
           <ScrollReveal delay={0.3}>
-            <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-              <div className="p-6">
-                <p className="text-white font-bold">촬영 불필요</p>
-                <p className="text-white/50 text-sm mt-1">스튜디오, 모델, 장소 NO</p>
+            <div className="mt-24 md:mt-32 flex flex-wrap justify-center gap-12 sm:gap-16 md:gap-24 lg:gap-32 text-center">
+              <div>
+                <p className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight">
+                  <span
+                    className="bg-clip-text text-transparent"
+                    style={{
+                      backgroundImage: 'linear-gradient(90deg, #00F5A0, #00D9F5)',
+                    }}
+                  >
+                    0원
+                  </span>
+                </p>
+                <p className="text-white/60 text-base sm:text-lg md:text-xl mt-3">촬영 비용</p>
               </div>
-              <div className="p-6">
-                <p className="text-white font-bold">48시간 납품</p>
-                <p className="text-white/50 text-sm mt-1">급한 캠페인도 문제없음</p>
+              <div>
+                <p className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight">
+                  <span
+                    className="bg-clip-text text-transparent"
+                    style={{
+                      backgroundImage: 'linear-gradient(90deg, #00F5A0, #00D9F5)',
+                    }}
+                  >
+                    48h
+                  </span>
+                </p>
+                <p className="text-white/60 text-base sm:text-lg md:text-xl mt-3">평균 납품</p>
               </div>
-              <div className="p-6">
-                <p className="text-white font-bold">무한 바리에이션</p>
-                <p className="text-white/50 text-sm mt-1">소재 고갈 걱정 끝</p>
+              <div>
+                <p className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight">
+                  <span
+                    className="bg-clip-text text-transparent"
+                    style={{
+                      backgroundImage: 'linear-gradient(90deg, #00F5A0, #00D9F5)',
+                    }}
+                  >
+                    무제한
+                  </span>
+                </p>
+                <p className="text-white/60 text-base sm:text-lg md:text-xl mt-3">바리에이션</p>
               </div>
             </div>
           </ScrollReveal>
@@ -200,7 +236,7 @@ export default function Home() {
       </section>
 
       {/* Problem & Solution Section - WHY AI? */}
-      <section id="why-ai" className="section-spacing bg-[#080808] spotlight-top">
+      <section id="why-ai" className="section-spacing bg-[#050505]">
         <div className="max-w-6xl mx-auto px-6">
           <ScrollReveal>
             <div className="text-center mb-16">
@@ -323,7 +359,7 @@ export default function Home() {
       </section>
 
       {/* Why It Works Section */}
-      <section className="section-spacing bg-[#050505] spotlight-center">
+      <section className="section-spacing bg-[#050505]">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <ScrollReveal>
             <p className="label-tag mb-4">OUR POSITION</p>
@@ -335,14 +371,31 @@ export default function Home() {
               <p className="text-white/70 text-lg mb-8">
                 마케팅의 성공 공식은 <strong className="text-white">좋은 소재(Creative)</strong> X <strong className="text-white">정교한 타겟팅(Ads)</strong>입니다.
               </p>
-              <p className="text-white/60 mb-8">
+              <p className="text-white/60 mb-12">
                 타겟팅은 귀사의 마케터가 제일 잘합니다.<br />
                 저희는 귀사의 마케터가 춤추게 할 <strong className="text-[#00F5A0]">&apos;압도적인 소재&apos;</strong>만 납품합니다.
               </p>
-              <div className="inline-flex items-center gap-2 px-6 py-3 bg-[#0A0A0A] border border-[#222222] rounded-full">
-                <span className="text-white/60 text-sm">매체비 효율을</span>
-                <span className="gradient-text font-bold text-xl">200%</span>
-                <span className="text-white/60 text-sm">끌어올리는 AI 모델</span>
+
+              {/* 임팩트 있는 200% 배지 */}
+              <div className="relative inline-block group cursor-pointer">
+                {/* Glow effect */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] rounded-2xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+                {/* Main badge */}
+                <div className="relative px-8 sm:px-12 py-6 sm:py-8 bg-gradient-to-r from-[#0A0A0A] to-[#111111] border-2 border-[#00F5A0]/50 rounded-2xl shadow-[0_0_40px_rgba(0,245,160,0.15)] group-hover:shadow-[0_0_60px_rgba(0,245,160,0.25)] transition-all duration-300">
+                  <p className="text-white/60 text-sm sm:text-base mb-2">매체비 효율을</p>
+                  <p className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight">
+                    <span
+                      className="bg-clip-text text-transparent animate-gradient"
+                      style={{
+                        backgroundImage: 'linear-gradient(90deg, #00F5A0, #00D9F5, #00F5A0)',
+                        backgroundSize: '200% 100%',
+                      }}
+                    >
+                      200%
+                    </span>
+                  </p>
+                  <p className="text-white/60 text-sm sm:text-base mt-2">끌어올리는 AI 모델</p>
+                </div>
               </div>
             </div>
           </ScrollReveal>
@@ -350,7 +403,7 @@ export default function Home() {
       </section>
 
       {/* Pricing Section - Premium */}
-      <section className="section-spacing bg-[#050505] spotlight-cards">
+      <section className="section-spacing bg-[#050505]">
         <div className="max-w-7xl mx-auto px-6">
           <ScrollReveal>
             <div className="text-center mb-16">
@@ -478,7 +531,7 @@ export default function Home() {
       </section>
 
       {/* Social Proof Section */}
-      <section className="section-spacing bg-[#080808] spotlight-cards">
+      <section className="section-spacing bg-[#050505]">
         <div className="max-w-6xl mx-auto px-6">
           <ScrollReveal>
             <div className="text-center mb-16">
@@ -553,6 +606,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+
 
       {/* CTA Section - Premium */}
       <section className="section-spacing bg-[#050505] spotlight-center relative overflow-hidden">

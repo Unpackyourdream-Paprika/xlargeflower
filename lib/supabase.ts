@@ -258,3 +258,90 @@ export async function uploadShowcaseVideo(file: File) {
 
   return publicUrl;
 }
+
+// AI 아티스트 모델 관련 타입 및 함수
+export type ArtistCategory = 'ALL' | 'FASHION' | 'BEAUTY' | 'F&B' | 'TECH' | 'LIFESTYLE';
+
+export interface ArtistModel {
+  id?: string;
+  created_at?: string;
+  name: string;
+  name_ko?: string;
+  category: ArtistCategory;
+  thumbnail_url: string;
+  hover_video_url?: string;
+  description: string;
+  tags?: string[];
+  is_active?: boolean;
+  sort_order?: number;
+}
+
+export async function getArtistModels() {
+  const { data, error } = await supabase
+    .from('xlarge_flower_artists')
+    .select('*')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true });
+
+  if (error) throw error;
+  return data as ArtistModel[];
+}
+
+export async function getAllArtistModels() {
+  const { data, error } = await supabase
+    .from('xlarge_flower_artists')
+    .select('*')
+    .order('sort_order', { ascending: true });
+
+  if (error) throw error;
+  return data as ArtistModel[];
+}
+
+export async function createArtistModel(data: Omit<ArtistModel, 'id' | 'created_at'>) {
+  const { data: artist, error } = await supabase
+    .from('xlarge_flower_artists')
+    .insert([data])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return artist as ArtistModel;
+}
+
+export async function updateArtistModel(id: string, data: Partial<ArtistModel>) {
+  const { error } = await supabase
+    .from('xlarge_flower_artists')
+    .update(data)
+    .eq('id', id);
+
+  if (error) throw error;
+  return true;
+}
+
+export async function deleteArtistModel(id: string) {
+  const { error } = await supabase
+    .from('xlarge_flower_artists')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+  return true;
+}
+
+export async function uploadArtistImage(file: File, type: 'thumbnail' | 'video' = 'thumbnail') {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+  const filePath = `artists/${type}/${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('images')
+    .upload(filePath, file);
+
+  if (uploadError) throw uploadError;
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('images')
+    .getPublicUrl(filePath);
+
+  return publicUrl;
+}
