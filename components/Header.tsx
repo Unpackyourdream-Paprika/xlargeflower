@@ -20,14 +20,17 @@ export default function Header() {
             <Link href="/" className="text-white/70 hover:text-white transition-colors text-sm">
               HOME
             </Link>
-            <Link href="/products" className="text-white/70 hover:text-white transition-colors text-sm">
-              PRODUCTS
+            <Link href="/#why-ai" className="text-white/70 hover:text-white transition-colors text-sm">
+              WHY AI?
             </Link>
             <Link href="/portfolio" className="text-white/70 hover:text-white transition-colors text-sm">
-              PORTFOLIO
+              MODEL LINEUP
+            </Link>
+            <Link href="/products" className="text-white/70 hover:text-white transition-colors text-sm">
+              PRICING
             </Link>
             <Link href="/contact" className="btn-primary text-sm py-2 px-5">
-              CONTACT
+              VIP ACCESS
             </Link>
           </div>
 
@@ -91,11 +94,11 @@ export default function Header() {
                     transition={{ duration: 0.2 }}
                   >
                     <Link
-                      href="/products"
+                      href="/#why-ai"
                       className="text-white/70 hover:text-white transition-colors text-sm block"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      PRODUCTS
+                      WHY AI?
                     </Link>
                   </motion.div>
                   <motion.div
@@ -110,7 +113,22 @@ export default function Header() {
                       className="text-white/70 hover:text-white transition-colors text-sm block"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      PORTFOLIO
+                      MODEL LINEUP
+                    </Link>
+                  </motion.div>
+                  <motion.div
+                    variants={{
+                      open: { y: 0, opacity: 1 },
+                      closed: { y: -10, opacity: 0 }
+                    }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Link
+                      href="/products"
+                      className="text-white/70 hover:text-white transition-colors text-sm block"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      PRICING
                     </Link>
                   </motion.div>
                   <motion.div
@@ -125,7 +143,7 @@ export default function Header() {
                       className="btn-primary text-sm py-2 px-5 text-center block"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      CONTACT
+                      VIP ACCESS
                     </Link>
                   </motion.div>
                 </motion.div>

@@ -128,9 +128,12 @@ export default function PortfolioPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-16">
-          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">포트폴리오</h1>
+          <p className="label-tag mb-4">AI MODEL LINEUP</p>
+          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">
+            소속 AI 아티스트 라인업
+          </h1>
           <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            AI로 생성한 광고 소재 실제 사례. 촬영 없이 제작되었습니다.
+            패션, 뷰티, F&B 등 산업별 최적화된 AI 인플루언서. 원하는 이미지로 즉시 커스텀 가능합니다.
           </p>
         </div>
 
