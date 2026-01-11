@@ -1,26 +1,612 @@
 @import "tailwindcss";
 
+/* =============================================
+   XLARGE FLOWER - Cyber Mint & Speed
+   ============================================= */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Background Colors */
+  --bg-primary: #050505;
+  --bg-surface: #0A0A0A;
+  --bg-elevated: #111111;
+
+  /* Text Colors */
+  --text-primary: #FFFFFF;
+  --text-secondary: #888888;
+  --text-muted: #555555;
+
+  /* Border Colors */
+  --border-default: #222222;
+  --border-subtle: rgba(255,255,255,0.1);
+  --border-hover: rgba(255,255,255,0.2);
+
+  /* Accent Gradient - Cyber Mint */
+  --gradient-accent: linear-gradient(90deg, #00F5A0 0%, #00D9F5 100%);
+  --color-accent-start: #00F5A0;
+  --color-accent-end: #00D9F5;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-background: var(--bg-primary);
+  --color-foreground: var(--text-primary);
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Base Styles */
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  letter-spacing: -0.02em;
+}
+
+/* Typography - Tight letter-spacing for headings */
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.04em;
+}
+
+/* Hide Scrollbar */
+::-webkit-scrollbar {
+  display: none;
+}
+
+html {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* =============================================
+   Utility Classes
+   ============================================= */
+
+/* Gradient Text */
+.gradient-text {
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Text Colors */
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+/* Background Colors */
+.bg-surface {
+  background: var(--bg-surface);
+}
+
+.bg-elevated {
+  background: var(--bg-elevated);
+}
+
+/* =============================================
+   Component Styles
+   ============================================= */
+
+/* Primary Button - Gradient with Black Text & Shine Effect */
+.btn-primary {
+  background: var(--gradient-accent);
+  color: #000000;
+  font-weight: 700;
+  padding: 16px 32px;
+  border-radius: 9999px;
+  border: none;
+  box-shadow: 0 0 20px rgba(0, 245, 160, 0.3);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.btn-primary:hover::before {
+  left: 100%;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 40px rgba(0, 245, 160, 0.5);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Secondary Button - Outline with Hover Effects */
+.btn-secondary {
+  background: transparent;
+  color: #FFFFFF;
+  font-weight: 700;
+  padding: 16px 32px;
+  border-radius: 9999px;
+  border: 1px solid var(--border-hover);
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  border-color: rgba(0, 245, 160, 0.5);
+  background: rgba(0, 245, 160, 0.05);
+  transform: translateY(-2px);
+}
+
+.btn-secondary:active {
+  transform: translateY(0);
+}
+
+/* Card Styles with Hover Effects */
+.card {
+  background: #111111;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  border-color: rgba(0, 245, 160, 0.4);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(0, 245, 160, 0.1);
+}
+
+/* Featured Card with Gradient Border & Breathing Glow */
+.card-featured {
+  background: #111111;
+  position: relative;
+  border-radius: 16px;
+  padding: 40px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  animation: breathingGlow 3s ease-in-out infinite;
+}
+
+@keyframes breathingGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 245, 160, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(0, 245, 160, 0.2);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.card-featured:hover {
+  transform: translateY(-4px);
+  animation: none;
+  box-shadow: 0 0 50px rgba(0, 245, 160, 0.3);
+}
+
+.card-featured::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: 16px;
+  background: var(--gradient-accent);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Input Field - Bottom Border Only */
+.input-minimal {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-hover);
+  color: #FFFFFF;
+  padding: 12px 0;
+  font-size: 16px;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s ease;
+}
+
+.input-minimal::placeholder {
+  color: var(--text-muted);
+}
+
+.input-minimal:focus {
+  border-bottom-color: var(--color-accent-start);
+}
+
+/* =============================================
+   Animations
+   ============================================= */
+
+/* Cursor Blink */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
+
+/* Typewriter Cursor */
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--text-primary);
+  margin-left: 2px;
+  animation: blink 1s step-end infinite;
+}
+
+/* Subtle Fade In */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* =============================================
+   Hero Glow Effect
+   ============================================= */
+
+/* Legacy hero-glow (kept for fallback) */
+.hero-glow {
+  display: none;
+}
+
+/* =============================================
+   Aurora Background Effect
+   ============================================= */
+
+.aurora-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  will-change: transform;
+}
+
+/* Orb 1 - Large Mint, top-left area */
+.aurora-orb-1 {
+  width: 800px;
+  height: 800px;
+  top: -20%;
+  left: -10%;
+  animation: auroraFloat1 15s ease-in-out infinite;
+}
+
+/* Orb 2 - Cyan, right side */
+.aurora-orb-2 {
+  width: 600px;
+  height: 600px;
+  top: 10%;
+  right: -15%;
+  animation: auroraFloat2 18s ease-in-out infinite;
+}
+
+/* Orb 3 - Violet accent, bottom */
+.aurora-orb-3 {
+  width: 500px;
+  height: 500px;
+  bottom: -10%;
+  left: 30%;
+  animation: auroraFloat3 20s ease-in-out infinite;
+}
+
+/* Orb 4 - Secondary Mint, center-left */
+.aurora-orb-4 {
+  width: 400px;
+  height: 400px;
+  top: 40%;
+  left: 10%;
+  animation: auroraFloat4 12s ease-in-out infinite;
+}
+
+@keyframes auroraFloat1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(50px, 30px) scale(1.1);
+  }
+  50% {
+    transform: translate(20px, -20px) scale(0.95);
+  }
+  75% {
+    transform: translate(-30px, 10px) scale(1.05);
+  }
+}
+
+@keyframes auroraFloat2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-40px, 40px) scale(1.15);
+  }
+  66% {
+    transform: translate(30px, -30px) scale(0.9);
+  }
+}
+
+@keyframes auroraFloat3 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-60px, -40px) scale(1.2);
+  }
+}
+
+@keyframes auroraFloat4 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(30px, -20px) scale(1.1);
+  }
+  50% {
+    transform: translate(-20px, 30px) scale(0.95);
+  }
+  75% {
+    transform: translate(10px, 10px) scale(1.05);
+  }
+}
+
+@media (max-width: 768px) {
+  .aurora-orb-1 {
+    width: 400px;
+    height: 400px;
+  }
+  .aurora-orb-2 {
+    width: 300px;
+    height: 300px;
+  }
+  .aurora-orb-3 {
+    width: 250px;
+    height: 250px;
+  }
+  .aurora-orb-4 {
+    width: 200px;
+    height: 200px;
+  }
+}
+
+/* =============================================
+   Section Spotlight Effects
+   ============================================= */
+
+/* Center Spotlight - for Hero & CTA sections */
+.spotlight-center {
+  position: relative;
+}
+
+.spotlight-center::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 50% at 50% 50%,
+    rgba(0, 245, 160, 0.08) 0%,
+    rgba(0, 217, 245, 0.04) 30%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+/* Top Spotlight - for sections that need top accent */
+.spotlight-top {
+  position: relative;
+}
+
+.spotlight-top::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  height: 400px;
+  background: radial-gradient(
+    ellipse 60% 100% at 50% 0%,
+    rgba(0, 245, 160, 0.06) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+/* Card Spotlight - subtle glow behind cards */
+.spotlight-cards {
+  position: relative;
+}
+
+.spotlight-cards::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  height: 60%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 245, 160, 0.05) 0%,
+    transparent 60%
+  );
+  pointer-events: none;
+}
+
+/* =============================================
+   Section Spacing
+   ============================================= */
+
+.section-spacing {
+  padding-top: 160px;
+  padding-bottom: 160px;
+}
+
+@media (max-width: 768px) {
+  .section-spacing {
+    padding-top: 80px;
+    padding-bottom: 80px;
+  }
+}
+
+/* =============================================
+   Label Styles
+   ============================================= */
+
+.label-tag {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.label-gradient {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* =============================================
+   Feature List (Bullet Points)
+   ============================================= */
+
+.feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.feature-list li {
+  color: var(--text-secondary);
+  font-size: 14px;
+  padding-left: 16px;
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.feature-list li::before {
+  content: "\00B7";
+  position: absolute;
+  left: 0;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+/* =============================================
+   Floating Chat Button
+   ============================================= */
+
+.floating-chat-btn {
+  box-shadow: 0 0 20px rgba(0, 245, 160, 0.4);
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 245, 160, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(0, 245, 160, 0.6);
+  }
+}
+
+.floating-chat-btn:hover {
+  animation: none;
+  box-shadow: 0 0 50px rgba(0, 245, 160, 0.7);
+}
+
+/* =============================================
+   Sticky Mobile CTA
+   ============================================= */
+
+.sticky-mobile-cta {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 24px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(5, 5, 5, 1) 0%, rgba(5, 5, 5, 0.95) 100%);
+  backdrop-filter: blur(10px);
+  z-index: 50;
+  display: none;
+  border-top: 1px solid var(--border-subtle);
+}
+
+@media (max-width: 768px) {
+  .sticky-mobile-cta {
+    display: block;
+  }
+
+  /* Add padding at the bottom to prevent content being hidden behind sticky CTA */
+  .main-content {
+    padding-bottom: 100px;
+  }
+}
+
+/* =============================================
+   Video Showcase Infinite Scroll
+   ============================================= */
+
+@keyframes scrollLeft {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-33.333%);
+  }
+}
+
+@keyframes scrollRight {
+  0% {
+    transform: translateX(-33.333%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.animate-scroll-left {
+  animation: scrollLeft 40s linear infinite;
+}
+
+.animate-scroll-right {
+  animation: scrollRight 40s linear infinite;
+}
+
+/* Pause animation on hover for better UX */
+.animate-scroll-left:hover,
+.animate-scroll-right:hover {
+  animation-play-state: paused;
 }
