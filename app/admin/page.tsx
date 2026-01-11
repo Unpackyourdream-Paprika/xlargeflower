@@ -184,32 +184,32 @@ export default function AdminDashboard() {
       </header>
 
       {/* Navigation */}
-      <nav className="bg-[#0A0A0A] border-b border-[#222]">
+      <nav className="bg-[#0A0A0A] border-b border-[#222] overflow-x-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-6">
+          <div className="flex gap-4 sm:gap-6 min-w-max">
             <Link
               href="/admin"
-              className="py-4 border-b-2 border-[#00F5A0] text-[#00F5A0] font-medium text-sm"
+              className="py-4 border-b-2 border-[#00F5A0] text-[#00F5A0] font-medium text-sm whitespace-nowrap"
             >
               대시보드
             </Link>
             <Link
               href="/admin/orders"
-              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors"
+              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
             >
               주문 관리
             </Link>
             <Link
               href="/admin/portfolio"
-              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors"
+              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
             >
               포트폴리오
             </Link>
             <Link
               href="/admin/showcase"
-              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors"
+              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
             >
-              쇼케이스 관리
+              쇼케이스
             </Link>
           </div>
         </div>
@@ -218,26 +218,26 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-          <div className="bg-[#0A0A0A] border border-[#222] rounded-xl p-6">
-            <p className="text-sm text-gray-500">오늘 주문</p>
-            <p className="text-3xl font-bold text-white mt-1">{stats.todayOrders}</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-8">
+          <div className="bg-[#0A0A0A] border border-[#222] rounded-xl p-4 sm:p-6">
+            <p className="text-xs sm:text-sm text-gray-500">오늘 주문</p>
+            <p className="text-2xl sm:text-3xl font-bold text-white mt-1">{stats.todayOrders}</p>
           </div>
-          <div className="bg-[#0A0A0A] border border-[#222] rounded-xl p-6">
-            <p className="text-sm text-gray-500">전체 주문</p>
-            <p className="text-3xl font-bold text-white mt-1">{stats.total}</p>
+          <div className="bg-[#0A0A0A] border border-[#222] rounded-xl p-4 sm:p-6">
+            <p className="text-xs sm:text-sm text-gray-500">전체 주문</p>
+            <p className="text-2xl sm:text-3xl font-bold text-white mt-1">{stats.total}</p>
           </div>
-          <div className="bg-[#0A0A0A] border border-[#222] rounded-xl p-6 border-l-4 border-l-yellow-500">
-            <p className="text-sm text-gray-500">접수 대기</p>
-            <p className="text-3xl font-bold text-yellow-400 mt-1">{stats.pending}</p>
+          <div className="bg-[#0A0A0A] border border-[#222] rounded-xl p-4 sm:p-6 border-l-4 border-l-yellow-500">
+            <p className="text-xs sm:text-sm text-gray-500">접수 대기</p>
+            <p className="text-2xl sm:text-3xl font-bold text-yellow-400 mt-1">{stats.pending}</p>
           </div>
-          <div className="bg-[#0A0A0A] border border-[#222] rounded-xl p-6 border-l-4 border-l-[#00F5A0]">
-            <p className="text-sm text-gray-500">작업 중</p>
-            <p className="text-3xl font-bold text-[#00F5A0] mt-1">{stats.inProgress}</p>
+          <div className="bg-[#0A0A0A] border border-[#222] rounded-xl p-4 sm:p-6 border-l-4 border-l-[#00F5A0]">
+            <p className="text-xs sm:text-sm text-gray-500">작업 중</p>
+            <p className="text-2xl sm:text-3xl font-bold text-[#00F5A0] mt-1">{stats.inProgress}</p>
           </div>
-          <div className="bg-[#0A0A0A] border border-[#222] rounded-xl p-6 border-l-4 border-l-[#00D9F5]">
-            <p className="text-sm text-gray-500">납품 완료</p>
-            <p className="text-3xl font-bold text-[#00D9F5] mt-1">{stats.completed}</p>
+          <div className="bg-[#0A0A0A] border border-[#222] rounded-xl p-4 sm:p-6 border-l-4 border-l-[#00D9F5] col-span-2 sm:col-span-1">
+            <p className="text-xs sm:text-sm text-gray-500">납품 완료</p>
+            <p className="text-2xl sm:text-3xl font-bold text-[#00D9F5] mt-1">{stats.completed}</p>
           </div>
         </div>
 
@@ -251,7 +251,7 @@ export default function AdminDashboard() {
           </div>
 
           {orders.length === 0 ? (
-            <div className="p-12 text-center text-gray-500">
+            <div className="p-8 sm:p-12 text-center text-gray-500">
               아직 주문이 없습니다.
             </div>
           ) : (
@@ -260,26 +260,26 @@ export default function AdminDashboard() {
                 <Link
                   key={order.id}
                   href={`/admin/orders/${order.id}`}
-                  className="px-6 py-4 flex items-center justify-between hover:bg-[#111] transition-colors"
+                  className="px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 hover:bg-[#111] transition-colors"
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <span className="font-medium text-white">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                      <span className="font-medium text-white text-sm sm:text-base">
                         {order.customer_name || '이름 없음'}
                       </span>
                       {getStatusBadge(order.status || 'pending')}
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-xs sm:text-sm text-gray-500 mt-1 truncate">
                       {order.order_summary?.product || order.order_summary?.category || '상품 정보 없음'}
                       {order.order_summary?.recommended_pack && (
                         <span className="ml-2 text-[#00F5A0]">
-                          • {order.order_summary.recommended_pack} 팩
+                          • {order.order_summary.recommended_pack}
                         </span>
                       )}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500">
+                  <div className="flex items-center justify-between sm:block sm:text-right">
+                    <p className="text-xs sm:text-sm text-gray-500">
                       {order.created_at && formatDate(order.created_at)}
                     </p>
                     {order.order_summary?.estimated_price && (

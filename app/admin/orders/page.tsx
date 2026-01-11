@@ -105,32 +105,32 @@ function OrdersContent() {
       </header>
 
       {/* Navigation */}
-      <nav className="bg-[#0A0A0A] border-b border-[#222]">
+      <nav className="bg-[#0A0A0A] border-b border-[#222] overflow-x-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-6">
+          <div className="flex gap-4 sm:gap-6 min-w-max">
             <Link
               href="/admin"
-              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors"
+              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
             >
               대시보드
             </Link>
             <Link
               href="/admin/orders"
-              className="py-4 border-b-2 border-[#00F5A0] text-[#00F5A0] font-medium text-sm"
+              className="py-4 border-b-2 border-[#00F5A0] text-[#00F5A0] font-medium text-sm whitespace-nowrap"
             >
               주문 관리
             </Link>
             <Link
               href="/admin/portfolio"
-              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors"
+              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
             >
               포트폴리오
             </Link>
             <Link
               href="/admin/showcase"
-              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors"
+              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
             >
-              쇼케이스 관리
+              쇼케이스
             </Link>
           </div>
         </div>
@@ -160,8 +160,49 @@ function OrdersContent() {
           ))}
         </div>
 
-        {/* Orders Table */}
-        <div className="bg-[#0A0A0A] border border-[#222] rounded-xl overflow-hidden">
+        {/* Orders - Mobile Cards */}
+        <div className="block sm:hidden space-y-3">
+          {filteredOrders.length === 0 ? (
+            <div className="bg-[#0A0A0A] border border-[#222] rounded-xl p-8 text-center text-gray-500">
+              {activeFilter === 'all' ? '아직 주문이 없습니다.' : '해당 상태의 주문이 없습니다.'}
+            </div>
+          ) : (
+            filteredOrders.map((order) => (
+              <Link
+                key={order.id}
+                href={`/admin/orders/${order.id}`}
+                className="block bg-[#0A0A0A] border border-[#222] rounded-xl p-4 hover:border-[#00F5A0]/50 transition-colors"
+              >
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div>
+                    <p className="font-medium text-white">{order.customer_name || '이름 없음'}</p>
+                    <p className="text-xs text-gray-500">{order.customer_phone}</p>
+                  </div>
+                  {getStatusBadge(order.status || 'pending')}
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <div>
+                    <p className="text-gray-400">{order.order_summary?.product || order.order_summary?.category || '-'}</p>
+                    <p className="text-[#00F5A0] text-xs">{order.order_summary?.recommended_pack}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-white font-medium">
+                      {order.order_summary?.estimated_price
+                        ? new Intl.NumberFormat('ko-KR').format(order.order_summary.estimated_price) + '원'
+                        : '-'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {order.created_at && formatDate(order.created_at)}
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            ))
+          )}
+        </div>
+
+        {/* Orders Table - Desktop */}
+        <div className="hidden sm:block bg-[#0A0A0A] border border-[#222] rounded-xl overflow-hidden">
           {filteredOrders.length === 0 ? (
             <div className="p-12 text-center text-gray-500">
               {activeFilter === 'all' ? '아직 주문이 없습니다.' : '해당 상태의 주문이 없습니다.'}

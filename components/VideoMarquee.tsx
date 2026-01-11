@@ -10,15 +10,6 @@ function wrap(min: number, max: number, value: number): number {
   return ((((value - min) % range) + range) % range) + min;
 }
 
-// 폴백 비디오 (DB에 데이터 없을 때 사용)
-const FALLBACK_VIDEOS = [
-  'https://assets.mixkit.co/videos/preview/mixkit-woman-running-above-the-clouds-32807-large.mp4',
-  'https://assets.mixkit.co/videos/preview/mixkit-portrait-of-a-fashion-woman-with-silver-makeup-39875-large.mp4',
-  'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-1232-large.mp4',
-  'https://assets.mixkit.co/videos/preview/mixkit-woman-modeling-hoop-earrings-4902-large.mp4',
-  'https://assets.mixkit.co/videos/preview/mixkit-curly-haired-woman-looking-at-camera-4693-large.mp4',
-  'https://assets.mixkit.co/videos/preview/mixkit-man-dancing-under-changing-lights-1240-large.mp4',
-];
 
 interface VideoCardProps {
   src: string;
@@ -34,8 +25,8 @@ function VideoCard({ src, index }: VideoCardProps) {
       style={{
         width: '180px',
         height: '320px',
-        marginLeft: index > 0 ? '-16px' : '0', // 겹침 효과
-        zIndex: isHovered ? 50 : 10 - (index % 10),
+        marginLeft: index > 0 ? '12px' : '0',
+        zIndex: isHovered ? 50 : 10,
       }}
       whileHover={{ scale: 1.05, zIndex: 50 }}
       onMouseEnter={() => setIsHovered(true)}
@@ -124,10 +115,15 @@ interface VideoMarqueeProps {
 export default function VideoMarquee({ videos }: VideoMarqueeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // DB 데이터가 있으면 사용, 없으면 폴백
+  // DB 데이터만 사용 (없으면 섹션 숨김)
   const videoUrls = videos && videos.length > 0
     ? videos.map(v => v.video_url)
-    : FALLBACK_VIDEOS;
+    : [];
+
+  // 영상이 없으면 섹션을 렌더링하지 않음
+  if (videoUrls.length === 0) {
+    return null;
+  }
 
   // Row 1과 Row 2에 다른 순서로 비디오 배분
   const row1Videos = videoUrls;

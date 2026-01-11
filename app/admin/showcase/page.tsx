@@ -226,32 +226,32 @@ export default function ShowcaseManagement() {
       </header>
 
       {/* Navigation */}
-      <nav className="bg-[#0A0A0A] border-b border-[#222]">
+      <nav className="bg-[#0A0A0A] border-b border-[#222] overflow-x-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-6">
+          <div className="flex gap-4 sm:gap-6 min-w-max">
             <Link
               href="/admin"
-              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors"
+              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
             >
               대시보드
             </Link>
             <Link
               href="/admin/orders"
-              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors"
+              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
             >
               주문 관리
             </Link>
             <Link
               href="/admin/portfolio"
-              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors"
+              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
             >
               포트폴리오
             </Link>
             <Link
               href="/admin/showcase"
-              className="py-4 border-b-2 border-[#00F5A0] text-[#00F5A0] font-medium text-sm"
+              className="py-4 border-b-2 border-[#00F5A0] text-[#00F5A0] font-medium text-sm whitespace-nowrap"
             >
-              쇼케이스 관리
+              쇼케이스
             </Link>
           </div>
         </div>

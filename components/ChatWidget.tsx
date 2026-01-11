@@ -187,7 +187,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
             exit={{ opacity: 0, scale: 0.5, y: 50, x: 50 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
             style={{ transformOrigin: "bottom right" }}
-            className="fixed z-50 flex flex-col overflow-hidden bg-[#0A0A0A] border border-[#222222] md:bottom-24 md:right-6 md:w-[380px] md:h-[600px] md:max-h-[calc(100vh-120px)] md:rounded-2xl inset-0 md:inset-auto rounded-none"
+            className="fixed z-50 flex flex-col overflow-hidden bg-[#0A0A0A] border border-[#222222] md:bottom-24 md:right-6 md:w-[380px] md:h-[600px] md:max-h-[calc(100vh-120px)] md:rounded-2xl inset-0 md:inset-auto rounded-none w-full h-full max-h-[100dvh]"
           >
         {/* Header */}
         <div className="bg-[#111111] border-b border-[#222222] px-4 py-4 flex items-center justify-between">
@@ -211,7 +211,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-[#050505]">
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-[#050505] min-h-0">
           {messages.map((message) => (
             <div
               key={message.id}

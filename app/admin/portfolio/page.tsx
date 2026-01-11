@@ -167,32 +167,32 @@ export default function AdminPortfolioPage() {
       </header>
 
       {/* Navigation */}
-      <nav className="bg-[#0A0A0A] border-b border-[#222]">
+      <nav className="bg-[#0A0A0A] border-b border-[#222] overflow-x-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-6">
+          <div className="flex gap-4 sm:gap-6 min-w-max">
             <Link
               href="/admin"
-              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors"
+              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
             >
               대시보드
             </Link>
             <Link
               href="/admin/orders"
-              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors"
+              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
             >
               주문 관리
             </Link>
             <Link
               href="/admin/portfolio"
-              className="py-4 border-b-2 border-[#00F5A0] text-[#00F5A0] font-medium text-sm"
+              className="py-4 border-b-2 border-[#00F5A0] text-[#00F5A0] font-medium text-sm whitespace-nowrap"
             >
               포트폴리오
             </Link>
             <Link
               href="/admin/showcase"
-              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors"
+              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
             >
-              쇼케이스 관리
+              쇼케이스
             </Link>
           </div>
         </div>
@@ -200,10 +200,10 @@ export default function AdminPortfolioPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-white">포트폴리오 관리</h2>
-            <p className="text-gray-500 mt-1">메인 페이지에 표시될 포트폴리오를 관리합니다.</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-white">포트폴리오 관리</h2>
+            <p className="text-gray-500 text-sm sm:text-base mt-1">메인 페이지에 표시될 포트폴리오를 관리합니다.</p>
           </div>
           <button
             onClick={() => {
@@ -221,7 +221,7 @@ export default function AdminPortfolioPage() {
               });
               setShowAddModal(true);
             }}
-            className="px-4 py-2 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black font-bold rounded-lg hover:shadow-lg hover:shadow-[#00F5A0]/20 transition-all"
+            className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black font-bold rounded-lg hover:shadow-lg hover:shadow-[#00F5A0]/20 transition-all text-sm sm:text-base"
           >
             + 새 포트폴리오 추가
           </button>
