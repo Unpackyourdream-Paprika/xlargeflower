@@ -14,11 +14,18 @@ function wrap(min: number, max: number, value: number): number {
 
 interface VideoCardProps {
   src: string;
+  webpSrc?: string;  // WebP 미리보기 URL
   index: number;
 }
 
-function VideoCard({ src, index }: VideoCardProps) {
+function VideoCard({ src, webpSrc, index }: VideoCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+
+  // Cloudinary 비디오 URL을 최적화된 스트리밍 URL로 변환
+  // 원본 비디오를 낮은 해상도로 스트리밍 (WebP보다 효율적)
+  const optimizedVideoUrl = src.includes('cloudinary.com')
+    ? src.replace('/upload/', '/upload/w_360,q_auto:low/')
+    : src;
 
   return (
     <motion.div
@@ -33,16 +40,17 @@ function VideoCard({ src, index }: VideoCardProps) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* 비디오 */}
+      {/* Cloudinary 최적화된 비디오 스트리밍 */}
       <video
         autoPlay
         muted
         loop
         playsInline
+        preload="metadata"
         className="w-full h-full object-cover"
         style={{ filter: isHovered ? 'none' : 'brightness(0.8)' }}
       >
-        <source src={src} type="video/mp4" />
+        <source src={optimizedVideoUrl} type="video/mp4" />
       </video>
 
       {/* 오버레이 (hover 시 사라짐) */}
@@ -58,8 +66,13 @@ function VideoCard({ src, index }: VideoCardProps) {
   );
 }
 
+interface VideoItem {
+  videoUrl: string;
+  webpUrl?: string;
+}
+
 interface ParallaxRowProps {
-  videos: string[];
+  videos: VideoItem[];
   baseVelocity: number;
   direction: 1 | -1;
 }
@@ -103,7 +116,12 @@ function ParallaxRow({ videos, baseVelocity, direction }: ParallaxRowProps) {
   return (
     <motion.div className="flex items-center" style={{ x }}>
       {repeatedVideos.map((video, index) => (
-        <VideoCard key={`${video}-${index}`} src={video} index={index} />
+        <VideoCard
+          key={`${video.videoUrl}-${index}`}
+          src={video.videoUrl}
+          webpSrc={video.webpUrl}
+          index={index}
+        />
       ))}
     </motion.div>
   );
@@ -187,16 +205,19 @@ export default function VideoMarquee({ videos }: VideoMarqueeProps) {
     return () => observer.disconnect();
   }, []);
 
-  // DB 데이터만 사용
-  const videoUrls = videos && videos.length > 0
-    ? videos.map(v => v.video_url)
+  // DB 데이터를 VideoItem 형태로 변환
+  const videoItems: VideoItem[] = videos && videos.length > 0
+    ? videos.map(v => ({
+        videoUrl: v.video_url,
+        webpUrl: v.thumbnail_webp_url
+      }))
     : [];
 
   // Row 1과 Row 2에 다른 순서로 비디오 배분
-  const row1Videos = videoUrls;
-  const row2Videos = [...videoUrls].reverse();
+  const row1Videos = videoItems;
+  const row2Videos = [...videoItems].reverse();
 
-  const hasVideos = videoUrls.length > 0;
+  const hasVideos = videoItems.length > 0;
 
   return (
     <section

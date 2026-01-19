@@ -16,28 +16,28 @@ export default function TermsPage() {
 
       {/* Content */}
       <main className="max-w-4xl mx-auto px-6 py-12 md:py-20">
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">이용약관</h1>
-        <p className="text-white/50 text-sm mb-12">최종 수정일: 2025년 1월 1일</p>
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">서비스 이용약관</h1>
+        <p className="text-white/50 text-sm mb-12">최종 수정일: 2025년 1월 19일</p>
 
         <div className="space-y-10 text-white/70 leading-relaxed">
           {/* 제1조 */}
           <section>
             <h2 className="text-xl font-bold text-white mb-4">제1조 (목적)</h2>
             <p>
-              본 약관은 주식회사 스네이크스테이크(이하 &quot;회사&quot;)가 운영하는 XLARGE FLOWER 서비스(이하 &quot;서비스&quot;)의
-              이용조건 및 절차, 회사와 이용자의 권리, 의무 및 책임사항 등을 규정함을 목적으로 합니다.
+              본 약관은 파프리카 주식회사(이하 &quot;회사&quot;)가 제공하는 AI 영상 제작 서비스 및 관련 제반 서비스(이하 &quot;서비스&quot;)의
+              이용과 관련하여 회사와 회원의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.
             </p>
           </section>
 
           {/* 제2조 */}
           <section>
-            <h2 className="text-xl font-bold text-white mb-4">제2조 (정의)</h2>
+            <h2 className="text-xl font-bold text-white mb-4">제2조 (용어의 정의)</h2>
             <ul className="list-decimal list-inside space-y-3">
               <li>
-                <span className="text-white font-medium">&quot;서비스&quot;</span>란 회사가 제공하는 AI 기반 광고 영상 제작 및 관련 서비스를 말합니다.
+                <span className="text-white font-medium">&quot;XLARGE FLOWER&quot;</span>란 회사가 AI 기술을 활용하여 제공하는 가상 모델 광고 제작 서비스를 의미합니다.
               </li>
               <li>
-                <span className="text-white font-medium">&quot;이용자&quot;</span>란 본 약관에 따라 회사가 제공하는 서비스를 이용하는 개인 또는 법인을 말합니다.
+                <span className="text-white font-medium">&quot;회원&quot;</span>이란 본 약관에 동의하고 회사와 이용 계약을 체결한 자를 말합니다.
               </li>
               <li>
                 <span className="text-white font-medium">&quot;콘텐츠&quot;</span>란 서비스를 통해 제작되는 모든 영상, 이미지, 텍스트 등의 결과물을 말합니다.
@@ -83,10 +83,10 @@ export default function TermsPage() {
 
           {/* 제5조 */}
           <section>
-            <h2 className="text-xl font-bold text-white mb-4">제5조 (서비스 이용료 및 결제)</h2>
+            <h2 className="text-xl font-bold text-white mb-4">제3조 (서비스의 내용 및 요금)</h2>
             <ul className="list-decimal list-inside space-y-3">
-              <li>서비스 이용료는 회사가 정한 요금표에 따르며, 웹사이트에 게시됩니다.</li>
-              <li>이용자는 서비스 이용 전 또는 회사가 정한 기한 내에 이용료를 결제해야 합니다.</li>
+              <li>회사는 AI 모델 생성, 영상 편집, 광고 운영 대행 등의 서비스를 제공합니다.</li>
+              <li>서비스 이용 요금은 홈페이지에 공시된 가격 정책을 따르며, 카드 결제와 현금(세금계산서) 결제 간의 프로모션 정책이 적용될 수 있습니다.</li>
               <li>결제는 신용카드, 계좌이체, 법인카드 등 회사가 정한 방법으로 가능합니다.</li>
               <li>세금계산서는 결제 완료 후 요청 시 발행됩니다.</li>
             </ul>
@@ -94,37 +94,39 @@ export default function TermsPage() {
 
           {/* 제6조 */}
           <section>
-            <h2 className="text-xl font-bold text-white mb-4">제6조 (환불 정책)</h2>
+            <h2 className="text-xl font-bold text-white mb-4">제4조 (환불 및 계약 해지)</h2>
             <div className="bg-[#0A0A0A] border border-white/10 rounded-xl p-6 space-y-4">
               <div>
                 <h3 className="text-white font-medium mb-2">전액 환불</h3>
                 <p className="text-sm">작업 시작 전 취소 시 전액 환불</p>
               </div>
               <div>
-                <h3 className="text-white font-medium mb-2">부분 환불</h3>
-                <p className="text-sm">작업 진행 중 취소 시 진행률에 따라 차등 환불 (최대 50%)</p>
+                <h3 className="text-white font-medium mb-2">부분 환불 불가</h3>
+                <p className="text-sm">디지털 콘텐츠(영상 등)의 특성상 제작이 착수된 이후(작업 공정률 10% 이상)에는 단순 변심에 의한 전액 환불이 불가합니다.</p>
               </div>
               <div>
-                <h3 className="text-white font-medium mb-2">환불 불가</h3>
-                <p className="text-sm">최종 결과물 납품 완료 후에는 환불 불가</p>
+                <h3 className="text-white font-medium mb-2">회사 귀책사유</h3>
+                <p className="text-sm">회사의 귀책사유로 인해 서비스가 정상적으로 제공되지 못한 경우, 회사는 이용대금을 환불하거나 계약 기간을 연장합니다.</p>
               </div>
             </div>
           </section>
 
           {/* 제7조 */}
           <section>
-            <h2 className="text-xl font-bold text-white mb-4">제7조 (저작권 및 라이선스)</h2>
+            <h2 className="text-xl font-bold text-white mb-4">제5조 (저작권의 귀속)</h2>
             <ul className="list-decimal list-inside space-y-3">
               <li>
-                <span className="text-white font-medium">READY 팩:</span> 비독점 라이선스가 부여되며, 동일 콘텐츠가 다른 이용자에게 제공될 수 있습니다.
+                회사가 제작한 결과물(영상)에 대한 저작권은 대금 결제가 완료된 시점부터 회원에게 귀속됩니다. 단, 영상 생성에 사용된 AI 모델의 원천 기술 및 베이스 소스에 대한 권리는 회사에 있습니다.
               </li>
               <li>
-                <span className="text-white font-medium">FAST 팩:</span> 납품된 콘텐츠에 대해 독점 사용권이 부여됩니다.
+                회사는 제작된 결과물을 회사의 포트폴리오로 활용할 수 있습니다. (원치 않을 경우 별도 요청)
               </li>
               <li>
-                <span className="text-white font-medium">EXCLUSIVE 팩:</span> 완전 독점 라이선스가 부여되며, 저작재산권이 이용자에게 양도됩니다.
+                <span className="text-white font-medium">STARTER 팩:</span> 비독점 라이선스가 부여되며 (1년), 동일 콘텐츠가 다른 이용자에게 제공될 수 있습니다.
               </li>
-              <li>이용자가 제공한 원본 소재의 저작권은 이용자에게 있으며, 회사는 서비스 제공 목적으로만 사용합니다.</li>
+              <li>
+                <span className="text-white font-medium">GROWTH/PERFORMANCE 팩:</span> 납품된 콘텐츠에 대해 영구 소장 라이선스가 부여됩니다.
+              </li>
             </ul>
           </section>
 
@@ -173,7 +175,15 @@ export default function TermsPage() {
           {/* 부칙 */}
           <section>
             <h2 className="text-xl font-bold text-white mb-4">부칙</h2>
-            <p>본 약관은 2025년 1월 1일부터 시행합니다.</p>
+            <p className="mb-4">본 약관은 2025년 1월 19일부터 시행합니다.</p>
+            <div className="bg-[#0A0A0A] border border-white/10 rounded-xl p-6">
+              <ul className="space-y-2 text-sm">
+                <li><span className="text-white/50">상호명:</span> <span className="text-white">파프리카 주식회사</span></li>
+                <li><span className="text-white/50">대표자:</span> <span className="text-white">정재훈</span></li>
+                <li><span className="text-white/50">사업자번호:</span> <span className="text-white">774-88-01296</span></li>
+                <li><span className="text-white/50">주소:</span> <span className="text-white">서울특별시 마포구 성암로 179, 14층</span></li>
+              </ul>
+            </div>
           </section>
         </div>
 

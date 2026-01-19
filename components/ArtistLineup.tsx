@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ScrollReveal from './animations/ScrollReveal';
 import { getArtistModels, ArtistModel, ArtistCategory } from '@/lib/supabase';
+import { triggerOpenChat } from './GlobalChatButton';
 
 // 카테고리 탭 정의
 const CATEGORIES: { key: ArtistCategory; label: string; labelKo: string }[] = [
@@ -233,6 +234,72 @@ function PlaceholderCard({ index }: { index: number }) {
   );
 }
 
+// 커스텀 모델 제작 CTA 카드
+function CustomModelCard({ index }: { index: number }) {
+  return (
+    <ScrollReveal delay={index * 0.1} direction="up">
+      <motion.div
+        className="group relative cursor-pointer overflow-hidden rounded-2xl bg-gradient-to-b from-[#1a0a2e] to-[#0A0A0A] border border-purple-500/30 hover:border-[#00F5A0]/50 transition-all duration-500"
+        whileHover={{ scale: 1.02 }}
+        transition={{ duration: 0.3 }}
+        onClick={triggerOpenChat}
+      >
+        {/* 글로우 효과 */}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+          <div className="absolute inset-0 rounded-2xl shadow-[0_0_40px_rgba(0,245,160,0.2)]" />
+        </div>
+
+        <div className="aspect-[4/5] relative flex flex-col items-center justify-center p-6">
+          {/* 아이콘 */}
+          <div className="w-20 h-20 rounded-full bg-gradient-to-r from-[#00F5A0]/20 to-purple-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+            <svg
+              className="w-10 h-10 text-[#00F5A0]"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+          </div>
+
+          {/* 텍스트 */}
+          <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-purple-400 mb-2">
+            CUSTOM MODEL
+          </span>
+          <h3 className="text-xl font-bold text-white tracking-tight text-center mb-2">
+            맞춤형 모델 제작
+          </h3>
+          <p className="text-sm text-white/60 text-center leading-relaxed mb-4">
+            원하는 얼굴이 없나요?
+            <br />
+            브랜드 전용 AI 모델을 만들어 드립니다
+          </p>
+
+          {/* CTA 버튼 */}
+          <div className="px-4 py-2 rounded-full bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black text-sm font-bold group-hover:shadow-[0_0_20px_rgba(0,245,160,0.4)] transition-all duration-300">
+            제작 문의하기
+          </div>
+
+          {/* 특징 태그 */}
+          <div className="flex flex-wrap justify-center gap-2 mt-4">
+            <span className="px-2 py-1 text-[10px] font-medium bg-white/5 rounded-full text-white/50">
+              독점 라이선스
+            </span>
+            <span className="px-2 py-1 text-[10px] font-medium bg-white/5 rounded-full text-white/50">
+              무제한 수정
+            </span>
+          </div>
+        </div>
+      </motion.div>
+    </ScrollReveal>
+  );
+}
+
 export default function ArtistLineup() {
   const [artists, setArtists] = useState<ArtistModel[]>([]);
   const [activeCategory, setActiveCategory] = useState<ArtistCategory>('ALL');
@@ -365,6 +432,19 @@ export default function ArtistLineup() {
                       <ArtistCard artist={artist} index={index} />
                     </motion.div>
                   ))}
+              {/* 커스텀 모델 제작 CTA 카드 - 항상 마지막에 표시 */}
+              {activeCategory === 'ALL' && (
+                <motion.div
+                  key="custom-model-card"
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <CustomModelCard index={filteredArtists.length} />
+                </motion.div>
+              )}
             </AnimatePresence>
           </motion.div>
         )}

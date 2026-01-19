@@ -7,7 +7,6 @@ import {
   createShowcaseVideo,
   updateShowcaseVideo,
   deleteShowcaseVideo,
-  uploadShowcaseVideo,
   ShowcaseVideo
 } from '@/lib/supabase';
 
@@ -20,6 +19,7 @@ export default function ShowcaseManagement() {
   const [password, setPassword] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<string>('');
 
   const ADMIN_PASSWORD = 'xlarge2024';
 
@@ -63,6 +63,7 @@ export default function ShowcaseManagement() {
     setIsUploading(true);
     setError(null);
     setUploadProgress(0);
+    setUploadStatus('');
 
     const totalFiles = files.length;
     let completed = 0;
@@ -77,15 +78,31 @@ export default function ShowcaseManagement() {
           continue;
         }
 
-        // Upload to Supabase Storage
-        const videoUrl = await uploadShowcaseVideo(file);
+        // Cloudinary에 업로드 (자동 WebP 변환)
+        setUploadStatus(`[${i + 1}/${totalFiles}] ${file.name} 업로드 중...`);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/api/upload-video', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Cloudinary 업로드 실패');
+        }
+
+        const result = await response.json();
 
         // Get next sort order
         const maxSortOrder = videos.reduce((max, v) => Math.max(max, v.sort_order || 0), 0);
 
-        // Create database entry
+        // DB에 저장 (video_url = Cloudinary URL, thumbnail_webp_url = 자동 변환된 WebP URL)
         await createShowcaseVideo({
-          video_url: videoUrl,
+          video_url: result.videoUrl,
+          thumbnail_webp_url: result.webpUrl,
+          thumbnail_url: result.thumbnailUrl,
           title: file.name.replace(/\.[^/.]+$/, ''),
           is_active: true,
           sort_order: maxSortOrder + 1 + i
@@ -93,16 +110,19 @@ export default function ShowcaseManagement() {
 
         completed++;
         setUploadProgress(Math.round((completed / totalFiles) * 100));
+        setUploadStatus(`[${i + 1}/${totalFiles}] 완료! (WebP 자동 생성됨)`);
       }
 
+      setUploadStatus('모든 업로드 완료!');
       // Refresh video list
       await fetchVideos();
     } catch (err) {
       console.error('Upload failed:', err);
-      setError('업로드 중 오류가 발생했습니다.');
+      setError('업로드 중 오류가 발생했습니다. Cloudinary 설정을 확인하세요.');
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
+      setTimeout(() => setUploadStatus(''), 3000);
     }
   };
 
@@ -311,13 +331,21 @@ export default function ShowcaseManagement() {
           {isUploading ? (
             <div className="space-y-4">
               <div className="w-12 h-12 border-4 border-[#00F5A0] border-t-transparent rounded-full animate-spin mx-auto" />
-              <p className="text-white font-medium">업로드 중... {uploadProgress}%</p>
-              <div className="w-48 h-2 bg-[#222] rounded-full mx-auto overflow-hidden">
+              <p className="text-white font-medium">
+                Cloudinary 업로드 중... {uploadProgress}%
+              </p>
+              {uploadStatus && (
+                <p className="text-[#00F5A0] text-sm">{uploadStatus}</p>
+              )}
+              <div className="w-64 h-2 bg-[#222] rounded-full mx-auto overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] transition-all"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>
+              <p className="text-gray-500 text-xs">
+                Cloudinary에서 WebP 자동 변환 중
+              </p>
             </div>
           ) : (
             <>
@@ -441,10 +469,15 @@ export default function ShowcaseManagement() {
                   </div>
 
                   {/* Sort Order */}
-                  <div className="absolute top-2 right-2">
+                  <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
                     <span className="px-2 py-1 bg-black/60 rounded text-xs text-white font-mono">
                       #{video.sort_order || 0}
                     </span>
+                    {video.thumbnail_webp_url && (
+                      <span className="px-2 py-1 bg-[#00D9F5]/20 rounded text-xs text-[#00D9F5] font-medium">
+                        WebP
+                      </span>
+                    )}
                   </div>
                 </div>
 

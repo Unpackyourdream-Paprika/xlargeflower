@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { getPortfolioItems, XLargeFlowerPortfolio } from '@/lib/supabase';
 
+// 업종 카테고리 (납품 사례용)
 const categories = [
   { id: 'all', name: '전체' },
   { id: 'beauty', name: '뷰티' },
@@ -13,7 +14,7 @@ const categories = [
   { id: 'lifestyle', name: '라이프스타일' },
 ];
 
-function PortfolioCard({ item }: { item: XLargeFlowerPortfolio }) {
+function CaseStudyCard({ item }: { item: XLargeFlowerPortfolio }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isHovering, setIsHovering] = useState(false);
 
@@ -40,6 +41,24 @@ function PortfolioCard({ item }: { item: XLargeFlowerPortfolio }) {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
+      {/* 고객사 로고 헤더 */}
+      {item.client_name && (
+        <div className="px-4 py-3 border-b border-white/5 flex items-center gap-3">
+          {item.client_logo_url ? (
+            <img
+              src={item.client_logo_url}
+              alt={item.client_name}
+              className="h-6 object-contain opacity-80"
+            />
+          ) : (
+            <span className="text-sm font-medium text-white/80">{item.client_name}</span>
+          )}
+          {item.campaign_date && (
+            <span className="text-xs text-gray-500 ml-auto">{item.campaign_date}</span>
+          )}
+        </div>
+      )}
+
       {/* Thumbnail / Video */}
       <div className="aspect-video bg-[#111] relative overflow-hidden">
         <img
@@ -71,30 +90,61 @@ function PortfolioCard({ item }: { item: XLargeFlowerPortfolio }) {
         <div className="absolute bottom-3 right-3 px-2 py-1 bg-black/70 backdrop-blur-sm rounded text-xs text-white font-medium">
           {item.duration}
         </div>
-
-        {/* Production Info Badges */}
-        <div className="absolute top-3 left-3 flex gap-2">
-          <span className="px-2 py-1 bg-[#00F5A0]/20 backdrop-blur-sm text-[#00F5A0] rounded text-xs font-medium border border-[#00F5A0]/30">
-            {item.production_time}
-          </span>
-          <span className="px-2 py-1 bg-[#00D9F5]/20 backdrop-blur-sm text-[#00D9F5] rounded text-xs font-medium border border-[#00D9F5]/30">
-            {item.cost}
-          </span>
-        </div>
       </div>
+
+      {/* 성과 지표 섹션 */}
+      {(item.metric_1_value || item.metric_2_value) && (
+        <div className="grid grid-cols-2 gap-2 p-4 border-b border-white/5">
+          {item.metric_1_value && (
+            <div className="text-center p-3 bg-[#00F5A0]/5 rounded-xl border border-[#00F5A0]/20">
+              <div className="text-xl font-bold text-[#00F5A0]">{item.metric_1_value}</div>
+              <div className="text-xs text-gray-400 mt-1">{item.metric_1_label || '성과 지표'}</div>
+            </div>
+          )}
+          {item.metric_2_value && (
+            <div className="text-center p-3 bg-[#00D9F5]/5 rounded-xl border border-[#00D9F5]/20">
+              <div className="text-xl font-bold text-[#00D9F5]">{item.metric_2_value}</div>
+              <div className="text-xs text-gray-400 mt-1">{item.metric_2_label || '성과 지표'}</div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Info */}
       <div className="p-4">
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs px-2 py-1 bg-[#00F5A0]/10 text-[#00F5A0] rounded font-medium border border-[#00F5A0]/20">
-            {item.format}
+          <span
+            className="text-xs px-2 py-1 rounded font-medium border"
+            style={{
+              backgroundColor: item.category_color ? `${item.category_color}15` : 'rgba(0,245,160,0.1)',
+              color: item.category_color || '#00F5A0',
+              borderColor: item.category_color ? `${item.category_color}30` : 'rgba(0,245,160,0.2)'
+            }}
+          >
+            {categoryLabel}
           </span>
           <span className="text-xs text-gray-500">
-            {categoryLabel}
+            {item.format}
           </span>
         </div>
         <h3 className="font-semibold text-white mb-1">{item.title}</h3>
         <p className="text-sm text-gray-400">{item.description}</p>
+
+        {/* 제작 정보 */}
+        <div className="flex items-center gap-3 mt-3 pt-3 border-t border-white/5">
+          <span className="text-xs text-gray-500 flex items-center gap-1">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {item.production_time}
+          </span>
+          <span className="text-xs text-gray-500 flex items-center gap-1">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {item.cost}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -102,49 +152,50 @@ function PortfolioCard({ item }: { item: XLargeFlowerPortfolio }) {
 
 export default function PortfolioPage() {
   const [activeCategory, setActiveCategory] = useState('all');
-  const [portfolioItems, setPortfolioItems] = useState<XLargeFlowerPortfolio[]>([]);
+  const [caseStudies, setCaseStudies] = useState<XLargeFlowerPortfolio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchPortfolio = async () => {
+    const fetchCaseStudies = async () => {
       try {
-        const items = await getPortfolioItems();
-        setPortfolioItems(items);
+        // CASE 타입만 가져오기 (납품 사례)
+        const items = await getPortfolioItems('CASE');
+        setCaseStudies(items);
       } catch (error) {
-        console.error('Failed to fetch portfolio items:', error);
+        console.error('Failed to fetch case studies:', error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchPortfolio();
+    fetchCaseStudies();
   }, []);
 
   const filteredItems = activeCategory === 'all'
-    ? portfolioItems
-    : portfolioItems.filter(item => item.category === activeCategory);
+    ? caseStudies
+    : caseStudies.filter(item => item.category === activeCategory);
 
   return (
     <div className="min-h-screen py-24 bg-[#050505]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-16">
-          <p className="label-tag mb-4">AI MODEL LINEUP</p>
+          <p className="label-tag mb-4">PORTFOLIO</p>
           <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">
-            소속 AI 아티스트 라인업
+            실제 납품 사례
           </h1>
           <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            패션, 뷰티, F&B 등 산업별 최적화된 AI 인플루언서. 원하는 이미지로 즉시 커스텀 가능합니다.
+            국내외 유수 기업에 납품한 AI 광고 크리에이티브. 측정 가능한 성과로 증명합니다.
           </p>
         </div>
 
-        {/* Quality Badge */}
+        {/* Trust Badge */}
         <div className="flex justify-center mb-12">
           <div className="inline-flex items-center gap-3 px-6 py-3 bg-[#0A0A0A] border border-[#00F5A0]/30 rounded-full">
             <svg className="w-5 h-5 text-[#00F5A0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
             <span className="text-sm font-medium text-gray-300">
-              100% AI 생성 - 촬영 없이 제작
+              실제 광고 성과 데이터 기반
             </span>
           </div>
         </div>
@@ -166,7 +217,7 @@ export default function PortfolioPage() {
           ))}
         </div>
 
-        {/* Portfolio Grid */}
+        {/* Case Studies Grid */}
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <div className="flex items-center gap-3 text-gray-400">
@@ -178,16 +229,16 @@ export default function PortfolioPage() {
           <div className="text-center py-20">
             <div className="w-16 h-16 bg-[#111] rounded-2xl flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
-            <p className="text-gray-500 mb-2">등록된 포트폴리오가 없습니다.</p>
-            <p className="text-gray-600 text-sm">곧 새로운 작업물이 업로드될 예정입니다.</p>
+            <p className="text-gray-500 mb-2">등록된 납품 사례가 없습니다.</p>
+            <p className="text-gray-600 text-sm">곧 새로운 성공 사례가 업로드될 예정입니다.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
             {filteredItems.map((item) => (
-              <PortfolioCard key={item.id} item={item} />
+              <CaseStudyCard key={item.id} item={item} />
             ))}
           </div>
         )}
@@ -199,8 +250,8 @@ export default function PortfolioPage() {
             <div className="text-xs sm:text-sm text-gray-400">납품 완료 영상</div>
           </div>
           <div className="p-4 sm:p-6 bg-[#0A0A0A] border border-white/10 rounded-2xl text-center">
-            <div className="text-2xl sm:text-3xl font-bold gradient-text mb-2">98%</div>
-            <div className="text-xs sm:text-sm text-gray-400">고객 만족도</div>
+            <div className="text-2xl sm:text-3xl font-bold gradient-text mb-2">+285%</div>
+            <div className="text-xs sm:text-sm text-gray-400">평균 ROAS 상승</div>
           </div>
           <div className="p-4 sm:p-6 bg-[#0A0A0A] border border-white/10 rounded-2xl text-center">
             <div className="text-2xl sm:text-3xl font-bold gradient-text mb-2">48시간</div>
@@ -269,7 +320,7 @@ export default function PortfolioPage() {
 
         {/* CTA */}
         <div className="text-center p-8 sm:p-12 bg-gradient-to-r from-[#00F5A0]/5 to-[#00D9F5]/5 border border-[#00F5A0]/20 rounded-3xl">
-          <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">직접 만들어보시겠어요?</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">다음 성공 사례의 주인공이 되세요</h2>
           <p className="text-gray-400 mb-8 max-w-xl mx-auto text-sm sm:text-base">
             48시간 내 AI 생성 광고 소재를 받아보세요. 촬영 없이, 기다림 없이.
           </p>

@@ -19,6 +19,8 @@ export interface XLargeFlowerContact {
   status?: 'new' | 'contacted' | 'converted' | 'closed';
 }
 
+export type PortfolioType = 'MODEL' | 'CASE';
+
 export interface XLargeFlowerPortfolio {
   id?: string;
   created_at?: string;
@@ -33,6 +35,17 @@ export interface XLargeFlowerPortfolio {
   cost: string;
   is_active?: boolean;
   order_index?: number;
+  // 새로 추가된 필드들
+  portfolio_type?: PortfolioType;  // 'MODEL' = AI 모델, 'CASE' = 고객사 성공 사례
+  client_name?: string;            // 고객사명 (예: "뷰티 D사")
+  client_logo_url?: string;        // 고객사 로고 URL
+  metric_1_value?: string;         // 성과 지표 1 값 (예: "+312%")
+  metric_1_label?: string;         // 성과 지표 1 라벨 (예: "ROAS 상승")
+  metric_2_value?: string;         // 성과 지표 2 값 (예: "₩4,200")
+  metric_2_label?: string;         // 성과 지표 2 라벨 (예: "CPA 달성")
+  is_featured?: boolean;           // 메인 페이지 노출 여부
+  campaign_date?: string;          // 캠페인 날짜 (예: "2024.12 캠페인")
+  category_color?: string;         // 업종 태그 색상
 }
 
 // Database functions
@@ -45,11 +58,30 @@ export async function submitContact(data: Omit<XLargeFlowerContact, 'id' | 'crea
   return true;
 }
 
-export async function getPortfolioItems() {
+export async function getPortfolioItems(type?: PortfolioType) {
+  let query = supabase
+    .from('xlarge_flower_portfolio')
+    .select('*')
+    .eq('is_active', true);
+
+  if (type) {
+    query = query.eq('portfolio_type', type);
+  }
+
+  const { data, error } = await query.order('order_index', { ascending: true });
+
+  if (error) throw error;
+  return data as XLargeFlowerPortfolio[];
+}
+
+// 메인 페이지 Real Portfolio 섹션용 - CASE 타입이면서 is_featured=true인 항목만
+export async function getFeaturedCaseStudies() {
   const { data, error } = await supabase
     .from('xlarge_flower_portfolio')
     .select('*')
     .eq('is_active', true)
+    .eq('portfolio_type', 'CASE')
+    .eq('is_featured', true)
     .order('order_index', { ascending: true });
 
   if (error) throw error;
@@ -184,6 +216,7 @@ export interface ShowcaseVideo {
   created_at?: string;
   video_url: string;
   thumbnail_url?: string;
+  thumbnail_webp_url?: string;  // Animated WebP 미리보기 (저용량)
   title?: string;
   is_active?: boolean;
   sort_order?: number;
@@ -249,6 +282,26 @@ export async function uploadShowcaseVideo(file: File) {
   const { error: uploadError } = await supabase.storage
     .from('videos')
     .upload(filePath, file);
+
+  if (uploadError) throw uploadError;
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('videos')
+    .getPublicUrl(filePath);
+
+  return publicUrl;
+}
+
+// WebP 썸네일 업로드 (Animated WebP)
+export async function uploadShowcaseWebPThumbnail(file: File | Blob, originalFileName: string) {
+  const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}_preview.webp`;
+  const filePath = `showcase/thumbnails/${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('videos')
+    .upload(filePath, file, {
+      contentType: 'image/webp'
+    });
 
   if (uploadError) throw uploadError;
 

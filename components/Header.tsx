@@ -45,7 +45,7 @@ export default function Header() {
               WHY AI?
             </a>
             <Link href="/portfolio" className="text-white/70 hover:text-white transition-colors text-sm">
-              MODEL LINEUP
+              PORTFOLIO
             </Link>
             <Link href="/products" className="text-white/70 hover:text-white transition-colors text-sm">
               PRICING
@@ -134,7 +134,7 @@ export default function Header() {
                       className="text-white/70 hover:text-white transition-colors text-sm block"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      MODEL LINEUP
+                      PORTFOLIO
                     </Link>
                   </motion.div>
                   <motion.div

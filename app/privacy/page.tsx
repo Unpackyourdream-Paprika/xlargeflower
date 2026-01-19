@@ -17,31 +17,36 @@ export default function PrivacyPage() {
       {/* Content */}
       <main className="max-w-4xl mx-auto px-6 py-12 md:py-20">
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">개인정보처리방침</h1>
-        <p className="text-white/50 text-sm mb-12">최종 수정일: 2025년 1월 1일</p>
+        <p className="text-white/50 text-sm mb-12">최종 수정일: 2025년 1월 19일</p>
 
         <div className="space-y-10 text-white/70 leading-relaxed">
           {/* 1. 개요 */}
           <section>
-            <h2 className="text-xl font-bold text-white mb-4">1. 개요</h2>
+            <h2 className="text-xl font-bold text-white mb-4">제1조 (총칙)</h2>
             <p>
-              주식회사 스네이크스테이크(이하 &quot;회사&quot;)는 이용자의 개인정보를 중요시하며,
-              「개인정보 보호법」 등 관련 법령을 준수하고 있습니다. 본 개인정보처리방침은
-              회사가 제공하는 XLARGE FLOWER 서비스(이하 &quot;서비스&quot;)에 적용됩니다.
+              파프리카 주식회사(이하 &quot;회사&quot;)는 정보통신망 이용촉진 및 정보보호 등에 관한 법률,
+              개인정보 보호법 등 관련 법령을 준수하며, 회원의 개인정보를 보호하기 위해 최선을 다하고 있습니다.
+              본 개인정보처리방침은 회사가 제공하는 XLARGE FLOWER 서비스(이하 &quot;서비스&quot;)에 적용됩니다.
             </p>
           </section>
 
           {/* 2. 수집하는 개인정보 */}
           <section>
-            <h2 className="text-xl font-bold text-white mb-4">2. 수집하는 개인정보</h2>
-            <p className="mb-4">회사는 서비스 제공을 위해 아래와 같은 개인정보를 수집합니다.</p>
+            <h2 className="text-xl font-bold text-white mb-4">제2조 (수집하는 개인정보의 항목)</h2>
+            <p className="mb-4">회사는 상담, 서비스 신청, 결제 등을 위해 아래와 같은 개인정보를 수집하고 있습니다.</p>
 
             <div className="bg-[#0A0A0A] border border-white/10 rounded-xl p-6 space-y-4">
               <div>
                 <h3 className="text-white font-medium mb-2">필수 수집 항목</h3>
                 <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>이름, 이메일 주소, 연락처</li>
-                  <li>회사명 (법인 고객의 경우)</li>
-                  <li>서비스 이용 기록, 접속 로그</li>
+                  <li>회사명, 담당자명, 연락처(휴대전화), 이메일</li>
+                  <li>결제정보 (카드사명, 계좌번호 등)</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-white font-medium mb-2">자동 수집 항목</h3>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>서비스 이용기록, 접속 로그, 쿠키, 접속 IP 정보</li>
                 </ul>
               </div>
               <div>
@@ -56,22 +61,22 @@ export default function PrivacyPage() {
 
           {/* 3. 개인정보의 수집 및 이용 목적 */}
           <section>
-            <h2 className="text-xl font-bold text-white mb-4">3. 개인정보의 수집 및 이용 목적</h2>
+            <h2 className="text-xl font-bold text-white mb-4">제3조 (개인정보의 수집 및 이용목적)</h2>
             <ul className="list-disc list-inside space-y-2">
-              <li>서비스 제공 및 계약 이행</li>
+              <li>서비스 제공에 관한 계약 이행 및 요금 정산</li>
+              <li>회원 관리: 본인 확인, 불량 회원의 부정 이용 방지</li>
               <li>고객 상담 및 문의 응대</li>
-              <li>주문 처리 및 결제</li>
               <li>서비스 개선 및 신규 서비스 개발</li>
-              <li>마케팅 및 광고 활용 (동의한 경우에 한함)</li>
+              <li>마케팅 및 광고: 신규 서비스 개발, 접속 빈도 파악, 타겟 마케팅 (네이버 광고 등 리타겟팅 활용 포함)</li>
             </ul>
           </section>
 
           {/* 4. 개인정보의 보유 및 이용 기간 */}
           <section>
-            <h2 className="text-xl font-bold text-white mb-4">4. 개인정보의 보유 및 이용 기간</h2>
+            <h2 className="text-xl font-bold text-white mb-4">제4조 (개인정보의 보유 및 이용기간)</h2>
             <p className="mb-4">
-              회사는 개인정보 수집 및 이용 목적이 달성된 후에는 해당 정보를 지체 없이 파기합니다.
-              단, 관련 법령에 따라 보존할 필요가 있는 경우 아래와 같이 보관합니다.
+              원칙적으로 개인정보 수집 및 이용목적이 달성된 후에는 해당 정보를 지체 없이 파기합니다.
+              단, 관계법령의 규정에 의하여 보존할 필요가 있는 경우 일정 기간 보관합니다.
             </p>
             <div className="bg-[#0A0A0A] border border-white/10 rounded-xl p-6">
               <ul className="space-y-3 text-sm">
@@ -139,12 +144,12 @@ export default function PrivacyPage() {
 
           {/* 8. 개인정보 보호책임자 */}
           <section>
-            <h2 className="text-xl font-bold text-white mb-4">8. 개인정보 보호책임자</h2>
+            <h2 className="text-xl font-bold text-white mb-4">제5조 (개인정보 보호책임자)</h2>
             <div className="bg-[#0A0A0A] border border-white/10 rounded-xl p-6">
               <ul className="space-y-2 text-sm">
-                <li><span className="text-white/50">담당부서:</span> <span className="text-white">개인정보보호팀</span></li>
-                <li><span className="text-white/50">이메일:</span> <span className="text-white">privacy@xlargeflower.com</span></li>
-                <li><span className="text-white/50">연락처:</span> <span className="text-white">02-0000-0000</span></li>
+                <li><span className="text-white/50">성명:</span> <span className="text-white">정재훈</span></li>
+                <li><span className="text-white/50">소속/직위:</span> <span className="text-white">대표이사</span></li>
+                <li><span className="text-white/50">이메일:</span> <span className="text-white">contact@xlargeflower.com</span></li>
               </ul>
             </div>
           </section>

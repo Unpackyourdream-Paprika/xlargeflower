@@ -92,3 +92,8 @@ CREATE POLICY "Anonymous users can insert orders"
 -- ALTER TABLE xlarge_flower_portfolio ADD COLUMN IF NOT EXISTS tags TEXT[];
 -- ALTER TABLE xlarge_flower_portfolio ADD COLUMN IF NOT EXISTS client_name VARCHAR(100);
 -- ALTER TABLE xlarge_flower_portfolio ADD COLUMN IF NOT EXISTS view_count INTEGER DEFAULT 0;
+
+-- 6. 쇼케이스 비디오 테이블에 WebP 썸네일 컬럼 추가
+-- Animated WebP 미리보기 URL 저장용 (저용량, 빠른 로딩)
+ALTER TABLE xlarge_flower_showcase_videos
+ADD COLUMN IF NOT EXISTS thumbnail_webp_url TEXT;

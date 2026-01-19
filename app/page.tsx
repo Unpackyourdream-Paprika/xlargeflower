@@ -7,22 +7,40 @@ import ScrollReveal from '@/components/animations/ScrollReveal';
 import VideoMarquee from '@/components/VideoMarquee';
 import ArtistLineup from '@/components/ArtistLineup';
 import { triggerOpenChat } from '@/components/GlobalChatButton';
-import { getShowcaseVideos, ShowcaseVideo } from '@/lib/supabase';
+import { getShowcaseVideos, ShowcaseVideo, getFeaturedCaseStudies, XLargeFlowerPortfolio } from '@/lib/supabase';
 
 export default function Home() {
   const [showcaseVideos, setShowcaseVideos] = useState<ShowcaseVideo[]>([]);
+  const [caseStudies, setCaseStudies] = useState<XLargeFlowerPortfolio[]>([]);
+  const [paymentType, setPaymentType] = useState<'card' | 'invoice'>('card');
 
   useEffect(() => {
-    const fetchVideos = async () => {
+    const fetchData = async () => {
       try {
-        const videos = await getShowcaseVideos();
+        const [videos, cases] = await Promise.all([
+          getShowcaseVideos(),
+          getFeaturedCaseStudies()
+        ]);
         setShowcaseVideos(videos);
+        setCaseStudies(cases);
       } catch (error) {
-        console.error('Failed to fetch showcase videos:', error);
+        console.error('Failed to fetch data:', error);
       }
     };
-    fetchVideos();
+    fetchData();
   }, []);
+
+  // 가격 계산 (세금계산서 발행 시 10% 할인)
+  const getPrice = (basePrice: number) => {
+    if (paymentType === 'invoice') {
+      return Math.round(basePrice * 0.9);
+    }
+    return basePrice;
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('ko-KR').format(price);
+  };
   return (
     <div className="min-h-screen bg-[#050505] main-content">
       {/* Hero Section */}
@@ -235,6 +253,212 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Real Portfolio / Case Study Section - DB 연동 */}
+      <section className="section-spacing bg-[#050505]">
+        <div className="max-w-7xl mx-auto px-6">
+          <ScrollReveal>
+            <div className="text-center mb-16">
+              <p className="label-tag mb-4">REAL PORTFOLIO</p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white">
+                이미 상위 1% 브랜드는<br />
+                <span className="gradient-text">XLARGE와 함께 매출을 올리고 있습니다</span>
+              </h2>
+              <p className="text-white/60 mt-4">가상 얼굴로 만든 실제 성공 사례를 확인하세요</p>
+            </div>
+          </ScrollReveal>
+
+          {caseStudies.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {caseStudies.map((caseItem, index) => (
+                <ScrollReveal key={caseItem.id} delay={0.1 * (index + 1)} direction="up">
+                  <div className="group relative bg-[#0A0A0A] border border-white/10 rounded-2xl overflow-hidden hover:border-[#00F5A0]/30 transition-all duration-300">
+                    {/* Video/Image Area */}
+                    <div className="relative aspect-[9/16] max-h-[320px] overflow-hidden bg-[#111]">
+                      {caseItem.video_url ? (
+                        <video
+                          src={caseItem.video_url}
+                          className="w-full h-full object-cover"
+                          muted
+                          loop
+                          playsInline
+                          onMouseEnter={(e) => e.currentTarget.play()}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.pause();
+                            e.currentTarget.currentTime = 0;
+                          }}
+                        />
+                      ) : caseItem.thumbnail_url ? (
+                        <img
+                          src={caseItem.thumbnail_url}
+                          alt={caseItem.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-20 h-20 rounded-full bg-[#00F5A0]/10 flex items-center justify-center">
+                            <svg className="w-8 h-8 text-[#00F5A0]" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent z-10 pointer-events-none" />
+
+                      {/* Client Logo or Name */}
+                      <div className="absolute top-4 left-4 z-20">
+                        {caseItem.client_logo_url ? (
+                          <img
+                            src={caseItem.client_logo_url}
+                            alt={caseItem.client_name || ''}
+                            className="h-8 object-contain bg-black/60 backdrop-blur-sm rounded-lg px-2 py-1"
+                          />
+                        ) : caseItem.client_name ? (
+                          <div className="px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-lg">
+                            <span className="text-white text-xs font-bold tracking-wider">{caseItem.client_name}</span>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    {/* Info */}
+                    <div className="p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <span
+                          className="px-2 py-1 text-xs font-bold rounded"
+                          style={{
+                            backgroundColor: caseItem.category_color ? `${caseItem.category_color}20` : 'rgba(0, 245, 160, 0.1)',
+                            color: caseItem.category_color || '#00F5A0'
+                          }}
+                        >
+                          {caseItem.category}
+                        </span>
+                        {caseItem.campaign_date && (
+                          <span className="text-white/40 text-xs">{caseItem.campaign_date}</span>
+                        )}
+                      </div>
+                      <h3 className="text-white font-bold text-lg mb-2">{caseItem.title}</h3>
+                      <p className="text-white/60 text-sm mb-4">{caseItem.description}</p>
+
+                      {/* Stats */}
+                      {(caseItem.metric_1_value || caseItem.metric_2_value) && (
+                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                          {caseItem.metric_1_value && (
+                            <div>
+                              <p className="text-2xl font-bold gradient-text">{caseItem.metric_1_value}</p>
+                              <p className="text-white/40 text-xs">{caseItem.metric_1_label}</p>
+                            </div>
+                          )}
+                          {caseItem.metric_2_value && (
+                            <div>
+                              <p className="text-2xl font-bold gradient-text">{caseItem.metric_2_value}</p>
+                              <p className="text-white/40 text-xs">{caseItem.metric_2_label}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
+          ) : (
+            /* 폴백: DB에 데이터가 없을 때 기본 카드 표시 */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                {
+                  client: 'BEAUTY D사',
+                  category: '뷰티',
+                  categoryColor: '#00F5A0',
+                  date: '2024.12 캠페인',
+                  title: '인플루언서 대비 ROAS 3배 달성',
+                  desc: '기존 인플루언서 협찬 대비 동일 매체비로 전환율 3배 상승',
+                  metric1: { value: '+312%', label: 'ROAS 상승' },
+                  metric2: { value: '₩4,200', label: 'CPA 달성' }
+                },
+                {
+                  client: 'F&B M사',
+                  category: 'F&B',
+                  categoryColor: '#F97316',
+                  date: '2025.01 캠페인',
+                  title: 'CPA 67% 절감, 매출 2.5배',
+                  desc: '15,000원 → 5,000원 CPA 하락, 월 매출 2.5배 성장',
+                  metric1: { value: '-67%', label: 'CPA 절감' },
+                  metric2: { value: '2.5x', label: '매출 성장' }
+                },
+                {
+                  client: 'D2C C사',
+                  category: 'D2C',
+                  categoryColor: '#A855F7',
+                  date: '2024.11 ~ 현재',
+                  title: '1년간 영상 재사용, ROI 극대화',
+                  desc: '한 번 제작한 영상으로 12개월 광고 운영, 섭외비 절감',
+                  metric1: { value: '12개월', label: '영상 재사용' },
+                  metric2: { value: '₩0', label: '추가 섭외비' }
+                }
+              ].map((item, index) => (
+                <ScrollReveal key={index} delay={0.1 * (index + 1)} direction="up">
+                  <div className="group relative bg-[#0A0A0A] border border-white/10 rounded-2xl overflow-hidden hover:border-[#00F5A0]/30 transition-all duration-300">
+                    <div className="relative aspect-[9/16] max-h-[320px] overflow-hidden bg-[#111]">
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent z-10" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-20 h-20 rounded-full bg-[#00F5A0]/10 flex items-center justify-center">
+                          <svg className="w-8 h-8 text-[#00F5A0]" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z"/>
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="absolute top-4 left-4 z-20">
+                        <div className="px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-lg">
+                          <span className="text-white text-xs font-bold tracking-wider">{item.client}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <span
+                          className="px-2 py-1 text-xs font-bold rounded"
+                          style={{
+                            backgroundColor: `${item.categoryColor}20`,
+                            color: item.categoryColor
+                          }}
+                        >
+                          {item.category}
+                        </span>
+                        <span className="text-white/40 text-xs">{item.date}</span>
+                      </div>
+                      <h3 className="text-white font-bold text-lg mb-2">{item.title}</h3>
+                      <p className="text-white/60 text-sm mb-4">{item.desc}</p>
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                        <div>
+                          <p className="text-2xl font-bold gradient-text">{item.metric1.value}</p>
+                          <p className="text-white/40 text-xs">{item.metric1.label}</p>
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold gradient-text">{item.metric2.value}</p>
+                          <p className="text-white/40 text-xs">{item.metric2.label}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
+          )}
+
+          {/* CTA */}
+          <ScrollReveal delay={0.4}>
+            <div className="mt-12 text-center">
+              <Link href="/portfolio" className="btn-secondary inline-flex items-center gap-2">
+                전체 포트폴리오 보기
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
       {/* Problem & Solution Section - WHY AI? */}
       <section id="why-ai" className="section-spacing bg-[#050505]">
         <div className="max-w-6xl mx-auto px-6">
@@ -406,10 +630,50 @@ export default function Home() {
       <section className="section-spacing bg-[#050505]">
         <div className="max-w-7xl mx-auto px-6">
           <ScrollReveal>
-            <div className="text-center mb-16">
+            <div className="text-center mb-12">
               <p className="label-tag mb-4">SELECT YOUR PLAN</p>
               <h2 className="text-3xl sm:text-4xl font-bold text-white">귀사의 클래스에 맞는 플랜</h2>
               <p className="text-white/60 mt-4">프리미엄 AI 크리에이티브 솔루션</p>
+
+              {/* 가격 비교 문구 */}
+              <div className="mt-6 inline-block px-6 py-3 bg-[#0A0A0A] border border-[#00F5A0]/30 rounded-xl">
+                <p className="text-sm text-white/80">
+                  <span className="text-[#00F5A0] font-bold">300만 원</span>으로
+                  <span className="text-white font-bold"> 3,000만 원</span>의 효과
+                  <span className="text-white/60"> (모델 섭외비 + 스튜디오 렌탈비 절감)</span>
+                </p>
+              </div>
+
+              {/* 결제 방식 토글 */}
+              <div className="mt-8 flex justify-center">
+                <div className="inline-flex bg-[#0A0A0A] border border-[#222] rounded-full p-1">
+                  <button
+                    onClick={() => setPaymentType('card')}
+                    className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all ${
+                      paymentType === 'card'
+                        ? 'bg-white text-black'
+                        : 'text-white/60 hover:text-white'
+                    }`}
+                  >
+                    카드 결제
+                  </button>
+                  <button
+                    onClick={() => setPaymentType('invoice')}
+                    className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all ${
+                      paymentType === 'invoice'
+                        ? 'bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black'
+                        : 'text-white/60 hover:text-white'
+                    }`}
+                  >
+                    세금계산서 (10% 할인)
+                  </button>
+                </div>
+              </div>
+              {paymentType === 'invoice' && (
+                <p className="mt-3 text-sm text-[#00F5A0]">
+                  기업 고객은 세금계산서 발행 시 10% 제휴 할인이 적용됩니다
+                </p>
+              )}
             </div>
           </ScrollReveal>
 
@@ -418,7 +682,14 @@ export default function Home() {
             <ScrollReveal delay={0.1} direction="up">
               <div className="card h-full flex flex-col">
                 <p className="label-tag mb-4">STARTER</p>
-                <h3 className="text-2xl font-bold text-white mb-1">₩3,000,000~</h3>
+                <div className="mb-1">
+                  {paymentType === 'invoice' && (
+                    <span className="text-white/40 text-sm line-through mr-2">₩3,300,000</span>
+                  )}
+                  <h3 className="text-2xl font-bold text-white inline">
+                    ₩{formatPrice(getPrice(3300000))}~
+                  </h3>
+                </div>
                 <p className="text-white/60 text-sm mb-6">테스트 도입을 위한 베이직 플랜</p>
                 <ul className="feature-list mb-8 flex-1">
                   <li>AI 인플루언서 영상 1종 (15초)</li>
@@ -435,11 +706,18 @@ export default function Home() {
             {/* GROWTH - Best Choice */}
             <ScrollReveal delay={0.2} direction="up">
               <div className="card-featured relative h-full flex flex-col">
-                <span className="absolute -top-3 left-6 px-3 py-1 text-xs font-bold tracking-wide bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-white">
+                <span className="absolute -top-3 left-6 px-3 py-1 text-xs font-bold tracking-wide bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black rounded-sm">
                   BEST CHOICE
                 </span>
                 <p className="label-tag mb-4">GROWTH</p>
-                <h3 className="text-2xl font-bold text-white mb-1">₩5,500,000</h3>
+                <div className="mb-1">
+                  {paymentType === 'invoice' && (
+                    <span className="text-white/40 text-sm line-through mr-2">₩5,500,000</span>
+                  )}
+                  <h3 className="text-2xl font-bold text-white inline">
+                    ₩{formatPrice(getPrice(5500000))}
+                  </h3>
+                </div>
                 <p className="text-white/60 text-sm mb-6">본격적인 성과를 위한 주력 플랜</p>
                 <ul className="feature-list mb-8 flex-1">
                   <li><strong className="text-white">영상 1종 + 바리에이션 3종</strong> (총 4개)</li>
@@ -461,7 +739,14 @@ export default function Home() {
             <ScrollReveal delay={0.3} direction="up">
               <div className="card h-full flex flex-col border-[#00D9F5]/30">
                 <p className="label-tag mb-4 text-[#00D9F5]">PERFORMANCE</p>
-                <h3 className="text-2xl font-bold text-white mb-1">₩9,000,000</h3>
+                <div className="mb-1">
+                  {paymentType === 'invoice' && (
+                    <span className="text-white/40 text-sm line-through mr-2">₩9,000,000</span>
+                  )}
+                  <h3 className="text-2xl font-bold text-white inline">
+                    ₩{formatPrice(getPrice(9000000))}
+                  </h3>
+                </div>
                 <p className="text-white/60 text-sm mb-6">고퀄리티 연출이 필요한 프리미엄 플랜</p>
                 <ul className="feature-list mb-8 flex-1">
                   <li><strong className="text-white">영상 2종 + 바리에이션 6종</strong> (총 8개)</li>
@@ -479,49 +764,85 @@ export default function Home() {
               </div>
             </ScrollReveal>
 
-            {/* VIP PARTNER */}
+            {/* PERFORMANCE ADS PACK - NEW */}
             <ScrollReveal delay={0.4} direction="up">
-              <div className="card h-full flex flex-col bg-gradient-to-b from-[#1a1a1a] to-[#0A0A0A] border-[#B8860B]/40">
+              <div className="card h-full flex flex-col bg-gradient-to-b from-[#1a1a1a] to-[#0A0A0A] border-purple-500/40">
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="text-[#FFD700] text-xs font-bold tracking-wider">VIP PARTNER</span>
-                  <svg className="w-4 h-4 text-[#FFD700]" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
+                  <span className="text-purple-400 text-xs font-bold tracking-wider">PERFORMANCE ADS</span>
+                  <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-[10px] font-bold rounded">NEW</span>
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-1">별도 문의</h3>
-                <p className="text-[#FFD700]/80 text-sm mb-6">중견/대기업을 위한 분기 독점 계약</p>
+                <div className="mb-1">
+                  {paymentType === 'invoice' && (
+                    <span className="text-white/40 text-sm line-through mr-2">₩15,000,000~</span>
+                  )}
+                  <h3 className="text-2xl font-bold text-white inline">
+                    ₩{formatPrice(getPrice(15000000))}~
+                  </h3>
+                </div>
+                <p className="text-purple-300/80 text-sm mb-6">영상 제작 + 광고 운영 올인원</p>
                 <ul className="space-y-2 mb-8 flex-1">
                   <li className="flex items-start gap-2 text-sm text-gray-300">
-                    <svg className="w-4 h-4 text-[#FFD700] mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
-                    <strong className="text-white">3개월 파트너십</strong> (총 12개 영상)
+                    <span><strong className="text-white">AI 모델 영상 제작 (5종)</strong></span>
                   </li>
                   <li className="flex items-start gap-2 text-sm text-gray-300">
-                    <svg className="w-4 h-4 text-[#FFD700] mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
-                    <strong className="text-white">브랜드 전속 AI 모델 독점 개발</strong>
+                    <span>A/B 테스트용 바리에이션 (10종)</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm text-gray-300">
-                    <svg className="w-4 h-4 text-[#FFD700] mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
-                    월간 성과 리포트 및 전략 컨설팅
+                    <span><strong className="text-purple-300">메타/틱톡/유튜브 광고 세팅</strong></span>
                   </li>
                   <li className="flex items-start gap-2 text-sm text-gray-300">
-                    <svg className="w-4 h-4 text-[#FFD700] mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
-                    VIP 전용 핫라인 및 무제한 수정
+                    <span>타겟 오디언스 정밀 세팅</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-gray-300">
+                    <svg className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span>ROAS 분석 리포트 제공</span>
                   </li>
                 </ul>
-                <Link href="/contact" className="block w-full text-center py-3 rounded-full font-medium bg-gradient-to-r from-[#B8860B] to-[#FFD700] text-black hover:opacity-90 transition-all">
-                  VIP 컨시어지 연결
-                </Link>
+                <p className="text-xs text-white/40 mb-4 text-center">영상만 만든다고 팔리지 않습니다.</p>
+                <button
+                  onClick={triggerOpenChat}
+                  className="block w-full text-center py-3 rounded-full font-medium bg-gradient-to-r from-purple-500 to-purple-400 text-white hover:opacity-90 transition-all"
+                >
+                  광고 패키지 상담
+                </button>
               </div>
             </ScrollReveal>
           </div>
+
+          {/* VIP PARTNER - Full Width */}
+          <ScrollReveal delay={0.5}>
+            <div className="mt-8 bg-gradient-to-r from-[#1a1a1a] via-[#111] to-[#1a1a1a] border border-[#B8860B]/40 rounded-2xl p-8">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[#FFD700] text-xs font-bold tracking-wider">VIP PARTNER</span>
+                    <svg className="w-4 h-4 text-[#FFD700]" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-2">중견/대기업을 위한 분기 독점 계약</h3>
+                  <p className="text-[#FFD700]/80 text-sm">3개월 파트너십 (총 12개 영상) + 브랜드 전속 AI 모델 독점 개발 + 월간 성과 리포트</p>
+                </div>
+                <Link href="/contact" className="shrink-0 inline-block text-center px-8 py-3 rounded-full font-medium bg-gradient-to-r from-[#B8860B] to-[#FFD700] text-black hover:opacity-90 transition-all">
+                  VIP 컨시어지 연결
+                </Link>
+              </div>
+            </div>
+          </ScrollReveal>
 
           {/* VAT Notice */}
           <p className="text-center text-white/40 text-sm mt-8">
