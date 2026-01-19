@@ -5,7 +5,9 @@
       "Bash(npx tsc:*)",
       "Bash(npm run build:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: 히어로 섹션 동적 레이아웃 및 카테고리 필터 수정\n\n- 히어로 섹션 Type A/C 레이아웃 구현 \\(버티컬 롤링/모바일 목업\\)\n- 폰 목업 스크롤 패럴랙스 효과 추가\n- 영상 디졸브 전환 구현\n- 오로라 배경 강도 조정\n- 아티스트 카테고리 필터 복수 카테고리 지원\n- 포트폴리오 카테고리 필터 어드민과 일치하도록 수정\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: 히어로 섹션 동적 레이아웃 및 카테고리 필터 수정\n\n- 히어로 섹션 Type A/C 레이아웃 구현 \\(버티컬 롤링/모바일 목업\\)\n- 폰 목업 스크롤 패럴랙스 효과 추가\n- 영상 디졸브 전환 구현\n- 오로라 배경 강도 조정\n- 아티스트 카테고리 필터 복수 카테고리 지원\n- 포트폴리오 카테고리 필터 어드민과 일치하도록 수정\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
