@@ -7,6 +7,35 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// 서명 생성 API (클라이언트 직접 업로드용)
+export async function GET() {
+  try {
+    const timestamp = Math.round(new Date().getTime() / 1000);
+
+    const signature = cloudinary.utils.api_sign_request(
+      {
+        timestamp,
+        folder: 'xlarge-showcase',
+      },
+      process.env.CLOUDINARY_API_SECRET!
+    );
+
+    return NextResponse.json({
+      signature,
+      timestamp,
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+      apiKey: process.env.CLOUDINARY_API_KEY,
+    });
+  } catch (error) {
+    console.error('Signature error:', error);
+    return NextResponse.json(
+      { error: 'Failed to generate signature' },
+      { status: 500 }
+    );
+  }
+}
+
+// 기존 서버 업로드 (작은 파일용 - 4MB 이하)
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -14,6 +43,14 @@ export async function POST(request: NextRequest) {
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    }
+
+    // 파일 크기 체크 (4MB 제한)
+    if (file.size > 4 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: 'File too large. Use client-side upload for files over 4MB.' },
+        { status: 413 }
+      );
     }
 
     // File을 Buffer로 변환
@@ -27,9 +64,7 @@ export async function POST(request: NextRequest) {
     const result = await cloudinary.uploader.upload(dataURI, {
       resource_type: 'video',
       folder: 'xlarge-showcase',
-      // 자동 변환 설정 (720px, 고품질)
       eager: [
-        // WebP GIF 형태로 변환 (Animated WebP)
         {
           format: 'webp',
           resource_type: 'video',
@@ -38,7 +73,6 @@ export async function POST(request: NextRequest) {
           crop: 'scale',
           quality: 'auto:good',
         },
-        // 포스터 이미지 (첫 프레임)
         {
           format: 'webp',
           resource_type: 'video',
@@ -48,20 +82,15 @@ export async function POST(request: NextRequest) {
           start_offset: '0',
         }
       ],
-      eager_async: false, // 동기적으로 변환 완료 대기
+      eager_async: false,
     });
 
-    // URL 생성
     const videoUrl = result.secure_url;
 
-    // Animated WebP URL (비디오를 Animated WebP로 변환)
-    // Cloudinary video-to-animated-webp 변환
-    // 해상도: 480px (품질과 용량 균형)
     const webpUrl = result.secure_url
       .replace('/upload/', '/upload/w_480,q_auto,f_webp,fl_awebp/')
       .replace(/\.[^.]+$/, '.webp');
 
-    // 정적 썸네일 URL (첫 프레임을 webp로)
     const thumbnailUrl = result.secure_url
       .replace('/upload/', '/upload/w_720,q_auto,so_0,f_webp/')
       .replace(/\.[^.]+$/, '.webp');

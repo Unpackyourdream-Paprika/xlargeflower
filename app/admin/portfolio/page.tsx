@@ -38,6 +38,45 @@ export default function AdminPortfolioPage() {
     fetchPortfolios();
   }, [fetchPortfolios]);
 
+  // Cloudinary 직접 업로드 함수
+  const uploadToCloudinary = async (file: File): Promise<{ videoUrl: string; thumbnailUrl: string }> => {
+    // 1. 서버에서 서명 받기
+    const signRes = await fetch('/api/upload-video');
+    if (!signRes.ok) throw new Error('서명 생성 실패');
+    const { signature, timestamp, cloudName, apiKey } = await signRes.json();
+
+    // 2. Cloudinary에 직접 업로드
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('signature', signature);
+    formData.append('timestamp', timestamp.toString());
+    formData.append('api_key', apiKey);
+    formData.append('folder', 'xlarge-showcase');
+
+    const uploadRes = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`,
+      {
+        method: 'POST',
+        body: formData,
+      }
+    );
+
+    if (!uploadRes.ok) {
+      const errorData = await uploadRes.json();
+      throw new Error(errorData.error?.message || '업로드 실패');
+    }
+
+    const result = await uploadRes.json();
+    const videoUrl = result.secure_url;
+
+    // 썸네일 URL 생성
+    const thumbnailUrl = videoUrl
+      .replace('/upload/', '/upload/w_720,q_auto,so_0,f_webp/')
+      .replace(/\.[^.]+$/, '.webp');
+
+    return { videoUrl, thumbnailUrl };
+  };
+
   // 드래그앤드롭 업로드
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -61,19 +100,8 @@ export default function AdminPortfolioPage() {
 
         setUploadStatus(`[${i + 1}/${totalFiles}] ${file.name} 업로드 중...`);
 
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const response = await fetch('/api/upload-video', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error('업로드 실패');
-        }
-
-        const result = await response.json();
+        // Cloudinary 직접 업로드 사용
+        const { videoUrl, thumbnailUrl } = await uploadToCloudinary(file);
 
         // DB에 저장
         const fileName = file.name.replace(/\.[^/.]+$/, '');
@@ -82,8 +110,8 @@ export default function AdminPortfolioPage() {
           .insert([{
             title: fileName,
             category: '기타',
-            thumbnail_url: result.thumbnailUrl || result.videoUrl,
-            video_url: result.videoUrl,
+            thumbnail_url: thumbnailUrl || videoUrl,
+            video_url: videoUrl,
             duration: '15초',
             format: '9:16',
             description: fileName,
@@ -107,7 +135,7 @@ export default function AdminPortfolioPage() {
       await fetchPortfolios();
     } catch (err) {
       console.error('Upload failed:', err);
-      setError('업로드 중 오류가 발생했습니다.');
+      setError(`업로드 중 오류가 발생했습니다: ${err instanceof Error ? err.message : '알 수 없는 오류'}`);
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
