@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import AuroraBackground from '@/components/animations/AuroraBackground';
 import ScrollReveal from '@/components/animations/ScrollReveal';
 import VideoMarquee from '@/components/VideoMarquee';
 import ArtistLineup from '@/components/ArtistLineup';
+import MainHeroContainer from '@/components/hero/MainHeroContainer';
 import { triggerOpenChat } from '@/components/GlobalChatButton';
 import { getShowcaseVideos, ShowcaseVideo, getFeaturedCaseStudies, XLargeFlowerPortfolio } from '@/lib/supabase';
 
@@ -43,43 +43,8 @@ export default function Home() {
   };
   return (
     <div className="min-h-screen bg-[#050505] main-content">
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Soft Aurora Background Effect */}
-        <AuroraBackground />
-
-        <ScrollReveal className="relative z-10 max-w-5xl mx-auto px-6 text-center">
-          <p className="label-gradient mb-8">CONVERSION-OPTIMIZED AI MODEL</p>
-
-          <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-none">
-            <span className="block text-white mb-2">매출 전환율 1위,</span>
-            <span className="block gradient-text">AI 버추얼 광고 모델 제작 XLARGE</span>
-          </h1>
-
-          <p className="mt-8 text-lg sm:text-xl text-white/80 max-w-2xl mx-auto">
-            국내 최초, 구매 전환(Conversion)에 최적화된 AI 퍼포먼스 모델 솔루션.<br />
-            거품 낀 섭외비 대신, 확실한 영상 자산을 소유하세요.
-          </p>
-
-          <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={triggerOpenChat}
-              className="btn-primary text-lg"
-            >
-              내 브랜드에 맞는 모델 찾기
-            </button>
-            <Link href="/portfolio" className="btn-secondary text-lg">
-              MODEL LINEUP 보기
-            </Link>
-          </div>
-
-        </ScrollReveal>
-
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
-          <div className="w-px h-12 bg-gradient-to-b from-transparent via-white/50 to-transparent animate-pulse" />
-        </div>
-      </section>
+      {/* Hero Section - Dynamic Layout */}
+      <MainHeroContainer />
 
       {/* AI Video Showcase - Video Wall */}
       <VideoMarquee videos={showcaseVideos} />
@@ -572,7 +537,7 @@ export default function Home() {
             <div className="mt-12 text-center">
               <p className="text-white/60 mb-6">인플루언서 1회 섭외 비용으로, 평생 쓰는 브랜드 전속 모델을 만드세요.</p>
               <button
-                onClick={triggerOpenChat}
+                onClick={() => triggerOpenChat('free_consult')}
                 className="btn-primary"
               >
                 무료 상담 받기
@@ -727,7 +692,7 @@ export default function Home() {
                   <li>수정 2회</li>
                 </ul>
                 <button
-                  onClick={triggerOpenChat}
+                  onClick={() => triggerOpenChat('growth_inquiry')}
                   className="btn-primary w-full"
                 >
                   도입 문의하기
@@ -756,7 +721,7 @@ export default function Home() {
                   <li>우선 제작 (Fast Track)</li>
                 </ul>
                 <button
-                  onClick={triggerOpenChat}
+                  onClick={() => triggerOpenChat('performance_inquiry')}
                   className="btn-secondary w-full text-center"
                 >
                   도입 상담받기
@@ -814,7 +779,7 @@ export default function Home() {
                 </ul>
                 <p className="text-xs text-white/40 mb-4 text-center">영상만 만든다고 팔리지 않습니다.</p>
                 <button
-                  onClick={triggerOpenChat}
+                  onClick={() => triggerOpenChat('ads_package')}
                   className="block w-full text-center py-3 rounded-full font-medium bg-gradient-to-r from-purple-500 to-purple-400 text-white hover:opacity-90 transition-all"
                 >
                   광고 패키지 상담
@@ -943,7 +908,7 @@ export default function Home() {
             법인카드 결제 가능 / 세금계산서 발행 / 48시간 납품
           </p>
           <button
-            onClick={triggerOpenChat}
+            onClick={() => triggerOpenChat('vip_consult')}
             className="btn-primary text-lg"
           >
             VIP 상담 신청하기
@@ -954,7 +919,7 @@ export default function Home() {
       {/* Sticky Mobile CTA */}
       <div className="sticky-mobile-cta">
         <button
-          onClick={triggerOpenChat}
+          onClick={() => triggerOpenChat('vip_consult')}
           className="btn-primary w-full text-center"
         >
           VIP 상담 신청하기

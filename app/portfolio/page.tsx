@@ -4,14 +4,15 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { getPortfolioItems, XLargeFlowerPortfolio } from '@/lib/supabase';
 
-// 업종 카테고리 (납품 사례용)
+// 업종 카테고리 (납품 사례용) - 어드민과 일치해야 함
 const categories = [
   { id: 'all', name: '전체' },
-  { id: 'beauty', name: '뷰티' },
-  { id: 'fashion', name: '패션' },
-  { id: 'tech', name: '테크' },
-  { id: 'food', name: '식음료' },
-  { id: 'lifestyle', name: '라이프스타일' },
+  { id: '기타', name: '기타' },
+  { id: '뷰티', name: '뷰티' },
+  { id: '패션', name: '패션' },
+  { id: 'F&B', name: '식음료' },
+  { id: '테크', name: '테크' },
+  { id: '라이프스타일', name: '라이프스타일' },
 ];
 
 function CaseStudyCard({ item }: { item: XLargeFlowerPortfolio }) {
@@ -21,6 +22,7 @@ function CaseStudyCard({ item }: { item: XLargeFlowerPortfolio }) {
   const handleMouseEnter = () => {
     setIsHovering(true);
     if (videoRef.current) {
+      videoRef.current.muted = false;
       videoRef.current.play().catch(() => {});
     }
   };
@@ -28,6 +30,7 @@ function CaseStudyCard({ item }: { item: XLargeFlowerPortfolio }) {
   const handleMouseLeave = () => {
     setIsHovering(false);
     if (videoRef.current) {
+      videoRef.current.muted = true;
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
     }
@@ -60,7 +63,7 @@ function CaseStudyCard({ item }: { item: XLargeFlowerPortfolio }) {
       )}
 
       {/* Thumbnail / Video */}
-      <div className="aspect-video bg-[#111] relative overflow-hidden">
+      <div className="aspect-[9/16] bg-[#111] relative overflow-hidden">
         <img
           src={item.thumbnail_url}
           alt={item.title}
@@ -73,6 +76,7 @@ function CaseStudyCard({ item }: { item: XLargeFlowerPortfolio }) {
             muted
             loop
             playsInline
+            preload="metadata"
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${isHovering ? 'opacity-100' : 'opacity-0'}`}
           />
         )}
@@ -86,10 +90,6 @@ function CaseStudyCard({ item }: { item: XLargeFlowerPortfolio }) {
           </div>
         </div>
 
-        {/* Duration Badge */}
-        <div className="absolute bottom-3 right-3 px-2 py-1 bg-black/70 backdrop-blur-sm rounded text-xs text-white font-medium">
-          {item.duration}
-        </div>
       </div>
 
       {/* 성과 지표 섹션 */}
@@ -236,7 +236,7 @@ export default function PortfolioPage() {
             <p className="text-gray-600 text-sm">곧 새로운 성공 사례가 업로드될 예정입니다.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 mb-16">
             {filteredItems.map((item) => (
               <CaseStudyCard key={item.id} item={item} />
             ))}

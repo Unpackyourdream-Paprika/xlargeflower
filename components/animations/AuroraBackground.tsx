@@ -17,7 +17,7 @@ export default function AuroraBackground() {
       <div
         className="aurora-orb aurora-orb-1"
         style={{
-          background: 'radial-gradient(circle, rgba(0, 245, 160, 0.4) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(0, 245, 160, 0.7) 0%, rgba(0, 245, 160, 0.25) 40%, transparent 70%)',
         }}
       />
 
@@ -25,7 +25,7 @@ export default function AuroraBackground() {
       <div
         className="aurora-orb aurora-orb-2"
         style={{
-          background: 'radial-gradient(circle, rgba(0, 217, 245, 0.35) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(0, 217, 245, 0.65) 0%, rgba(0, 217, 245, 0.2) 40%, transparent 70%)',
         }}
       />
 
@@ -33,7 +33,7 @@ export default function AuroraBackground() {
       <div
         className="aurora-orb aurora-orb-3"
         style={{
-          background: 'radial-gradient(circle, rgba(91, 33, 182, 0.25) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(91, 33, 182, 0.55) 0%, rgba(91, 33, 182, 0.15) 40%, transparent 70%)',
         }}
       />
 
@@ -41,7 +41,7 @@ export default function AuroraBackground() {
       <div
         className="aurora-orb aurora-orb-4"
         style={{
-          background: 'radial-gradient(circle, rgba(0, 245, 160, 0.3) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(0, 245, 160, 0.6) 0%, rgba(0, 245, 160, 0.15) 40%, transparent 70%)',
         }}
       />
 
@@ -49,7 +49,7 @@ export default function AuroraBackground() {
       <div
         className="absolute inset-0"
         style={{
-          background: 'radial-gradient(ellipse 50% 50% at 50% 50%, transparent 0%, rgba(5, 5, 5, 0.7) 100%)',
+          background: 'radial-gradient(ellipse 65% 65% at 50% 50%, transparent 0%, rgba(5, 5, 5, 0.4) 100%)',
         }}
       />
     </div>

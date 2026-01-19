@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createOrder, OrderSummaryInput } from '@/lib/supabase';
+import { ChatContext } from './GlobalChatButton';
 
 interface Message {
   id: string;
@@ -14,11 +15,21 @@ interface Message {
 interface ChatWidgetProps {
   isOpen: boolean;
   onClose: () => void;
+  initialContext?: ChatContext;
 }
 
-const INITIAL_CONTENT = '안녕하세요. XLARGE 크리에이티브 디렉터입니다.\n\n어떤 영상을 만들고 싶으신가요?';
+// Context별 초기 메시지
+const INITIAL_MESSAGES: Record<ChatContext, string> = {
+  default: '안녕하세요! XLARGE 크리에이티브 디렉터입니다.\n\n어떤 영상을 만들고 싶으신가요?',
+  find_model: '안녕하세요! 브랜드에 딱 맞는 AI 모델을 찾아드릴게요.\n\n어떤 업종이시고, 타겟 고객층은 어떻게 되시나요?\n(예: 뷰티 브랜드, 20-30대 여성 타겟)',
+  free_consult: '안녕하세요! 무료 상담 도와드릴게요.\n\n인플루언서 마케팅에서 AI 모델로 전환을 고려 중이신가요?\n현재 마케팅 고민이 무엇인지 편하게 말씀해 주세요.',
+  growth_inquiry: '안녕하세요! GROWTH 플랜에 관심 가져주셔서 감사합니다.\n\nGROWTH 플랜은 영상 1종 + 바리에이션 3종(총 4개)으로 본격적인 광고 테스트에 최적화되어 있어요.\n\n어떤 제품/서비스를 홍보하실 예정이신가요?',
+  performance_inquiry: '안녕하세요! PERFORMANCE 플랜 상담 도와드릴게요.\n\n이 플랜은 영상 2종 + 바리에이션 6종(총 8개)에 성과 저조 시 소재 교체 AS까지 포함되어 있어요.\n\n현재 광고 운영 중이시라면, 어떤 채널에서 주로 광고하고 계신가요?',
+  ads_package: '안녕하세요! 퍼포먼스 광고 패키지 상담입니다.\n\n영상 제작부터 메타/틱톡/유튜브 광고 세팅, ROAS 분석까지 올인원으로 진행해 드려요.\n\n현재 월 광고비 예산은 어느 정도 생각하고 계신가요?',
+  vip_consult: '안녕하세요! VIP 상담을 요청해 주셨네요.\n\n중견/대기업 고객님께는 분기 독점 계약과 브랜드 전속 AI 모델 개발 서비스를 제공해 드리고 있습니다.\n\n회사명과 현재 마케팅 니즈를 말씀해 주시면, 맞춤 제안서를 준비해 드릴게요.'
+};
 
-export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
+export default function ChatWidget({ isOpen, onClose, initialContext = 'default' }: ChatWidgetProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -27,21 +38,27 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const [customerInfo, setCustomerInfo] = useState({ name: '', email: '', phone: '' });
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [orderSubmitted, setOrderSubmitted] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const lastContextRef = useRef<ChatContext | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // 채팅창 열릴 때 즉시 초기 메시지 설정
   useEffect(() => {
-    if (!isInitialized) {
-      setMessages([{
-        id: '1',
-        role: 'assistant',
-        content: INITIAL_CONTENT,
-        timestamp: new Date(),
-      }]);
-      setIsInitialized(true);
+    if (isOpen) {
+      // context가 바뀌었거나 처음 열리는 경우
+      if (lastContextRef.current !== initialContext) {
+        lastContextRef.current = initialContext;
+        setMessages([{
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: INITIAL_MESSAGES[initialContext],
+          timestamp: new Date(),
+        }]);
+        setOrderSummary(null);
+        setOrderSubmitted(false);
+      }
     }
-  }, [isInitialized]);
+  }, [isOpen, initialContext]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

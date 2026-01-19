@@ -285,7 +285,7 @@ export default function ProductsPage() {
             전문 컨설턴트가 귀사의 니즈를 분석하여 최적의 솔루션을 제안드립니다.
           </p>
           <button
-            onClick={triggerOpenChat}
+            onClick={() => triggerOpenChat('vip_consult')}
             className="btn-primary inline-flex items-center gap-2"
           >
             VIP 상담 신청하기

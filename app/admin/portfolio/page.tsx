@@ -16,7 +16,7 @@ export default function AdminPortfolioPage() {
 
   // 간단 편집 모달
   const [editingItem, setEditingItem] = useState<XLargeFlowerPortfolio | null>(null);
-  const [editForm, setEditForm] = useState({ client_name: '', category: '' });
+  const [editForm, setEditForm] = useState({ client_name: '', category: '', title: '', description: '' });
 
   const fetchPortfolios = useCallback(async () => {
     try {
@@ -140,7 +140,8 @@ export default function AdminPortfolioPage() {
         .update({
           client_name: editForm.client_name || null,
           category: editForm.category || '기타',
-          title: editForm.client_name || editingItem.title
+          title: editForm.title || editingItem.title,
+          description: editForm.description || null
         })
         .eq('id', editingItem.id);
 
@@ -379,7 +380,12 @@ export default function AdminPortfolioPage() {
                     <button
                       onClick={() => {
                         setEditingItem(item);
-                        setEditForm({ client_name: item.client_name || '', category: item.category || '' });
+                        setEditForm({
+                          client_name: item.client_name || '',
+                          category: item.category || '',
+                          title: item.title || '',
+                          description: item.description || ''
+                        });
                       }}
                       className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
                       title="편집"
@@ -469,13 +475,13 @@ export default function AdminPortfolioPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-2">클라이언트명</label>
+                <label className="block text-sm text-gray-400 mb-2">클라이언트명 (상단 표시)</label>
                 <input
                   type="text"
                   value={editForm.client_name}
                   onChange={(e) => setEditForm({ ...editForm, client_name: e.target.value })}
                   className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white"
-                  placeholder="예: 뷰티 D사"
+                  placeholder="예: 국민건강보험공단"
                 />
               </div>
 
@@ -493,6 +499,28 @@ export default function AdminPortfolioPage() {
                   <option value="테크">테크</option>
                   <option value="라이프스타일">라이프스타일</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">제목 (하단 표시)</label>
+                <input
+                  type="text"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                  className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white"
+                  placeholder="예: 건강보험 캠페인"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">설명 (하단 표시)</label>
+                <input
+                  type="text"
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white"
+                  placeholder="예: AI 모델로 제작한 건강보험 광고"
+                />
               </div>
             </div>
 

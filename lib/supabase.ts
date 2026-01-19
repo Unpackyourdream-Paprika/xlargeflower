@@ -398,3 +398,124 @@ export async function uploadArtistImage(file: File, type: 'thumbnail' | 'video' 
 
   return publicUrl;
 }
+
+// ============================================
+// 히어로 섹션 관련 타입 및 함수
+// ============================================
+
+export type HeroLayoutType = 'VERTICAL_ROLLING' | 'MOBILE_MOCKUP';
+
+export interface HeroMediaAsset {
+  id?: string;
+  created_at?: string;
+  updated_at?: string;
+  title?: string;
+  thumbnail_url: string;
+  video_url: string;
+  thumbnail_webp_url?: string;
+  sort_order: number;
+  is_active: boolean;
+}
+
+export interface HeroConfig {
+  layout_type: HeroLayoutType;
+  assets: HeroMediaAsset[];
+}
+
+// 히어로 레이아웃 타입 조회
+export async function getHeroLayoutType(): Promise<HeroLayoutType> {
+  const { data, error } = await supabase
+    .from('xlarge_flower_settings')
+    .select('value')
+    .eq('key_name', 'hero_layout_type')
+    .single();
+
+  if (error || !data) return 'VERTICAL_ROLLING';
+  return data.value as HeroLayoutType;
+}
+
+// 히어로 레이아웃 타입 변경
+export async function updateHeroLayoutType(type: HeroLayoutType) {
+  const { error } = await supabase
+    .from('xlarge_flower_settings')
+    .upsert({
+      key_name: 'hero_layout_type',
+      value: type,
+      description: 'Hero section layout: VERTICAL_ROLLING or MOBILE_MOCKUP',
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'key_name' });
+
+  if (error) throw error;
+  return true;
+}
+
+// 히어로 미디어 에셋 조회
+export async function getHeroAssets(activeOnly = true): Promise<HeroMediaAsset[]> {
+  let query = supabase
+    .from('xlarge_flower_hero_assets')
+    .select('*')
+    .order('sort_order', { ascending: true });
+
+  if (activeOnly) {
+    query = query.eq('is_active', true);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data as HeroMediaAsset[];
+}
+
+// 히어로 미디어 에셋 생성
+export async function createHeroAsset(data: Omit<HeroMediaAsset, 'id' | 'created_at' | 'updated_at'>) {
+  const { data: asset, error } = await supabase
+    .from('xlarge_flower_hero_assets')
+    .insert([data])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return asset as HeroMediaAsset;
+}
+
+// 히어로 미디어 에셋 수정
+export async function updateHeroAsset(id: string, data: Partial<HeroMediaAsset>) {
+  const { error } = await supabase
+    .from('xlarge_flower_hero_assets')
+    .update({ ...data, updated_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) throw error;
+  return true;
+}
+
+// 히어로 미디어 에셋 순서 일괄 업데이트
+export async function updateHeroAssetOrders(orders: { id: string; sort_order: number }[]) {
+  for (const order of orders) {
+    await updateHeroAsset(order.id, { sort_order: order.sort_order });
+  }
+  return true;
+}
+
+// 히어로 미디어 에셋 삭제
+export async function deleteHeroAsset(id: string) {
+  const { error } = await supabase
+    .from('xlarge_flower_hero_assets')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+  return true;
+}
+
+// 히어로 설정 전체 조회 (프론트엔드용)
+export async function getHeroConfig(): Promise<HeroConfig> {
+  const [layoutType, assets] = await Promise.all([
+    getHeroLayoutType(),
+    getHeroAssets(true)
+  ]);
+
+  return {
+    layout_type: layoutType,
+    assets
+  };
+}

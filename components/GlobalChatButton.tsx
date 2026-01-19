@@ -3,29 +3,57 @@
 import { useState, useEffect } from 'react';
 import ChatWidget from './ChatWidget';
 
-// Global event for opening chat from anywhere
-export const openChatEvent = new Event('openGlobalChat');
+// Chat context types for different entry points
+export type ChatContext =
+  | 'default'           // 기본 상담
+  | 'find_model'        // 내 브랜드에 맞는 모델 찾기
+  | 'free_consult'      // 무료 상담
+  | 'growth_inquiry'    // GROWTH 플랜 도입 문의
+  | 'performance_inquiry' // PERFORMANCE 플랜 상담
+  | 'ads_package'       // 광고 패키지 상담
+  | 'vip_consult';      // VIP 상담
 
-export function triggerOpenChat() {
+// Custom event with context
+interface ChatEventDetail {
+  context: ChatContext;
+}
+
+export function triggerOpenChat(context: ChatContext = 'default') {
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(openChatEvent);
+    const event = new CustomEvent('openGlobalChat', { detail: { context } });
+    window.dispatchEvent(event);
   }
 }
 
 export default function GlobalChatButton() {
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatContext, setChatContext] = useState<ChatContext>('default');
 
   useEffect(() => {
-    const handleOpenChat = () => setIsChatOpen(true);
+    const handleOpenChat = (e: Event) => {
+      const customEvent = e as CustomEvent<ChatEventDetail>;
+      const context = customEvent.detail?.context || 'default';
+      setChatContext(context);
+      setIsChatOpen(true);
+    };
     window.addEventListener('openGlobalChat', handleOpenChat);
     return () => window.removeEventListener('openGlobalChat', handleOpenChat);
   }, []);
+
+  const handleClose = () => {
+    setIsChatOpen(false);
+    // 닫을 때 context 리셋
+    setTimeout(() => setChatContext('default'), 300);
+  };
 
   return (
     <>
       {/* Floating Chat Button */}
       <button
-        onClick={() => setIsChatOpen(true)}
+        onClick={() => {
+          setChatContext('default');
+          setIsChatOpen(true);
+        }}
         className="floating-chat-btn fixed bottom-6 right-6 z-40 w-14 h-14 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] rounded-full flex items-center justify-center hover:scale-110 transition-transform"
       >
         <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -34,7 +62,11 @@ export default function GlobalChatButton() {
       </button>
 
       {/* Chat Widget */}
-      <ChatWidget isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+      <ChatWidget
+        isOpen={isChatOpen}
+        onClose={handleClose}
+        initialContext={chatContext}
+      />
     </>
   );
 }

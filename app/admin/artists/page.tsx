@@ -23,7 +23,7 @@ const CATEGORIES: { key: ArtistCategory; label: string }[] = [
 interface ArtistFormData {
   name: string;
   name_ko: string;
-  category: ArtistCategory;
+  categories: ArtistCategory[];
   description: string;
   tags: string;
   thumbnail_url: string;
@@ -33,7 +33,7 @@ interface ArtistFormData {
 const initialFormData: ArtistFormData = {
   name: '',
   name_ko: '',
-  category: 'FASHION',
+  categories: ['FASHION'],
   description: '',
   tags: '',
   thumbnail_url: '',
@@ -127,16 +127,53 @@ export default function ArtistManagement() {
 
   const openEditModal = (artist: ArtistModel) => {
     setEditingArtist(artist);
+    // category가 쉼표로 구분된 문자열이면 배열로 변환
+    const categoriesArray: ArtistCategory[] = artist.category
+      ? (artist.category.includes(',')
+          ? artist.category.split(',').map(c => c.trim()) as ArtistCategory[]
+          : [artist.category as ArtistCategory])
+      : ['FASHION'];
     setFormData({
       name: artist.name,
       name_ko: artist.name_ko || '',
-      category: artist.category,
+      categories: categoriesArray,
       description: artist.description,
       tags: artist.tags?.join(', ') || '',
       thumbnail_url: artist.thumbnail_url,
       hover_video_url: artist.hover_video_url || '',
     });
     setIsModalOpen(true);
+  };
+
+  const handleDownloadImage = async (url: string, fileName: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `${fileName}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error('Download failed:', err);
+      setError('이미지 다운로드에 실패했습니다.');
+    }
+  };
+
+  const toggleCategory = (cat: ArtistCategory) => {
+    setFormData(prev => {
+      const exists = prev.categories.includes(cat);
+      if (exists) {
+        // 최소 1개는 선택되어야 함
+        if (prev.categories.length === 1) return prev;
+        return { ...prev, categories: prev.categories.filter(c => c !== cat) };
+      } else {
+        return { ...prev, categories: [...prev.categories, cat] };
+      }
+    });
   };
 
   const closeModal = () => {
@@ -159,7 +196,7 @@ export default function ArtistManagement() {
       const artistData = {
         name: formData.name,
         name_ko: formData.name_ko || undefined,
-        category: formData.category,
+        category: formData.categories.join(', ') as ArtistCategory,
         description: formData.description,
         tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
         thumbnail_url: formData.thumbnail_url,
@@ -637,13 +674,22 @@ export default function ArtistManagement() {
                       권장 크기: 800x1000px 이상
                     </p>
                     {formData.thumbnail_url && (
-                      <button
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, thumbnail_url: '' }))}
-                        className="text-sm text-red-400 hover:underline"
-                      >
-                        이미지 삭제
-                      </button>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadImage(formData.thumbnail_url, formData.name || 'artist')}
+                          className="text-sm text-[#00F5A0] hover:underline"
+                        >
+                          이미지 다운로드
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, thumbnail_url: '' }))}
+                          className="text-sm text-red-400 hover:underline"
+                        >
+                          이미지 삭제
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -678,20 +724,20 @@ export default function ArtistManagement() {
                 </div>
               </div>
 
-              {/* Category */}
+              {/* Category - 복수 선택 */}
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">
-                  카테고리 *
+                  카테고리 * <span className="text-gray-500 font-normal">(복수 선택 가능)</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {CATEGORIES.map((cat) => (
                     <button
                       key={cat.key}
                       type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, category: cat.key }))}
+                      onClick={() => toggleCategory(cat.key)}
                       className={`
                         px-4 py-2 rounded-lg text-sm font-medium transition-all
-                        ${formData.category === cat.key
+                        ${formData.categories.includes(cat.key)
                           ? 'bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black'
                           : 'bg-[#111] border border-[#333] text-gray-400 hover:border-[#00F5A0]/50'
                         }

@@ -242,7 +242,7 @@ function CustomModelCard({ index }: { index: number }) {
         className="group relative cursor-pointer overflow-hidden rounded-2xl bg-gradient-to-b from-[#1a0a2e] to-[#0A0A0A] border border-purple-500/30 hover:border-[#00F5A0]/50 transition-all duration-500"
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.3 }}
-        onClick={triggerOpenChat}
+        onClick={() => triggerOpenChat('find_model')}
       >
         {/* 글로우 효과 */}
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
@@ -331,10 +331,17 @@ export default function ArtistLineup() {
   }, []);
 
   // 클라이언트 사이드 필터링
+  // category가 쉼표로 구분된 문자열일 수 있음 (예: "FASHION, TECH")
   const filteredArtists =
     activeCategory === 'ALL'
       ? artists
-      : artists.filter((artist) => artist.category === activeCategory);
+      : artists.filter((artist) => {
+          // 쉼표로 구분된 카테고리를 배열로 변환하여 검사
+          const categories = artist.category
+            .split(',')
+            .map((c) => c.trim());
+          return categories.includes(activeCategory);
+        });
 
   const showPlaceholders = filteredArtists.length === 0 && !isLoading;
 
