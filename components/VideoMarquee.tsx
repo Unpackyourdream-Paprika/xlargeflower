@@ -44,8 +44,14 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
     ? src.replace('/upload/', isMobile ? '/upload/w_240,q_auto:low/' : '/upload/w_360,q_auto:low/')
     : src;
 
-  // Intersection Observer로 뷰포트 진입 시에만 비디오 재생
+  // 데스크톱에서만 Intersection Observer 사용, 모바일에서는 항상 재생
   useEffect(() => {
+    // 모바일에서는 항상 재생 상태로 설정
+    if (isMobile) {
+      setIsInView(true);
+      return;
+    }
+
     const container = containerRef.current;
     if (!container) return;
 
@@ -58,7 +64,7 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
 
     observer.observe(container);
     return () => observer.disconnect();
-  }, []);
+  }, [isMobile]);
 
   // 뷰포트 진입/이탈에 따른 비디오 재생/정지
   useEffect(() => {

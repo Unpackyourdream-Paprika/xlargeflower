@@ -57,6 +57,19 @@ html {
   scroll-behavior: smooth;
 }
 
+/* 모바일에서 좌우 스크롤/흔들림 방지 */
+html, body {
+  overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden;
+    position: relative;
+    width: 100%;
+  }
+}
+
 /* =============================================
    Utility Classes
    ============================================= */
