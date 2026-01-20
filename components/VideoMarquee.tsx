@@ -37,10 +37,12 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Cloudinary 비디오 URL을 최적화된 스트리밍 URL로 변환
+  // Cloudinary 비디오 URL을 WebM으로 변환 (더 가벼움)
   // 모바일에서는 더 낮은 해상도 사용
   const optimizedVideoUrl = src.includes('cloudinary.com')
-    ? src.replace('/upload/', isMobile ? '/upload/w_240,q_auto:low/' : '/upload/w_360,q_auto:low/')
+    ? src.replace('/upload/', isMobile
+        ? '/upload/w_240,f_webm,vc_vp9,q_auto:eco/'
+        : '/upload/w_360,f_webm,vc_vp9,q_auto:eco/')
     : src;
 
   // 비디오 재생 함수 - iOS 저전력 모드 대응

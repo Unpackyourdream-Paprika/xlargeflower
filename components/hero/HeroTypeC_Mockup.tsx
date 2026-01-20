@@ -21,14 +21,14 @@ function playVideoSafely(video: HTMLVideoElement) {
   }
 }
 
-// Cloudinary URL 최적화 함수 - WebM 자동 변환
+// Cloudinary URL 최적화 함수 - WebM 강제 변환 (더 가벼움)
 function optimizeVideoUrl(url: string, isMobile: boolean): string {
   if (!url.includes('cloudinary.com')) return url;
-  // f_auto: 브라우저에 맞게 WebM/MP4 자동 선택
-  // vc_auto: 코덱 자동 선택
+  // f_webm: 무조건 WebM으로 변환 (MP4보다 30-50% 가벼움)
+  // vc_vp9: VP9 코덱 (높은 압축률)
   const transformation = isMobile
-    ? 'w_270,h_480,c_limit,f_auto,vc_auto,q_auto:eco,br_300k,so_0'
-    : 'w_360,h_640,c_limit,f_auto,vc_auto,q_auto:eco,br_500k,so_0';
+    ? 'w_270,h_480,c_limit,f_webm,vc_vp9,q_auto:eco,br_300k,so_0'
+    : 'w_360,h_640,c_limit,f_webm,vc_vp9,q_auto:eco,br_500k,so_0';
   return url.replace('/upload/', `/upload/${transformation}/`);
 }
 

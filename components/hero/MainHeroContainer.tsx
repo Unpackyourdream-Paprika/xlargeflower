@@ -6,14 +6,14 @@ import HeroTypeA_Rolling from './HeroTypeA_Rolling';
 import HeroTypeC_Mockup from './HeroTypeC_Mockup';
 import { HeroConfig } from '@/lib/supabase';
 
-// 비디오 프리로드 함수 - 최우선 로딩 (WebM 자동 변환)
+// 비디오 프리로드 함수 - 최우선 로딩 (WebM 강제 변환)
 function preloadHeroVideo(url: string, isMobile: boolean) {
   if (!url.includes('cloudinary.com')) return;
 
-  // f_auto: 브라우저에 맞게 WebM/MP4 자동 선택
+  // f_webm: 무조건 WebM으로 변환 (더 가벼움)
   const transformation = isMobile
-    ? 'w_270,h_480,c_limit,f_auto,vc_auto,q_auto:eco,br_300k,so_0'
-    : 'w_360,h_640,c_limit,f_auto,vc_auto,q_auto:eco,br_500k,so_0';
+    ? 'w_270,h_480,c_limit,f_webm,vc_vp9,q_auto:eco,br_300k,so_0'
+    : 'w_360,h_640,c_limit,f_webm,vc_vp9,q_auto:eco,br_500k,so_0';
   const optimizedUrl = url.replace('/upload/', `/upload/${transformation}/`);
 
   // link preload 추가
