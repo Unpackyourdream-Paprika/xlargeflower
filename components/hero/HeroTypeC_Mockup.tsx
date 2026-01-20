@@ -7,9 +7,9 @@ import { HeroMediaAsset } from '@/lib/supabase';
 
 // 로컬 비디오 경로 (public/videos/ 폴더에서 서빙 - Vercel CDN 캐싱)
 const LOCAL_HERO_VIDEOS = [
-  '/videos/hero1.mp4',
-  '/videos/hero2.mp4',
-  '/videos/hero3.mp4',
+  { video: '/videos/hero1.mp4', poster: 'https://res.cloudinary.com/dqqvypyrb/video/upload/w_360,h_640,c_limit,f_webp,q_auto/xlarge/rqewlnmdjcnfxapb2gup.webp' },
+  { video: '/videos/hero2.mp4', poster: 'https://res.cloudinary.com/dqqvypyrb/video/upload/w_360,h_640,c_limit,f_webp,q_auto/xlarge/fqg25yjllblgkszsmhob.webp' },
+  { video: '/videos/hero3.mp4', poster: 'https://res.cloudinary.com/dqqvypyrb/video/upload/w_360,h_640,c_limit,f_webp,q_auto/xlarge/rdvqqaaqv6imxwzejocj.webp' },
 ];
 
 // iOS 저전력 모드 대응 비디오 재생 함수
@@ -34,7 +34,7 @@ interface HeroTypeC_MockupProps {
 
 export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
   // 로컬 비디오 사용 (API 응답 무시하고 로컬 파일 사용)
-  const videos = LOCAL_HERO_VIDEOS;
+  const mediaItems = LOCAL_HERO_VIDEOS;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [nextIndex, setNextIndex] = useState(1);
   const [isDissolving, setIsDissolving] = useState(false);
@@ -42,12 +42,12 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const nextVideoIndex = useCallback((current: number) => {
-    return (current + 1) % videos.length;
-  }, [videos.length]);
+    return (current + 1) % mediaItems.length;
+  }, [mediaItems.length]);
 
   // 영상 끝나면 다음으로 디졸브 전환
   const handleVideoEnded = useCallback(() => {
-    if (videos.length <= 1) return;
+    if (mediaItems.length <= 1) return;
 
     setIsDissolving(true);
     setNextIndex(nextVideoIndex(currentIndex));
@@ -57,7 +57,7 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
       setCurrentIndex(nextVideoIndex(currentIndex));
       setIsDissolving(false);
     }, 800); // 디졸브 시간
-  }, [videos.length, currentIndex, nextVideoIndex]);
+  }, [mediaItems.length, currentIndex, nextVideoIndex]);
 
   // 인디케이터 클릭 시 디졸브 전환
   const handleIndicatorClick = useCallback((index: number) => {
@@ -115,8 +115,8 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
     };
   }, []);
 
-  const currentVideoUrl = videos[currentIndex];
-  const nextVideoUrl = videos[nextIndex];
+  const currentMedia = mediaItems[currentIndex];
+  const nextMedia = mediaItems[nextIndex];
 
   return (
     <div ref={containerRef} className="relative z-10 w-full min-h-screen flex items-center">
@@ -149,7 +149,8 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                 <video
                   ref={videoRef}
                   key={`current-${currentIndex}`}
-                  src={currentVideoUrl}
+                  src={currentMedia.video}
+                  poster={currentMedia.poster}
                   autoPlay
                   muted
                   playsInline
@@ -169,7 +170,8 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                 >
                   <video
                     key={`next-${nextIndex}`}
-                    src={nextVideoUrl}
+                    src={nextMedia.video}
+                    poster={nextMedia.poster}
                     autoPlay
                     muted
                     playsInline
@@ -183,7 +185,7 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
 
               {/* Indicators */}
               <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-                {videos.map((_, i) => (
+                {mediaItems.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => handleIndicatorClick(i)}
