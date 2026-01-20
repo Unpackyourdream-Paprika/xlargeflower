@@ -11,42 +11,88 @@ function wrap(min: number, max: number, value: number): number {
   return ((((value - min) % range) + range) % range) + min;
 }
 
+// 모바일 감지 훅
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+}
 
 interface VideoCardProps {
   src: string;
   webpSrc?: string;  // WebP 미리보기 URL
   index: number;
+  isMobile?: boolean;
 }
 
-function VideoCard({ src, webpSrc, index }: VideoCardProps) {
+function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [isInView, setIsInView] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Cloudinary 비디오 URL을 최적화된 스트리밍 URL로 변환
-  // 원본 비디오를 낮은 해상도로 스트리밍 (WebP보다 효율적)
+  // 모바일에서는 더 낮은 해상도 사용
   const optimizedVideoUrl = src.includes('cloudinary.com')
-    ? src.replace('/upload/', '/upload/w_360,q_auto:low/')
+    ? src.replace('/upload/', isMobile ? '/upload/w_240,q_auto:low/' : '/upload/w_360,q_auto:low/')
     : src;
 
+  // Intersection Observer로 뷰포트 진입 시에만 비디오 재생
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  // 뷰포트 진입/이탈에 따른 비디오 재생/정지
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isInView) {
+      video.play().catch(() => {});
+    } else {
+      video.pause();
+    }
+  }, [isInView]);
+
   return (
-    <motion.div
-      className="flex-shrink-0 relative overflow-hidden rounded-3xl border border-[rgba(0,245,160,0.15)] shadow-[0_0_30px_rgba(0,245,160,0.08)]"
+    <div
+      ref={containerRef}
+      className="flex-shrink-0 relative overflow-hidden rounded-3xl border border-[rgba(0,245,160,0.15)] shadow-[0_0_30px_rgba(0,245,160,0.08)] transition-transform duration-300"
       style={{
-        width: '180px',
-        height: '320px',
+        width: isMobile ? '150px' : '180px',
+        height: isMobile ? '267px' : '320px',
         marginLeft: index > 0 ? '12px' : '0',
         zIndex: isHovered ? 50 : 10,
+        transform: isHovered && !isMobile ? 'scale(1.05)' : 'scale(1)',
       }}
-      whileHover={{ scale: 1.05, zIndex: 50 }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => !isMobile && setIsHovered(true)}
+      onMouseLeave={() => !isMobile && setIsHovered(false)}
     >
       {/* Cloudinary 최적화된 비디오 스트리밍 */}
       <video
-        autoPlay
+        ref={videoRef}
         muted
         loop
         playsInline
-        preload="metadata"
+        preload="none"
         className="w-full h-full object-cover"
         style={{ filter: isHovered ? 'none' : 'brightness(0.8)' }}
       >
@@ -62,7 +108,7 @@ function VideoCard({ src, webpSrc, index }: VideoCardProps) {
 
       {/* 하단 그라데이션 */}
       <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent" />
-    </motion.div>
+    </div>
   );
 }
 
@@ -75,9 +121,11 @@ interface ParallaxRowProps {
   videos: VideoItem[];
   baseVelocity: number;
   direction: 1 | -1;
+  isMobile?: boolean;
 }
 
-function ParallaxRow({ videos, baseVelocity, direction }: ParallaxRowProps) {
+// 데스크톱용 패럴랙스 Row (기존 로직)
+function DesktopParallaxRow({ videos, baseVelocity, direction }: ParallaxRowProps) {
   const baseX = useMotionValue(0);
   const { scrollY } = useScroll();
   const scrollVelocity = useVelocity(scrollY);
@@ -89,28 +137,22 @@ function ParallaxRow({ videos, baseVelocity, direction }: ParallaxRowProps) {
     clamp: false,
   });
 
-  // 무한 루프를 위한 x 위치 계산
   const x = useTransform(baseX, (v) => `${wrap(-25, -75, v)}%`);
-
   const directionFactor = useRef<number>(direction);
 
   useAnimationFrame((t, delta) => {
     let moveBy = directionFactor.current * baseVelocity * (delta / 1000);
 
-    // 스크롤 방향에 따라 속도 조절
     if (velocityFactor.get() < 0) {
       directionFactor.current = -direction;
     } else if (velocityFactor.get() > 0) {
       directionFactor.current = direction;
     }
 
-    // 스크롤 속도에 따른 가속
     moveBy += directionFactor.current * moveBy * velocityFactor.get();
-
     baseX.set(baseX.get() + moveBy);
   });
 
-  // 비디오를 4번 반복하여 무한 루프 효과
   const repeatedVideos = [...videos, ...videos, ...videos, ...videos];
 
   return (
@@ -121,10 +163,39 @@ function ParallaxRow({ videos, baseVelocity, direction }: ParallaxRowProps) {
           src={video.videoUrl}
           webpSrc={video.webpUrl}
           index={index}
+          isMobile={false}
         />
       ))}
     </motion.div>
   );
+}
+
+// 모바일용 CSS 애니메이션 Row (경량화)
+function MobileScrollRow({ videos, direction }: { videos: VideoItem[]; direction: 1 | -1 }) {
+  // 모바일에서는 비디오 2번만 반복 (메모리 절약)
+  const repeatedVideos = [...videos, ...videos];
+  const animationClass = direction === 1 ? 'animate-scroll-left-mobile' : 'animate-scroll-right-mobile';
+
+  return (
+    <div className={`flex items-center ${animationClass}`} style={{ width: 'max-content' }}>
+      {repeatedVideos.map((video, index) => (
+        <VideoCard
+          key={`${video.videoUrl}-${index}`}
+          src={video.videoUrl}
+          webpSrc={video.webpUrl}
+          index={index}
+          isMobile={true}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ParallaxRow({ videos, baseVelocity, direction, isMobile = false }: ParallaxRowProps) {
+  if (isMobile) {
+    return <MobileScrollRow videos={videos} direction={direction} />;
+  }
+  return <DesktopParallaxRow videos={videos} baseVelocity={baseVelocity} direction={direction} />;
 }
 
 // 카운팅 애니메이션 컴포넌트
@@ -134,9 +205,10 @@ interface AnimatedStatProps {
   label: string;
   isVisible: boolean;
   delay: number;
+  isMobile?: boolean;
 }
 
-function AnimatedStat({ value, suffix, label, isVisible, delay }: AnimatedStatProps) {
+function AnimatedStat({ value, suffix, label, isVisible, delay, isMobile = false }: AnimatedStatProps) {
   const [shouldAnimate, setShouldAnimate] = useState(false);
 
   useEffect(() => {
@@ -148,12 +220,16 @@ function AnimatedStat({ value, suffix, label, isVisible, delay }: AnimatedStatPr
     }
   }, [isVisible, delay]);
 
+  // 모바일에서는 애니메이션 비활성화 - 즉시 최종값 표시
   const { displayValue } = useCountUp({
     end: value,
-    duration: 1800,
+    duration: isMobile ? 0 : 1800,
     suffix,
     enabled: shouldAnimate,
   });
+
+  // 모바일에서는 즉시 표시
+  const finalValue = isMobile && shouldAnimate ? `${value}${suffix}` : (shouldAnimate ? displayValue : '0' + suffix);
 
   return (
     <div
@@ -169,7 +245,7 @@ function AnimatedStat({ value, suffix, label, isVisible, delay }: AnimatedStatPr
             backgroundSize: '200% 100%',
           }}
         >
-          {shouldAnimate ? displayValue : '0' + suffix}
+          {finalValue}
         </span>
       </div>
       <div className="text-white/60 text-base sm:text-lg md:text-xl mt-3">{label}</div>
@@ -185,6 +261,7 @@ export default function VideoMarquee({ videos }: VideoMarqueeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
   const [statsVisible, setStatsVisible] = useState(false);
+  const isMobile = useIsMobile();
 
   // 통계 섹션 스크롤 감지
   useEffect(() => {
@@ -248,12 +325,12 @@ export default function VideoMarquee({ videos }: VideoMarqueeProps) {
         <div className="relative -rotate-2 space-y-4">
           {/* Row 1: 오른쪽으로 이동 */}
           <div className="overflow-hidden">
-            <ParallaxRow videos={row1Videos} baseVelocity={-2} direction={1} />
+            <ParallaxRow videos={row1Videos} baseVelocity={-2} direction={1} isMobile={isMobile} />
           </div>
 
           {/* Row 2: 왼쪽으로 이동 (데스크톱만) */}
           <div className="overflow-hidden hidden md:block">
-            <ParallaxRow videos={row2Videos} baseVelocity={2} direction={-1} />
+            <ParallaxRow videos={row2Videos} baseVelocity={2} direction={-1} isMobile={false} />
           </div>
         </div>
       )}
@@ -263,9 +340,9 @@ export default function VideoMarquee({ videos }: VideoMarqueeProps) {
         ref={statsRef}
         className={`${hasVideos ? 'mt-20 md:mt-28' : 'mt-8'} flex flex-wrap justify-center gap-12 sm:gap-16 md:gap-24 lg:gap-32 text-center px-6 relative z-30`}
       >
-        <AnimatedStat value={500} suffix="+" label="납품 완료" isVisible={statsVisible} delay={0} />
-        <AnimatedStat value={48} suffix="h" label="평균 제작" isVisible={statsVisible} delay={150} />
-        <AnimatedStat value={98} suffix="%" label="만족도" isVisible={statsVisible} delay={300} />
+        <AnimatedStat value={500} suffix="+" label="납품 완료" isVisible={statsVisible} delay={0} isMobile={isMobile} />
+        <AnimatedStat value={48} suffix="h" label="평균 제작" isVisible={statsVisible} delay={150} isMobile={isMobile} />
+        <AnimatedStat value={98} suffix="%" label="만족도" isVisible={statsVisible} delay={300} isMobile={isMobile} />
       </div>
     </section>
   );

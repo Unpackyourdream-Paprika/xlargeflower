@@ -190,6 +190,14 @@ html {
   }
 }
 
+/* 모바일에서는 breathing glow 비활성화 (성능 최적화) */
+@media (max-width: 768px) {
+  .card-featured {
+    animation: none;
+    box-shadow: 0 0 20px rgba(0, 245, 160, 0.1);
+  }
+}
+
 .card-featured:hover {
   transform: translateY(-4px);
   animation: none;
@@ -544,6 +552,14 @@ html {
   }
 }
 
+/* 모바일에서는 pulseGlow 비활성화 (성능 최적화) */
+@media (max-width: 768px) {
+  .floating-chat-btn {
+    animation: none;
+    box-shadow: 0 0 20px rgba(0, 245, 160, 0.4);
+  }
+}
+
 .floating-chat-btn:hover {
   animation: none;
   box-shadow: 0 0 50px rgba(0, 245, 160, 0.7);
@@ -632,4 +648,44 @@ html {
 
 .animate-gradient {
   animation: gradient 3s ease infinite;
+}
+
+/* =============================================
+   Mobile Video Scroll Animations (경량화)
+   ============================================= */
+
+@keyframes scrollLeftMobile {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes scrollRightMobile {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.animate-scroll-left-mobile {
+  animation: scrollLeftMobile 30s linear infinite;
+  will-change: transform;
+}
+
+.animate-scroll-right-mobile {
+  animation: scrollRightMobile 30s linear infinite;
+  will-change: transform;
+}
+
+/* 모바일에서 gradient 애니메이션 비활성화 */
+@media (max-width: 768px) {
+  .animate-gradient {
+    animation: none;
+    background-position: 0% 50%;
+  }
 }

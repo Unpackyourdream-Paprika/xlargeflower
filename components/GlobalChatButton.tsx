@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import ChatWidget from './ChatWidget';
+import { useState, useEffect, lazy, Suspense } from 'react';
+
+// ChatWidget을 동적 로딩 (초기 번들에서 제외)
+const ChatWidget = lazy(() => import('./ChatWidget'));
 
 // Chat context types for different entry points
 export type ChatContext =
@@ -27,6 +29,7 @@ export function triggerOpenChat(context: ChatContext = 'default') {
 
 export default function GlobalChatButton() {
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [hasBeenOpened, setHasBeenOpened] = useState(false);
   const [chatContext, setChatContext] = useState<ChatContext>('default');
 
   useEffect(() => {
@@ -35,10 +38,17 @@ export default function GlobalChatButton() {
       const context = customEvent.detail?.context || 'default';
       setChatContext(context);
       setIsChatOpen(true);
+      setHasBeenOpened(true);
     };
     window.addEventListener('openGlobalChat', handleOpenChat);
     return () => window.removeEventListener('openGlobalChat', handleOpenChat);
   }, []);
+
+  const handleOpen = () => {
+    setChatContext('default');
+    setIsChatOpen(true);
+    setHasBeenOpened(true);
+  };
 
   const handleClose = () => {
     setIsChatOpen(false);
@@ -50,10 +60,7 @@ export default function GlobalChatButton() {
     <>
       {/* Floating Chat Button */}
       <button
-        onClick={() => {
-          setChatContext('default');
-          setIsChatOpen(true);
-        }}
+        onClick={handleOpen}
         className="floating-chat-btn fixed bottom-6 right-6 z-40 w-14 h-14 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] rounded-full flex items-center justify-center hover:scale-110 transition-transform"
       >
         <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,12 +68,16 @@ export default function GlobalChatButton() {
         </svg>
       </button>
 
-      {/* Chat Widget */}
-      <ChatWidget
-        isOpen={isChatOpen}
-        onClose={handleClose}
-        initialContext={chatContext}
-      />
+      {/* Chat Widget - 한번이라도 열었을 때만 로드 (동적 로딩) */}
+      {hasBeenOpened && (
+        <Suspense fallback={null}>
+          <ChatWidget
+            isOpen={isChatOpen}
+            onClose={handleClose}
+            initialContext={chatContext}
+          />
+        </Suspense>
+      )}
     </>
   );
 }

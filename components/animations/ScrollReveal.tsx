@@ -1,7 +1,6 @@
 'use client';
 
-import { motion, useInView } from 'framer-motion';
-import { useRef, ReactNode } from 'react';
+import { useRef, ReactNode, useEffect, useState } from 'react';
 
 interface ScrollRevealProps {
   children: ReactNode;
@@ -16,36 +15,53 @@ export default function ScrollReveal({
   delay = 0,
   direction = 'up'
 }: ScrollRevealProps) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-50px' });
+  const ref = useRef<HTMLDivElement>(null);
+  const [isInView, setIsInView] = useState(false);
 
-  const directionVariants = {
-    up: { y: 30, x: 0 },
-    down: { y: -30, x: 0 },
-    left: { y: 0, x: 30 },
-    right: { y: 0, x: -30 },
+  // CSS 기반 애니메이션으로 전환 (Framer-motion 제거)
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          // delay 적용 후 애니메이션 트리거
+          setTimeout(() => {
+            setIsInView(true);
+          }, delay * 1000);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1, rootMargin: '-50px' }
+    );
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [delay]);
+
+  // 방향별 초기 transform 값
+  const directionStyles = {
+    up: 'translate-y-8',
+    down: '-translate-y-8',
+    left: 'translate-x-8',
+    right: '-translate-x-8',
   };
 
   return (
-    <motion.div
+    <div
       ref={ref}
-      initial={{
-        opacity: 0,
-        ...directionVariants[direction]
+      className={`transition-all duration-600 ease-out ${className} ${
+        isInView
+          ? 'opacity-100 translate-x-0 translate-y-0'
+          : `opacity-0 ${directionStyles[direction]}`
+      }`}
+      style={{
+        transitionDuration: '0.6s',
+        transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
       }}
-      animate={isInView ? {
-        opacity: 1,
-        x: 0,
-        y: 0
-      } : {}}
-      transition={{
-        duration: 0.6,
-        delay,
-        ease: [0.22, 1, 0.36, 1]
-      }}
-      className={className}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }

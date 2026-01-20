@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface Particle {
   x: number;
@@ -15,9 +15,20 @@ export default function NeuralCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | undefined>(undefined);
   const particlesRef = useRef<Particle[]>([]);
-  const mouseRef = useRef({ x: 0, y: 0 });
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    // 모바일 감지
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    // 모바일에서는 캔버스 애니메이션 완전 비활성화
+    if (isMobile) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -30,7 +41,8 @@ export default function NeuralCanvas() {
     };
 
     const initParticles = () => {
-      const particleCount = Math.min(50, Math.floor(window.innerWidth / 30));
+      // 데스크톱에서도 파티클 수 줄임 (50 → 25)
+      const particleCount = Math.min(25, Math.floor(window.innerWidth / 50));
       particlesRef.current = [];
 
       for (let i = 0; i < particleCount; i++) {
@@ -52,8 +64,8 @@ export default function NeuralCanvas() {
 
       const particles = particlesRef.current;
 
-      // Update and draw particles
-      particles.forEach((particle, i) => {
+      // Update and draw particles (연결선 제거로 O(n²) → O(n) 최적화)
+      particles.forEach((particle) => {
         // Update position
         particle.x += particle.vx;
         particle.y += particle.vy;
@@ -64,64 +76,37 @@ export default function NeuralCanvas() {
         if (particle.y < 0) particle.y = canvas.height;
         if (particle.y > canvas.height) particle.y = 0;
 
-        // Draw particle
-        const gradient = ctx.createRadialGradient(
-          particle.x, particle.y, 0,
-          particle.x, particle.y, particle.size * 2
-        );
-        gradient.addColorStop(0, `rgba(0, 245, 160, ${particle.opacity})`);
-        gradient.addColorStop(1, 'rgba(0, 245, 160, 0)');
-
+        // Draw particle (그라데이션 대신 단순 원으로 최적화)
         ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.size * 2, 0, Math.PI * 2);
-        ctx.fillStyle = gradient;
+        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(0, 245, 160, ${particle.opacity})`;
         ctx.fill();
-
-        // Draw connections
-        particles.forEach((other, j) => {
-          if (i >= j) return;
-
-          const dx = particle.x - other.x;
-          const dy = particle.y - other.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-
-          if (distance < 150) {
-            const opacity = (1 - distance / 150) * 0.15;
-            ctx.beginPath();
-            ctx.moveTo(particle.x, particle.y);
-            ctx.lineTo(other.x, other.y);
-            ctx.strokeStyle = `rgba(0, 217, 245, ${opacity})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-          }
-        });
       });
 
       animationRef.current = requestAnimationFrame(animate);
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseRef.current = { x: e.clientX, y: e.clientY };
     };
 
     resizeCanvas();
     initParticles();
     animate();
 
-    window.addEventListener('resize', () => {
+    const handleResize = () => {
       resizeCanvas();
       initParticles();
-    });
-    window.addEventListener('mousemove', handleMouseMove);
+    };
+
+    window.addEventListener('resize', handleResize);
 
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
-      window.removeEventListener('resize', resizeCanvas);
-      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('resize', handleResize);
     };
-  }, []);
+  }, [isMobile]);
+
+  // 모바일에서는 렌더링하지 않음
+  if (isMobile) return null;
 
   return (
     <canvas
