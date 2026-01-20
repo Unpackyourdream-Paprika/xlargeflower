@@ -43,25 +43,46 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
     ? src.replace('/upload/', isMobile ? '/upload/w_240,q_auto:low/' : '/upload/w_360,q_auto:low/')
     : src;
 
-  // 모바일에서는 마운트 즉시 재생, 데스크톱은 뷰포트 진입 시 재생
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    // 모바일: 항상 자동 재생
-    if (isMobile) {
-      video.play().catch(() => {});
-      return;
+  // 비디오 재생 함수 - iOS 호환성을 위해 여러 방법 시도
+  const playVideo = (video: HTMLVideoElement) => {
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        // 자동 재생 실패 시 muted 확인 후 재시도
+        video.muted = true;
+        video.play().catch(() => {});
+      });
     }
+  };
 
-    // 데스크톱: IntersectionObserver로 뷰포트 진입 시 재생
+  // 비디오 로드 완료 시 재생 (iOS 대응)
+  const handleLoadedData = () => {
+    const video = videoRef.current;
+    if (video) {
+      playVideo(video);
+    }
+  };
+
+  // 비디오 canplay 이벤트 (더 빠른 재생 시작)
+  const handleCanPlay = () => {
+    const video = videoRef.current;
+    if (video && video.paused) {
+      playVideo(video);
+    }
+  };
+
+  // 데스크톱에서 뷰포트 진입/이탈 처리
+  useEffect(() => {
+    if (isMobile) return; // 모바일은 항상 재생
+
+    const video = videoRef.current;
     const container = containerRef.current;
-    if (!container) return;
+    if (!video || !container) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          video.play().catch(() => {});
+          playVideo(video);
         } else {
           video.pause();
         }
@@ -94,7 +115,9 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
         muted
         loop
         playsInline
-        preload={isMobile ? 'auto' : 'metadata'}
+        preload="auto"
+        onLoadedData={handleLoadedData}
+        onCanPlay={handleCanPlay}
         className="w-full h-full object-cover"
         style={{ filter: isHovered ? 'none' : 'brightness(0.8)' }}
       >
