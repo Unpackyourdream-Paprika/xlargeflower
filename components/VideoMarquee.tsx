@@ -118,20 +118,10 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
         onLoadedData={(e) => playVideo(e.currentTarget)}
         onCanPlay={(e) => playVideo(e.currentTarget)}
         className="w-full h-full object-cover"
-        style={{ filter: isHovered ? 'none' : 'brightness(0.8)' }}
       >
         <source src={optimizedVideoUrl} type="video/mp4" />
       </video>
 
-      {/* 오버레이 (hover 시 사라짐) */}
-      <div
-        className={`absolute inset-0 bg-black/20 transition-opacity duration-300 ${
-          isHovered ? 'opacity-0' : 'opacity-100'
-        }`}
-      />
-
-      {/* 하단 그라데이션 */}
-      <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent" />
     </div>
   );
 }

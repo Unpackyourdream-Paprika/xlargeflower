@@ -88,6 +88,24 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
     return () => observer.disconnect();
   }, [currentIndex]);
 
+  // 터치/클릭 시 재생 시도 (iOS 저전력 모드 우회)
+  useEffect(() => {
+    const handleUserInteraction = () => {
+      if (videoRef.current) {
+        playVideoSafely(videoRef.current);
+      }
+    };
+
+    // 첫 번째 터치/클릭에서 재생 시도
+    document.addEventListener('touchstart', handleUserInteraction, { once: true });
+    document.addEventListener('click', handleUserInteraction, { once: true });
+
+    return () => {
+      document.removeEventListener('touchstart', handleUserInteraction);
+      document.removeEventListener('click', handleUserInteraction);
+    };
+  }, []);
+
   const currentAsset = assets[currentIndex];
   const nextAsset = assets[nextIndex];
 
