@@ -5,13 +5,6 @@ import HeroTextContent from './HeroTextContent';
 import PhoneMockupFrame from './PhoneMockupFrame';
 import { HeroMediaAsset } from '@/lib/supabase';
 
-// 로컬 비디오 경로 (public/videos/ 폴더에서 서빙 - Vercel CDN 캐싱)
-const LOCAL_HERO_VIDEOS = [
-  { video: '/videos/hero1.mp4', poster: 'https://res.cloudinary.com/dqqvypyrb/video/upload/w_360,h_640,c_limit,f_webp,q_auto/xlarge/rqewlnmdjcnfxapb2gup.webp' },
-  { video: '/videos/hero2.mp4', poster: 'https://res.cloudinary.com/dqqvypyrb/video/upload/w_360,h_640,c_limit,f_webp,q_auto/xlarge/fqg25yjllblgkszsmhob.webp' },
-  { video: '/videos/hero3.mp4', poster: 'https://res.cloudinary.com/dqqvypyrb/video/upload/w_360,h_640,c_limit,f_webp,q_auto/xlarge/rdvqqaaqv6imxwzejocj.webp' },
-];
-
 // iOS 저전력 모드 대응 비디오 재생 함수
 function playVideoSafely(video: HTMLVideoElement) {
   video.muted = true;
@@ -28,36 +21,66 @@ function playVideoSafely(video: HTMLVideoElement) {
   }
 }
 
+// Cloudinary URL 최적화 함수 - WebM 자동 변환
+function optimizeVideoUrl(url: string, isMobile: boolean): string {
+  if (!url.includes('cloudinary.com')) return url;
+  // f_auto: 브라우저에 맞게 WebM/MP4 자동 선택
+  // vc_auto: 코덱 자동 선택
+  const transformation = isMobile
+    ? 'w_270,h_480,c_limit,f_auto,vc_auto,q_auto:eco,br_300k,so_0'
+    : 'w_360,h_640,c_limit,f_auto,vc_auto,q_auto:eco,br_500k,so_0';
+  return url.replace('/upload/', `/upload/${transformation}/`);
+}
+
+// WebP 포스터 URL 생성
+function getPosterUrl(url: string): string {
+  if (!url.includes('cloudinary.com')) return '';
+  return url.replace('/upload/', '/upload/w_360,h_640,c_limit,f_webp,q_auto,so_0/');
+}
+
+// 모바일 감지 훅
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+}
+
 interface HeroTypeC_MockupProps {
   assets: HeroMediaAsset[];
 }
 
 export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
-  // 로컬 비디오 사용 (API 응답 무시하고 로컬 파일 사용)
-  const mediaItems = LOCAL_HERO_VIDEOS;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [nextIndex, setNextIndex] = useState(1);
   const [isDissolving, setIsDissolving] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
-  const nextVideoIndex = useCallback((current: number) => {
-    return (current + 1) % mediaItems.length;
-  }, [mediaItems.length]);
+  const nextAssetIndex = useCallback((current: number) => {
+    return (current + 1) % assets.length;
+  }, [assets.length]);
 
   // 영상 끝나면 다음으로 디졸브 전환
   const handleVideoEnded = useCallback(() => {
-    if (mediaItems.length <= 1) return;
+    if (assets.length <= 1) return;
 
     setIsDissolving(true);
-    setNextIndex(nextVideoIndex(currentIndex));
+    setNextIndex(nextAssetIndex(currentIndex));
 
     // 디졸브 완료 후 인덱스 교체
     setTimeout(() => {
-      setCurrentIndex(nextVideoIndex(currentIndex));
+      setCurrentIndex(nextAssetIndex(currentIndex));
       setIsDissolving(false);
     }, 800); // 디졸브 시간
-  }, [mediaItems.length, currentIndex, nextVideoIndex]);
+  }, [assets.length, currentIndex, nextAssetIndex]);
 
   // 인디케이터 클릭 시 디졸브 전환
   const handleIndicatorClick = useCallback((index: number) => {
@@ -115,8 +138,8 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
     };
   }, []);
 
-  const currentMedia = mediaItems[currentIndex];
-  const nextMedia = mediaItems[nextIndex];
+  const currentAsset = assets[currentIndex];
+  const nextAsset = assets[nextIndex];
 
   return (
     <div ref={containerRef} className="relative z-10 w-full min-h-screen flex items-center">
@@ -138,69 +161,86 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
           style={{ flexBasis: '50%' }}
         >
           <PhoneMockupFrame>
-            <div className="relative w-full h-full">
-              {/* Current Video - 페이드 아웃 */}
-              <div
-                className={`absolute inset-0 transition-opacity duration-800 ease-in-out ${
-                  isDissolving ? 'opacity-0' : 'opacity-100'
-                }`}
-                style={{ transitionDuration: '800ms' }}
-              >
-                <video
-                  ref={videoRef}
-                  key={`current-${currentIndex}`}
-                  src={currentMedia.video}
-                  poster={currentMedia.poster}
-                  autoPlay
-                  muted
-                  playsInline
-                  preload="auto"
-                  onEnded={handleVideoEnded}
-                  onLoadedData={(e) => playVideoSafely(e.currentTarget)}
-                  onCanPlay={(e) => playVideoSafely(e.currentTarget)}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              {/* Next Video - 페이드 인 (디졸브 시에만 표시) */}
-              {isDissolving && (
+            {assets.length > 0 && currentAsset ? (
+              <div className="relative w-full h-full">
+                {/* Current Video - 페이드 아웃 */}
                 <div
-                  className="absolute inset-0 transition-opacity duration-800 ease-in-out opacity-100"
+                  className={`absolute inset-0 transition-opacity duration-800 ease-in-out ${
+                    isDissolving ? 'opacity-0' : 'opacity-100'
+                  }`}
                   style={{ transitionDuration: '800ms' }}
                 >
                   <video
-                    key={`next-${nextIndex}`}
-                    src={nextMedia.video}
-                    poster={nextMedia.poster}
+                    ref={videoRef}
+                    key={`current-${currentAsset.id}`}
+                    src={optimizeVideoUrl(currentAsset.video_url, isMobile)}
+                    poster={getPosterUrl(currentAsset.video_url)}
                     autoPlay
                     muted
                     playsInline
                     preload="auto"
+                    onEnded={handleVideoEnded}
                     onLoadedData={(e) => playVideoSafely(e.currentTarget)}
                     onCanPlay={(e) => playVideoSafely(e.currentTarget)}
                     className="w-full h-full object-cover"
                   />
                 </div>
-              )}
 
-              {/* Indicators */}
-              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-                {mediaItems.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleIndicatorClick(i)}
-                    className={`w-1.5 h-1.5 rounded-full transition-all ${
-                      i === currentIndex
-                        ? 'bg-white w-4'
-                        : 'bg-white/40 hover:bg-white/60'
-                    }`}
-                  />
-                ))}
+                {/* Next Video - 페이드 인 (디졸브 시에만 표시) */}
+                {isDissolving && nextAsset && (
+                  <div
+                    className="absolute inset-0 transition-opacity duration-800 ease-in-out opacity-100"
+                    style={{ transitionDuration: '800ms' }}
+                  >
+                    <video
+                      key={`next-${nextAsset.id}`}
+                      src={optimizeVideoUrl(nextAsset.video_url, isMobile)}
+                      poster={getPosterUrl(nextAsset.video_url)}
+                      autoPlay
+                      muted
+                      playsInline
+                      preload="auto"
+                      onLoadedData={(e) => playVideoSafely(e.currentTarget)}
+                      onCanPlay={(e) => playVideoSafely(e.currentTarget)}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+
+                {/* Indicators */}
+                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                  {assets.slice(0, 5).map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleIndicatorClick(i)}
+                      className={`w-1.5 h-1.5 rounded-full transition-all ${
+                        i === currentIndex
+                          ? 'bg-white w-4'
+                          : 'bg-white/40 hover:bg-white/60'
+                      }`}
+                    />
+                  ))}
+                  {assets.length > 5 && (
+                    <span className="text-white/40 text-xs ml-1">+{assets.length - 5}</span>
+                  )}
+                </div>
+
+                {/* Top gradient for status bar area */}
+                <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-black/40 to-transparent pointer-events-none" />
               </div>
-
-              {/* Top gradient for status bar area */}
-              <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-black/40 to-transparent pointer-events-none" />
-            </div>
+            ) : (
+              /* 빈 상태에서도 폰 프레임 내부에 콘텐츠 표시 */
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-[#1a1a1a] to-[#111]">
+                <div className="text-center px-4">
+                  <div className="w-12 h-12 bg-[#222] rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-white/40 text-sm">미디어를 등록해주세요</p>
+                </div>
+              </div>
+            )}
           </PhoneMockupFrame>
         </div>
       </div>
