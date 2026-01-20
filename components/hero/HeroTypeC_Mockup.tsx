@@ -21,6 +21,28 @@ function playVideoSafely(video: HTMLVideoElement) {
   }
 }
 
+// Cloudinary URL 최적화 함수
+function optimizeVideoUrl(url: string, isMobile: boolean): string {
+  if (!url.includes('cloudinary.com')) return url;
+  // 모바일: 480p, 데스크톱: 720p (히어로는 크게 보여서 슬라이더보다 높은 해상도)
+  const transformation = isMobile ? 'w_480,q_auto:low' : 'w_720,q_auto';
+  return url.replace('/upload/', `/upload/${transformation}/`);
+}
+
+// 모바일 감지 훅
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+}
+
 interface HeroTypeC_MockupProps {
   assets: HeroMediaAsset[];
 }
@@ -31,6 +53,7 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
   const [isDissolving, setIsDissolving] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
   const nextAssetIndex = useCallback((current: number) => {
     return (current + 1) % assets.length;
@@ -141,7 +164,7 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                 <video
                   ref={videoRef}
                   key={`current-${currentAsset.id}`}
-                  src={currentAsset.video_url}
+                  src={optimizeVideoUrl(currentAsset.video_url, isMobile)}
                   autoPlay
                   muted
                   playsInline
@@ -161,7 +184,7 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                 >
                   <video
                     key={`next-${nextAsset.id}`}
-                    src={nextAsset.video_url}
+                    src={optimizeVideoUrl(nextAsset.video_url, isMobile)}
                     autoPlay
                     muted
                     playsInline
