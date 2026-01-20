@@ -1,10 +1,32 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import AuroraBackground from '@/components/animations/AuroraBackground';
 import HeroTypeA_Rolling from './HeroTypeA_Rolling';
 import HeroTypeC_Mockup from './HeroTypeC_Mockup';
 import { HeroConfig } from '@/lib/supabase';
+
+// 비디오 프리로드 함수 - 최우선 로딩
+function preloadHeroVideo(url: string, isMobile: boolean) {
+  if (!url.includes('cloudinary.com')) return;
+
+  // 최적화된 URL 생성
+  const transformation = isMobile
+    ? 'w_270,h_480,c_limit,f_mp4,vc_h264,q_auto:eco,br_300k,so_0'
+    : 'w_360,h_640,c_limit,f_mp4,vc_h264,q_auto:eco,br_500k,so_0';
+  const optimizedUrl = url.replace('/upload/', `/upload/${transformation}/`);
+
+  // link preload 추가
+  const link = document.createElement('link');
+  link.rel = 'preload';
+  link.as = 'video';
+  link.href = optimizedUrl;
+  link.crossOrigin = 'anonymous';
+  document.head.appendChild(link);
+
+  // fetch로 즉시 다운로드 시작 (캐시에 저장)
+  fetch(optimizedUrl, { mode: 'cors', credentials: 'omit' }).catch(() => {});
+}
 
 // 스켈레톤 로딩 컴포넌트 - 레이아웃 유지
 function HeroSkeleton() {
@@ -57,15 +79,28 @@ function HeroSkeleton() {
 export default function MainHeroContainer() {
   const [config, setConfig] = useState<HeroConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const preloadedRef = useRef(false);
 
   useEffect(() => {
     const fetchConfig = async () => {
+      const isMobile = window.innerWidth < 768;
+
       try {
         const response = await fetch('/api/hero/config');
         if (!response.ok) {
           throw new Error('Failed to fetch hero config');
         }
         const data = await response.json();
+
+        // API 응답 받자마자 첫 번째 비디오 즉시 프리로드
+        if (!preloadedRef.current && data.assets?.length > 0) {
+          preloadedRef.current = true;
+          const firstVideoUrl = data.assets[0]?.video_url;
+          if (firstVideoUrl) {
+            preloadHeroVideo(firstVideoUrl, isMobile);
+          }
+        }
+
         setConfig(data);
       } catch (err) {
         console.error('Failed to fetch hero config:', err);
