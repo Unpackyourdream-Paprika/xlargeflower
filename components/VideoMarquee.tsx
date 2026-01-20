@@ -43,38 +43,25 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
     ? src.replace('/upload/', isMobile ? '/upload/w_240,q_auto:low/' : '/upload/w_360,q_auto:low/')
     : src;
 
-  // 비디오 재생 함수 - iOS 호환성을 위해 여러 방법 시도
+  // 비디오 재생 함수 - iOS 저전력 모드 대응
   const playVideo = (video: HTMLVideoElement) => {
+    // iOS에서 muted 속성이 필수
+    video.muted = true;
+    video.playsInline = true;
+
     const playPromise = video.play();
     if (playPromise !== undefined) {
       playPromise.catch(() => {
-        // 자동 재생 실패 시 muted 확인 후 재시도
-        video.muted = true;
-        video.play().catch(() => {});
+        // 재생 실패 시 약간의 지연 후 재시도
+        setTimeout(() => {
+          video.play().catch(() => {});
+        }, 100);
       });
     }
   };
 
-  // 비디오 로드 완료 시 재생 (iOS 대응)
-  const handleLoadedData = () => {
-    const video = videoRef.current;
-    if (video) {
-      playVideo(video);
-    }
-  };
-
-  // 비디오 canplay 이벤트 (더 빠른 재생 시작)
-  const handleCanPlay = () => {
-    const video = videoRef.current;
-    if (video && video.paused) {
-      playVideo(video);
-    }
-  };
-
-  // 데스크톱에서 뷰포트 진입/이탈 처리
+  // IntersectionObserver로 뷰포트 진입 시 즉시 재생 (iOS 저전력 모드 대응)
   useEffect(() => {
-    if (isMobile) return; // 모바일은 항상 재생
-
     const video = videoRef.current;
     const container = containerRef.current;
     if (!video || !container) return;
@@ -82,15 +69,27 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
+          // 뷰포트에 들어오면 즉시 재생 시도
           playVideo(video);
-        } else {
+        } else if (!isMobile) {
+          // 데스크톱에서만 뷰포트 이탈 시 정지
           video.pause();
         }
       },
-      { threshold: 0.1 }
+      {
+        threshold: 0,  // 조금이라도 보이면 즉시 트리거
+        rootMargin: '50px'  // 50px 미리 로드
+      }
     );
 
     observer.observe(container);
+
+    // 초기 로드 시에도 재생 시도 (이미 뷰포트에 있는 경우)
+    const rect = container.getBoundingClientRect();
+    if (rect.top < window.innerHeight && rect.bottom > 0) {
+      playVideo(video);
+    }
+
     return () => observer.disconnect();
   }, [isMobile]);
 
@@ -116,8 +115,8 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
         loop
         playsInline
         preload="auto"
-        onLoadedData={handleLoadedData}
-        onCanPlay={handleCanPlay}
+        onLoadedData={(e) => playVideo(e.currentTarget)}
+        onCanPlay={(e) => playVideo(e.currentTarget)}
         className="w-full h-full object-cover"
         style={{ filter: isHovered ? 'none' : 'brightness(0.8)' }}
       >

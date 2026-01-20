@@ -1,9 +1,25 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import HeroTextContent from './HeroTextContent';
 import PhoneMockupFrame from './PhoneMockupFrame';
 import { HeroMediaAsset } from '@/lib/supabase';
+
+// iOS 저전력 모드 대응 비디오 재생 함수
+function playVideoSafely(video: HTMLVideoElement) {
+  video.muted = true;
+  video.playsInline = true;
+
+  const playPromise = video.play();
+  if (playPromise !== undefined) {
+    playPromise.catch(() => {
+      // 재생 실패 시 약간의 지연 후 재시도
+      setTimeout(() => {
+        video.play().catch(() => {});
+      }, 100);
+    });
+  }
+}
 
 interface HeroTypeC_MockupProps {
   assets: HeroMediaAsset[];
@@ -14,6 +30,7 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
   const [nextIndex, setNextIndex] = useState(1);
   const [isDissolving, setIsDissolving] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const nextAssetIndex = useCallback((current: number) => {
     return (current + 1) % assets.length;
@@ -46,11 +63,36 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
     }, 800);
   }, [currentIndex, isDissolving]);
 
+  // iOS 저전력 모드 대응: 마운트 시 즉시 재생 시도
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // 즉시 재생 시도
+    playVideoSafely(video);
+
+    // IntersectionObserver로 뷰포트 진입 시에도 재생 시도
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && videoRef.current) {
+          playVideoSafely(videoRef.current);
+        }
+      },
+      { threshold: 0, rootMargin: '50px' }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [currentIndex]);
+
   const currentAsset = assets[currentIndex];
   const nextAsset = assets[nextIndex];
 
   return (
-    <div className="relative z-10 w-full min-h-screen flex items-center">
+    <div ref={containerRef} className="relative z-10 w-full min-h-screen flex items-center">
       {/* max-w-7xl 컨테이너로 navbar와 기준점 맞춤 */}
       <div className="max-w-7xl mx-auto px-6 w-full flex flex-col lg:flex-row items-center">
         {/* Left: Text Content - 50% 고정, 내부 max-width 제한 */}
@@ -85,7 +127,10 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                   autoPlay
                   muted
                   playsInline
+                  preload="auto"
                   onEnded={handleVideoEnded}
+                  onLoadedData={(e) => playVideoSafely(e.currentTarget)}
+                  onCanPlay={(e) => playVideoSafely(e.currentTarget)}
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -102,6 +147,9 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                     autoPlay
                     muted
                     playsInline
+                    preload="auto"
+                    onLoadedData={(e) => playVideoSafely(e.currentTarget)}
+                    onCanPlay={(e) => playVideoSafely(e.currentTarget)}
                     className="w-full h-full object-cover"
                   />
                 </div>
