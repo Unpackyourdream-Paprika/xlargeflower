@@ -21,12 +21,29 @@ function playVideoSafely(video: HTMLVideoElement) {
   }
 }
 
-// Cloudinary URL 최적화 함수
+// Cloudinary URL 최적화 함수 - 최대한 빠른 로딩
 function optimizeVideoUrl(url: string, isMobile: boolean): string {
   if (!url.includes('cloudinary.com')) return url;
-  // 모바일: 480p, 데스크톱: 720p (히어로는 크게 보여서 슬라이더보다 높은 해상도)
-  const transformation = isMobile ? 'w_480,q_auto:low' : 'w_720,q_auto';
+  // 모바일: 초경량 (270p), 데스크톱: 경량 (360p)
+  // so_0: 시작점 0초 (스트리밍 빠른 시작)
+  // f_mp4: MP4 고정 (호환성)
+  // vc_h264: H.264 코덱 (하드웨어 가속)
+  // q_auto:eco: 최저 품질 (가장 빠른 로딩)
+  // br_300k/500k: 낮은 비트레이트
+  const transformation = isMobile
+    ? 'w_270,h_480,c_limit,f_mp4,vc_h264,q_auto:eco,br_300k,so_0'
+    : 'w_360,h_640,c_limit,f_mp4,vc_h264,q_auto:eco,br_500k,so_0';
   return url.replace('/upload/', `/upload/${transformation}/`);
+}
+
+// 비디오 프리로드 함수
+function preloadVideo(url: string) {
+  const link = document.createElement('link');
+  link.rel = 'preload';
+  link.as = 'video';
+  link.href = url;
+  link.crossOrigin = 'anonymous';
+  document.head.appendChild(link);
 }
 
 // 모바일 감지 훅
@@ -54,6 +71,21 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  const preloadedRef = useRef(false);
+
+  // 첫 번째 비디오 즉시 프리로드 (컴포넌트 마운트 시)
+  useEffect(() => {
+    if (preloadedRef.current || assets.length === 0) return;
+    preloadedRef.current = true;
+
+    const firstAsset = assets[0];
+    if (firstAsset?.video_url) {
+      // 모바일/데스크톱 판단 후 최적화된 URL로 프리로드
+      const checkMobile = window.innerWidth < 768;
+      const optimizedUrl = optimizeVideoUrl(firstAsset.video_url, checkMobile);
+      preloadVideo(optimizedUrl);
+    }
+  }, [assets]);
 
   const nextAssetIndex = useCallback((current: number) => {
     return (current + 1) % assets.length;
