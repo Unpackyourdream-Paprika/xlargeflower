@@ -34,7 +34,6 @@ interface VideoCardProps {
 
 function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const [isInView, setIsInView] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -44,20 +43,28 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
     ? src.replace('/upload/', isMobile ? '/upload/w_240,q_auto:low/' : '/upload/w_360,q_auto:low/')
     : src;
 
-  // 데스크톱에서만 Intersection Observer 사용, 모바일에서는 항상 재생
+  // 모바일에서는 마운트 즉시 재생, 데스크톱은 뷰포트 진입 시 재생
   useEffect(() => {
-    // 모바일에서는 항상 재생 상태로 설정
+    const video = videoRef.current;
+    if (!video) return;
+
+    // 모바일: 항상 자동 재생
     if (isMobile) {
-      setIsInView(true);
+      video.play().catch(() => {});
       return;
     }
 
+    // 데스크톱: IntersectionObserver로 뷰포트 진입 시 재생
     const container = containerRef.current;
     if (!container) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsInView(entry.isIntersecting);
+        if (entry.isIntersecting) {
+          video.play().catch(() => {});
+        } else {
+          video.pause();
+        }
       },
       { threshold: 0.1 }
     );
@@ -65,18 +72,6 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
     observer.observe(container);
     return () => observer.disconnect();
   }, [isMobile]);
-
-  // 뷰포트 진입/이탈에 따른 비디오 재생/정지
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    if (isInView) {
-      video.play().catch(() => {});
-    } else {
-      video.pause();
-    }
-  }, [isInView]);
 
   return (
     <div
@@ -95,10 +90,11 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
       {/* Cloudinary 최적화된 비디오 스트리밍 */}
       <video
         ref={videoRef}
+        autoPlay
         muted
         loop
         playsInline
-        preload="none"
+        preload={isMobile ? 'auto' : 'metadata'}
         className="w-full h-full object-cover"
         style={{ filter: isHovered ? 'none' : 'brightness(0.8)' }}
       >
