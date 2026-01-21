@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { supabase, XLargeFlowerPortfolio, PortfolioType } from '@/lib/supabase';
 
 export default function AdminPortfolioPage() {
@@ -13,6 +14,11 @@ export default function AdminPortfolioPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  // 드래그 앤 드롭 순서 변경
+  const [draggedItem, setDraggedItem] = useState<XLargeFlowerPortfolio | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [isReordering, setIsReordering] = useState(false);
 
   // 간단 편집 모달
   const [editingItem, setEditingItem] = useState<XLargeFlowerPortfolio | null>(null);
@@ -248,6 +254,85 @@ export default function AdminPortfolioPage() {
     }
   };
 
+  // 드래그 앤 드롭 핸들러
+  const handleDragStart = (e: React.DragEvent, item: XLargeFlowerPortfolio) => {
+    // 썸네일 없으면 드래그 불가
+    if (!item.thumbnail_url) {
+      e.preventDefault();
+      alert('썸네일이 없는 항목은 순서를 변경할 수 없습니다.');
+      return;
+    }
+    setDraggedItem(item);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItem(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragOverItem = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedItem) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDropOnItem = async (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (!draggedItem) return;
+
+    const currentList = filterType === 'ALL' ? portfolios : portfolios.filter(p => p.portfolio_type === filterType);
+    const draggedIndex = currentList.findIndex(p => p.id === draggedItem.id);
+
+    if (draggedIndex === targetIndex) {
+      setDraggedItem(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    setIsReordering(true);
+
+    try {
+      // 새 순서 계산
+      const newList = [...currentList];
+      const [removed] = newList.splice(draggedIndex, 1);
+      newList.splice(targetIndex, 0, removed);
+
+      // UI 먼저 업데이트
+      if (filterType === 'ALL') {
+        setPortfolios(newList);
+      } else {
+        // 필터링된 리스트의 순서를 전체 리스트에 반영
+        const otherItems = portfolios.filter(p => p.portfolio_type !== filterType);
+        setPortfolios([...newList, ...otherItems]);
+      }
+
+      // DB 업데이트
+      const updates = newList.map((item, idx) => ({
+        id: item.id!,
+        order_index: idx
+      }));
+
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('xlarge_flower_portfolio')
+          .update({ order_index: update.order_index })
+          .eq('id', update.id);
+
+        if (error) throw error;
+      }
+    } catch (err) {
+      console.error('Failed to reorder:', err);
+      alert('순서 변경에 실패했습니다.');
+      fetchPortfolios(); // 롤백
+    } finally {
+      setDraggedItem(null);
+      setDragOverIndex(null);
+      setIsReordering(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#050505] flex items-center justify-center">
@@ -394,6 +479,19 @@ export default function AdminPortfolioPage() {
           ))}
         </div>
 
+        {/* Reorder Info */}
+        <div className="mb-4 p-3 bg-[#111] border border-[#333] rounded-xl flex items-center gap-3">
+          <svg className="w-5 h-5 text-[#00F5A0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+          </svg>
+          <p className="text-sm text-gray-400">
+            카드를 드래그하여 순서를 변경할 수 있습니다. <span className="text-[#00F5A0]">썸네일이 있는 항목만</span> 순서 변경이 가능합니다.
+          </p>
+          {isReordering && (
+            <span className="ml-auto text-xs text-[#00F5A0] animate-pulse">저장 중...</span>
+          )}
+        </div>
+
         {/* Portfolio Grid */}
         {filteredPortfolios.length === 0 ? (
           <div className="bg-[#0A0A0A] border border-[#222] rounded-xl p-12 text-center">
@@ -402,12 +500,19 @@ export default function AdminPortfolioPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {filteredPortfolios.map((item) => (
+            {filteredPortfolios.map((item, index) => (
               <div
                 key={item.id}
-                className={`relative bg-[#0A0A0A] border rounded-xl overflow-hidden group ${
+                draggable={!!item.thumbnail_url}
+                onDragStart={(e) => handleDragStart(e, item)}
+                onDragEnd={handleDragEnd}
+                onDragOver={(e) => handleDragOverItem(e, index)}
+                onDrop={(e) => handleDropOnItem(e, index)}
+                className={`relative bg-[#0A0A0A] border rounded-xl overflow-hidden group transition-all ${
                   item.is_active ? 'border-[#222]' : 'border-red-500/30 opacity-60'
-                }`}
+                } ${draggedItem?.id === item.id ? 'opacity-50 scale-95' : ''} ${
+                  dragOverIndex === index && draggedItem?.id !== item.id ? 'border-[#00F5A0] border-2' : ''
+                } ${item.thumbnail_url ? 'cursor-grab active:cursor-grabbing' : 'cursor-not-allowed'}`}
               >
                 {/* Video */}
                 <div className="aspect-[9/16] bg-[#111] relative">
@@ -482,6 +587,18 @@ export default function AdminPortfolioPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
+                  </div>
+
+                  {/* Order Number & Thumbnail Status */}
+                  <div className="absolute bottom-2 left-2 flex items-center gap-1">
+                    <span className="px-2 py-1 bg-black/70 text-white text-xs font-bold rounded">
+                      #{index + 1}
+                    </span>
+                    {!item.thumbnail_url && (
+                      <span className="px-2 py-1 bg-red-500/80 text-white text-xs rounded">
+                        썸네일 없음
+                      </span>
+                    )}
                   </div>
 
                   {/* Badges */}

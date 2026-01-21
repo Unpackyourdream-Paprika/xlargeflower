@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { PricingPlan, PromotionSettings } from '@/lib/supabase';
-import { triggerOpenChat } from '@/components/GlobalChatButton';
+import { triggerOpenChat, ChatContext } from '@/components/GlobalChatButton';
 
 interface PricingCardProps {
   plan: PricingPlan;
@@ -84,7 +84,7 @@ export default function PricingCard({ plan, promotion, paymentType }: PricingCar
 
   const handleButtonClick = () => {
     if (plan.button_action === 'chat' && plan.chat_trigger) {
-      triggerOpenChat(plan.chat_trigger);
+      triggerOpenChat(plan.chat_trigger as ChatContext);
     }
   };
 
