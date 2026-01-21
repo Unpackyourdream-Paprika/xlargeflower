@@ -49,6 +49,18 @@ export default function RootLayout({
           crossOrigin="anonymous"
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
         />
+        {/* Google Analytics */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-WBLTN85HQK"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-WBLTN85HQK');
+            `,
+          }}
+        />
       </head>
       <body
         className={`${geistMono.variable} antialiased bg-[#050505] text-white`}
