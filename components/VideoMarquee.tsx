@@ -37,13 +37,19 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Cloudinary 비디오 URL을 WebM으로 변환 (더 가벼움)
-  // 모바일에서는 더 낮은 해상도 사용
+  // Cloudinary 비디오 URL 최적화
+  // 모바일: 낮은 해상도 + 비트레이트 제한 + MP4 (호환성)
+  // 데스크톱: 중간 해상도 + MP4
   const optimizedVideoUrl = src.includes('cloudinary.com')
     ? src.replace('/upload/', isMobile
-        ? '/upload/w_240,f_webm,vc_vp9,q_auto:eco/'
-        : '/upload/w_360,f_webm,vc_vp9,q_auto:eco/')
+        ? '/upload/w_180,h_320,c_limit,q_auto:eco,br_200k/'
+        : '/upload/w_280,h_500,c_limit,q_auto:low/')
     : src;
+
+  // 포스터 이미지 URL (첫 프레임)
+  const posterUrl = src.includes('cloudinary.com')
+    ? src.replace('/upload/', '/upload/w_180,h_320,c_limit,f_webp,q_60,so_0/')
+    : '';
 
   // 비디오 재생 함수 - iOS 저전력 모드 대응
   const playVideo = (video: HTMLVideoElement) => {
@@ -116,13 +122,13 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
         muted
         loop
         playsInline
-        preload="auto"
+        preload={isMobile ? 'none' : 'metadata'}
+        poster={posterUrl}
         onLoadedData={(e) => playVideo(e.currentTarget)}
         onCanPlay={(e) => playVideo(e.currentTarget)}
         className="w-full h-full object-cover"
-      >
-        <source src={optimizedVideoUrl} type="video/mp4" />
-      </video>
+        src={optimizedVideoUrl}
+      />
 
     </div>
   );
@@ -188,13 +194,13 @@ function DesktopParallaxRow({ videos, baseVelocity, direction }: ParallaxRowProp
 
 // 모바일용 CSS 애니메이션 Row (경량화)
 function MobileScrollRow({ videos, direction }: { videos: VideoItem[]; direction: 1 | -1 }) {
-  // 모바일에서는 비디오 2번만 반복 (메모리 절약)
-  const repeatedVideos = [...videos, ...videos];
+  // 모바일에서는 최대 6개만 표시 (메모리 절약)
+  const limitedVideos = videos.slice(0, 6);
   const animationClass = direction === 1 ? 'animate-scroll-left-mobile' : 'animate-scroll-right-mobile';
 
   return (
     <div className={`flex items-center ${animationClass}`} style={{ width: 'max-content' }}>
-      {repeatedVideos.map((video, index) => (
+      {limitedVideos.map((video, index) => (
         <VideoCard
           key={`${video.videoUrl}-${index}`}
           src={video.videoUrl}

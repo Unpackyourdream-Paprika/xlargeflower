@@ -6,7 +6,7 @@ const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODE
 
 export async function POST(request: NextRequest) {
   try {
-    const { prompt } = await request.json();
+    const { prompt, gender } = await request.json();
 
     if (!prompt || typeof prompt !== 'string') {
       return NextResponse.json(
@@ -24,8 +24,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 프롬프트 강화: 3면도 캐릭터 시트 형태로 생성 (연습생 프로필 컨셉) - 정사각형 비율
-    const enhancedPrompt = `Generate a square image (1:1 aspect ratio): Professional model portfolio character sheet, split screen showing three views of the same person: front view, 45 degree angle view, and side profile view, arranged horizontally in one square image. ${prompt}, Korean model, high-end fashion aesthetic, elegant and sophisticated, professional studio lighting, clean dark background, photorealistic, high quality, detailed facial features, consistent face across all three angles, model agency composite card style`;
+    // 성별에 따른 프롬프트 조정
+    const genderText = gender === 'male' ? 'male' : 'female';
+    const genderKorean = gender === 'male' ? '남성' : '여성';
+
+    // 프롬프트 강화: 실사 품질의 전신 3컷 (전신/3/4뷰/측면) - 정사각형 비율
+    const enhancedPrompt = `Create a ultra-realistic photography composite image in square format (1:1 aspect ratio). The image shows THREE separate full-body shots of the SAME ${genderKorean} Korean fashion model arranged horizontally side by side:
+
+LEFT: Full body front view - model standing facing camera directly, full body from head to toe visible
+CENTER: 3/4 angle view - model standing at 45 degree angle, full body visible, natural pose
+RIGHT: Side profile view - model standing sideways, full body silhouette visible
+
+Requirements:
+- ${genderText} Korean model, ${prompt}
+- ULTRA PHOTOREALISTIC, looks like actual photograph taken with DSLR camera
+- Professional fashion model physique, tall and slim
+- Wearing simple elegant outfit (black or neutral toned clothing)
+- Clean solid gray or white studio background
+- Professional studio lighting with soft shadows
+- Same person with CONSISTENT face, body, and outfit across all three views
+- High-end fashion editorial quality, like photos from modeling agency portfolio
+- 8K resolution quality, sharp details, natural skin texture
+- NO anime, NO cartoon, NO illustration - ONLY photorealistic human photography`;
 
     // Gemini API 요청 (nanobanana와 동일한 방식)
     const payload = {

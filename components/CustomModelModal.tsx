@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { submitContact } from '@/lib/supabase';
 
 type ModalStep = 'SELECT' | 'GENERATE' | 'CONTACT';
+type Gender = 'female' | 'male';
 
 interface CustomModelModalProps {
   isOpen: boolean;
@@ -23,13 +24,13 @@ interface ModelProfile {
 }
 
 // 랜덤 프로필 생성 함수
-function generateRandomProfile(styleKeyword: string): ModelProfile {
+function generateRandomProfile(styleKeyword: string, gender: Gender): ModelProfile {
   const bloodTypes = ['A', 'B', 'O', 'AB'];
   const mbtis = ['ENFP', 'INFJ', 'ENTP', 'ISFJ', 'ESTJ', 'INFP', 'ENTJ', 'ISFP', 'ESTP', 'INTJ'];
   const specialties = ['패션 화보', '뷰티 광고', '브랜드 캠페인', 'SNS 콘텐츠', '럭셔리 브랜드', 'CF 모델'];
 
-  // 스타일 키워드에서 이름 생성
-  const namePool = {
+  // 성별별 이름 풀
+  const femaleNamePool: Record<string, { en: string; ko: string }> = {
     시크: { en: 'SERA', ko: '세라' },
     청순: { en: 'YUNA', ko: '유나' },
     고급: { en: 'LUNA', ko: '루나' },
@@ -43,20 +44,41 @@ function generateRandomProfile(styleKeyword: string): ModelProfile {
     default: { en: 'NOVA', ko: '노바' }
   };
 
+  const maleNamePool: Record<string, { en: string; ko: string }> = {
+    시크: { en: 'KAI', ko: '카이' },
+    청순: { en: 'JUNHO', ko: '준호' },
+    고급: { en: 'LEON', ko: '레온' },
+    럭셔리: { en: 'FELIX', ko: '펠릭스' },
+    힙: { en: 'JAY', ko: '제이' },
+    내추럴: { en: 'MINHO', ko: '민호' },
+    도시: { en: 'DANIEL', ko: '다니엘' },
+    따뜻: { en: 'SIWOO', ko: '시우' },
+    쿨: { en: 'TAEHYUN', ko: '태현' },
+    우아: { en: 'YEONJUN', ko: '연준' },
+    default: { en: 'HYUN', ko: '현' }
+  };
+
+  const namePool = gender === 'female' ? femaleNamePool : maleNamePool;
+
   // 키워드 매칭
   let selectedName = namePool.default;
   const lowerKeyword = styleKeyword.toLowerCase();
   for (const [key, value] of Object.entries(namePool)) {
-    if (lowerKeyword.includes(key)) {
+    if (key !== 'default' && lowerKeyword.includes(key)) {
       selectedName = value;
       break;
     }
   }
 
+  // 성별에 따른 키 범위
+  const heightRange = gender === 'female'
+    ? { min: 165, max: 172 }
+    : { min: 175, max: 185 };
+
   return {
     name: selectedName.en,
     nameKo: selectedName.ko,
-    height: `${Math.floor(Math.random() * (172 - 165 + 1)) + 165}cm`,
+    height: `${Math.floor(Math.random() * (heightRange.max - heightRange.min + 1)) + heightRange.min}cm`,
     bloodType: `${bloodTypes[Math.floor(Math.random() * bloodTypes.length)]}형`,
     mbti: mbtis[Math.floor(Math.random() * mbtis.length)],
     age: `${Math.floor(Math.random() * (26 - 22 + 1)) + 22}세`,
@@ -71,7 +93,8 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
   const [prompt, setPrompt] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [modelProfile, setModelProfile] = useState<ModelProfile | null>(null);
-  const [customModelName, setCustomModelName] = useState(''); // 사용자 지정 모델 이름
+  const [customModelName, setCustomModelName] = useState('');
+  const [gender, setGender] = useState<Gender>('female'); // 성별 선택 (유지됨)
 
   // Contact form state
   const [formData, setFormData] = useState({
@@ -84,7 +107,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // 모달이 닫힐 때 상태 초기화
+  // 모달이 닫힐 때 상태 초기화 (성별은 유지)
   useEffect(() => {
     if (!isOpen) {
       setStep('SELECT');
@@ -95,6 +118,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
       setCustomModelName('');
       setFormData({ name: '', company: '', email: '', phone: '', message: '' });
       setIsSubmitted(false);
+      // 성별(gender)은 초기화하지 않음 - 유지
     }
   }, [isOpen]);
 
@@ -120,14 +144,22 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
       return;
     }
 
+    // 이미 생성 중이면 무시
+    if (isGenerating) return;
+
     setIsGenerating(true);
     setError(null);
+    setGeneratedImage(null);
+    setModelProfile(null);
 
     try {
       const response = await fetch('/api/generate-model', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: prompt.trim() }),
+        body: JSON.stringify({
+          prompt: prompt.trim(),
+          gender: gender
+        }),
       });
 
       const data = await response.json();
@@ -137,8 +169,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
       }
 
       setGeneratedImage(data.imageUrl);
-      // 프로필도 함께 생성
-      setModelProfile(generateRandomProfile(prompt));
+      setModelProfile(generateRandomProfile(prompt, gender));
     } catch (err) {
       const message = err instanceof Error ? err.message : '이미지 생성에 실패했습니다.';
       setError(message);
@@ -159,7 +190,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
     setIsSubmitting(true);
     try {
       const profileInfo = modelProfile
-        ? `\n\n[생성된 AI 모델 프로필]\n- 모델명: ${finalModelName}${finalModelNameKo ? ` (${finalModelNameKo})` : ''}\n- 신장: ${modelProfile.height}\n- 혈액형: ${modelProfile.bloodType}\n- MBTI: ${modelProfile.mbti}\n- 연령: ${modelProfile.age}\n- 특기: ${modelProfile.specialty}`
+        ? `\n\n[생성된 AI 모델 프로필]\n- 모델명: ${finalModelName}${finalModelNameKo ? ` (${finalModelNameKo})` : ''}\n- 성별: ${gender === 'female' ? '여성' : '남성'}\n- 신장: ${modelProfile.height}\n- 혈액형: ${modelProfile.bloodType}\n- MBTI: ${modelProfile.mbti}\n- 연령: ${modelProfile.age}\n- 특기: ${modelProfile.specialty}`
         : '';
 
       const messageWithImage = generatedImage
@@ -305,6 +336,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                   setGeneratedImage(null);
                   setModelProfile(null);
                   setError(null);
+                  // prompt와 gender는 유지
                 }}
                 className="flex items-center gap-2 text-white/50 hover:text-white text-sm mb-6 transition-colors"
               >
@@ -325,14 +357,64 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                     <p className="mt-2 text-white/60">원하는 모델의 스타일과 분위기를 입력해 주세요</p>
                   </div>
 
+                  {/* 성별 선택 */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-400 mb-3">
+                      모델 성별 선택
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setGender('female')}
+                        className={`p-4 rounded-xl border-2 transition-all ${
+                          gender === 'female'
+                            ? 'border-[#00F5A0] bg-[#00F5A0]/10'
+                            : 'border-[#333] bg-[#111] hover:border-[#444]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-center gap-3">
+                          <svg className={`w-6 h-6 ${gender === 'female' ? 'text-[#00F5A0]' : 'text-white/60'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <circle cx="12" cy="8" r="5" strokeWidth={2} />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 13v8M9 18h6" />
+                          </svg>
+                          <span className={`font-bold ${gender === 'female' ? 'text-[#00F5A0]' : 'text-white'}`}>
+                            여성 모델
+                          </span>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setGender('male')}
+                        className={`p-4 rounded-xl border-2 transition-all ${
+                          gender === 'male'
+                            ? 'border-[#00F5A0] bg-[#00F5A0]/10'
+                            : 'border-[#333] bg-[#111] hover:border-[#444]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-center gap-3">
+                          <svg className={`w-6 h-6 ${gender === 'male' ? 'text-[#00F5A0]' : 'text-white/60'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <circle cx="10" cy="14" r="5" strokeWidth={2} />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 5l-5.4 5.4M19 5h-5M19 5v5" />
+                          </svg>
+                          <span className={`font-bold ${gender === 'male' ? 'text-[#00F5A0]' : 'text-white'}`}>
+                            남성 모델
+                          </span>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
                   {/* Prompt Input */}
                   <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                      원하는 스타일
+                    </label>
                     <input
                       type="text"
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && !isGenerating && handleGenerate()}
-                      placeholder="예: 시크한 도시 여성, 따뜻한 분위기의 청순한 모델"
+                      placeholder="예: 시크한 도시적인 느낌, 따뜻한 분위기"
                       className="w-full px-4 py-4 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors text-lg"
                       disabled={isGenerating}
                     />
@@ -340,8 +422,10 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                       {['시크한', '청순한', '고급스러운', '힙한', '내추럴', '우아한'].map((tag) => (
                         <button
                           key={tag}
+                          type="button"
                           onClick={() => setPrompt((prev) => prev ? `${prev}, ${tag}` : tag)}
                           className="px-3 py-1 text-xs bg-[#222] border border-[#333] rounded-full text-white/60 hover:text-white hover:border-purple-500/50 transition-all"
+                          disabled={isGenerating}
                         >
                           + {tag}
                         </button>
@@ -351,6 +435,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
 
                   {/* Generate Button */}
                   <button
+                    type="button"
                     onClick={handleGenerate}
                     disabled={isGenerating || !prompt.trim()}
                     className="w-full py-4 rounded-xl font-bold text-black bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] hover:shadow-[0_0_30px_rgba(0,245,160,0.4)] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
@@ -373,6 +458,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                     <div className="mt-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
                       <p className="text-red-400 text-sm mb-3">{error}</p>
                       <button
+                        type="button"
                         onClick={handleErrorToContact}
                         className="text-sm text-white/70 hover:text-[#00F5A0] transition-colors underline"
                       >
@@ -402,8 +488,8 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                       />
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
                         <div className="flex justify-between text-xs text-white/60">
-                          <span>FRONT VIEW</span>
-                          <span>45° ANGLE</span>
+                          <span>FULL BODY</span>
+                          <span>3/4 VIEW</span>
                           <span>SIDE PROFILE</span>
                         </div>
                       </div>
@@ -457,10 +543,13 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                         </div>
 
                         {/* 특기/스타일 */}
-                        <div className="flex items-center gap-2 mb-6">
+                        <div className="flex flex-wrap items-center gap-2 mb-6">
                           <span className="text-xs text-white/40">SPECIALTY:</span>
                           <span className="px-3 py-1 bg-purple-500/10 border border-purple-500/30 rounded-full text-sm text-purple-300">
                             {modelProfile.specialty}
+                          </span>
+                          <span className="px-3 py-1 bg-[#222] border border-[#333] rounded-full text-sm text-white/60">
+                            {gender === 'female' ? '여성' : '남성'}
                           </span>
                           <span className="px-3 py-1 bg-[#222] border border-[#333] rounded-full text-sm text-white/60">
                             {prompt}
@@ -470,20 +559,24 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                         {/* 버튼 영역 */}
                         <div className="flex gap-3">
                           <button
+                            type="button"
                             onClick={() => {
                               setGeneratedImage(null);
                               setModelProfile(null);
                               setCustomModelName('');
+                              // gender와 prompt는 유지
                               handleGenerate();
                             }}
                             disabled={isGenerating}
                             className="flex-1 py-3 rounded-xl font-medium text-white bg-[#222] border border-[#333] hover:border-[#00F5A0]/50 transition-all disabled:opacity-50"
                           >
-                            다시 생성하기
+                            {isGenerating ? '생성 중...' : '다시 생성하기'}
                           </button>
                           <button
+                            type="button"
                             onClick={() => setStep('CONTACT')}
-                            className="flex-1 py-3 rounded-xl font-bold text-black bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] hover:shadow-[0_0_20px_rgba(0,245,160,0.4)] transition-all"
+                            disabled={isGenerating}
+                            className="flex-1 py-3 rounded-xl font-bold text-black bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] hover:shadow-[0_0_20px_rgba(0,245,160,0.4)] transition-all disabled:opacity-50"
                           >
                             이 모델로 선택하기
                           </button>
@@ -502,6 +595,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
               {/* Back button */}
               {!isSubmitted && (
                 <button
+                  type="button"
                   onClick={() => setStep(generatedImage ? 'GENERATE' : 'SELECT')}
                   className="flex items-center gap-2 text-white/50 hover:text-white text-sm mb-6 transition-colors"
                 >
@@ -528,7 +622,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                         {finalModelNameKo && <span className="text-sm text-white/60 ml-2">({finalModelNameKo})</span>}
                       </p>
                       <p className="text-xs text-white/50">
-                        {modelProfile.height} / {modelProfile.bloodType} / {modelProfile.mbti}
+                        {gender === 'female' ? '여성' : '남성'} / {modelProfile.height} / {modelProfile.bloodType} / {modelProfile.mbti}
                       </p>
                     </div>
                     <span className="px-3 py-1 bg-[#00F5A0]/10 border border-[#00F5A0]/30 rounded-full text-xs text-[#00F5A0]">
@@ -540,10 +634,10 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
 
               <div className="text-center mb-6">
                 <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#00F5A0]">
-                  CONTRACT REQUEST
+                  CONTACT
                 </span>
                 <h2 className="mt-2 text-2xl font-bold text-white">
-                  {generatedImage ? '모델 계약 문의' : '제작 문의하기'}
+                  {generatedImage ? '모델 문의하기' : '제작 문의하기'}
                 </h2>
                 <p className="mt-2 text-white/60">담당자가 빠르게 연락드립니다</p>
               </div>
@@ -556,10 +650,11 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                     </svg>
                   </div>
                   <h3 className="text-xl font-bold text-white mb-2">
-                    {generatedImage ? '계약 문의가 접수되었습니다!' : '문의가 접수되었습니다!'}
+                    문의가 접수되었습니다!
                   </h3>
                   <p className="text-gray-400 mb-6">빠른 시일 내에 연락드리겠습니다.</p>
                   <button
+                    type="button"
                     onClick={onClose}
                     className="px-8 py-3 rounded-xl font-bold text-black bg-gradient-to-r from-[#00F5A0] to-[#00D9F5]"
                   >
@@ -643,7 +738,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                     disabled={isSubmitting}
                     className="w-full py-4 rounded-xl font-bold text-black bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] hover:shadow-[0_0_30px_rgba(0,245,160,0.4)] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
-                    {isSubmitting ? '전송 중...' : (generatedImage ? '계약 문의 보내기' : '문의 보내기')}
+                    {isSubmitting ? '전송 중...' : '문의 보내기'}
                   </button>
                 </form>
               )}

@@ -21,14 +21,14 @@ function playVideoSafely(video: HTMLVideoElement) {
   }
 }
 
-// Cloudinary URL 최적화 함수 - WebM 강제 변환 (더 가벼움)
+// Cloudinary URL 최적화 함수 - MP4 유지 (호환성)
 function optimizeVideoUrl(url: string, isMobile: boolean): string {
   if (!url.includes('cloudinary.com')) return url;
-  // f_webm: 무조건 WebM으로 변환 (MP4보다 30-50% 가벼움)
-  // vc_vp9: VP9 코덱 (높은 압축률)
+  // 모바일: 낮은 해상도 + 비트레이트 제한
+  // 데스크톱: 적정 해상도
   const transformation = isMobile
-    ? 'w_270,h_480,c_limit,f_webm,vc_vp9,q_auto:eco,br_300k,so_0'
-    : 'w_360,h_640,c_limit,f_webm,vc_vp9,q_auto:eco,br_500k,so_0';
+    ? 'w_270,h_480,c_limit,q_auto:eco,br_400k'
+    : 'w_360,h_640,c_limit,q_auto:low,br_800k';
   return url.replace('/upload/', `/upload/${transformation}/`);
 }
 
@@ -178,7 +178,7 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                     autoPlay
                     muted
                     playsInline
-                    preload="auto"
+                    preload={isMobile ? 'metadata' : 'auto'}
                     onEnded={handleVideoEnded}
                     onLoadedData={(e) => playVideoSafely(e.currentTarget)}
                     onCanPlay={(e) => playVideoSafely(e.currentTarget)}
@@ -199,7 +199,7 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                       autoPlay
                       muted
                       playsInline
-                      preload="auto"
+                      preload={isMobile ? 'metadata' : 'auto'}
                       onLoadedData={(e) => playVideoSafely(e.currentTarget)}
                       onCanPlay={(e) => playVideoSafely(e.currentTarget)}
                       className="w-full h-full object-cover"
