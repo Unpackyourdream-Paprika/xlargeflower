@@ -37,10 +37,10 @@ export default function HeroTextContent() {
           onClick={() => {
             const modelSection = document.getElementById('model-lineup');
             if (modelSection) {
-              const navbarHeight = 80;
+              const offset = 20;
               const elementPosition = modelSection.getBoundingClientRect().top + window.scrollY;
               window.scrollTo({
-                top: elementPosition - navbarHeight,
+                top: elementPosition - offset,
                 behavior: 'smooth'
               });
             }
