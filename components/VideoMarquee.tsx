@@ -37,39 +37,27 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Cloudinary 비디오 URL 최적화
-  // 모바일: 낮은 해상도 + 비트레이트 제한 + MP4 (호환성)
-  // 데스크톱: 중간 해상도 + MP4
+  // Cloudinary URL 최적화
   const optimizedVideoUrl = src.includes('cloudinary.com')
-    ? src.replace('/upload/', isMobile
-        ? '/upload/w_180,h_320,c_limit,q_auto:eco,br_200k/'
-        : '/upload/w_280,h_500,c_limit,q_auto:low/')
+    ? src.replace('/upload/', '/upload/w_280,h_500,c_limit,q_auto:low/')
     : src;
 
-  // 포스터 이미지 URL (첫 프레임)
+  // 포스터/썸네일 이미지 URL (모바일에서는 이것만 표시)
   const posterUrl = src.includes('cloudinary.com')
-    ? src.replace('/upload/', '/upload/w_180,h_320,c_limit,f_webp,q_60,so_0/')
+    ? src.replace('/upload/', '/upload/w_180,h_320,c_limit,f_webp,q_70,so_0/')
     : '';
 
-  // 비디오 재생 함수 - iOS 저전력 모드 대응
+  // 비디오 재생 함수 - 데스크톱 전용
   const playVideo = (video: HTMLVideoElement) => {
-    // iOS에서 muted 속성이 필수
     video.muted = true;
     video.playsInline = true;
-
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(() => {
-        // 재생 실패 시 약간의 지연 후 재시도
-        setTimeout(() => {
-          video.play().catch(() => {});
-        }, 100);
-      });
-    }
+    video.play().catch(() => {});
   };
 
-  // IntersectionObserver로 뷰포트 진입 시 즉시 재생 (iOS 저전력 모드 대응)
+  // 데스크톱에서만 IntersectionObserver 사용
   useEffect(() => {
+    if (isMobile) return; // 모바일에서는 비디오 로드 안함
+
     const video = videoRef.current;
     const container = containerRef.current;
     if (!video || !container) return;
@@ -77,27 +65,15 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          // 뷰포트에 들어오면 즉시 재생 시도
           playVideo(video);
-        } else if (!isMobile) {
-          // 데스크톱에서만 뷰포트 이탈 시 정지
+        } else {
           video.pause();
         }
       },
-      {
-        threshold: 0,  // 조금이라도 보이면 즉시 트리거
-        rootMargin: '50px'  // 50px 미리 로드
-      }
+      { threshold: 0, rootMargin: '50px' }
     );
 
     observer.observe(container);
-
-    // 초기 로드 시에도 재생 시도 (이미 뷰포트에 있는 경우)
-    const rect = container.getBoundingClientRect();
-    if (rect.top < window.innerHeight && rect.bottom > 0) {
-      playVideo(video);
-    }
-
     return () => observer.disconnect();
   }, [isMobile]);
 
@@ -115,21 +91,29 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
       onMouseEnter={() => !isMobile && setIsHovered(true)}
       onMouseLeave={() => !isMobile && setIsHovered(false)}
     >
-      {/* Cloudinary 최적화된 비디오 스트리밍 */}
-      <video
-        ref={videoRef}
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload={isMobile ? 'none' : 'metadata'}
-        poster={posterUrl}
-        onLoadedData={(e) => playVideo(e.currentTarget)}
-        onCanPlay={(e) => playVideo(e.currentTarget)}
-        className="w-full h-full object-cover"
-        src={optimizedVideoUrl}
-      />
-
+      {/* 모바일: 정적 이미지만 표시 (비디오 로드 없음) */}
+      {isMobile ? (
+        <img
+          src={posterUrl}
+          alt=""
+          className="w-full h-full object-cover"
+          loading="lazy"
+        />
+      ) : (
+        /* 데스크톱: 비디오 재생 */
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          poster={posterUrl}
+          onLoadedData={(e) => playVideo(e.currentTarget)}
+          className="w-full h-full object-cover"
+          src={optimizedVideoUrl}
+        />
+      )}
     </div>
   );
 }
@@ -283,7 +267,32 @@ export default function VideoMarquee({ videos }: VideoMarqueeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
   const [statsVisible, setStatsVisible] = useState(false);
+  const [shouldLoadVideos, setShouldLoadVideos] = useState(false);
   const isMobile = useIsMobile();
+
+  // 섹션이 뷰포트에 진입하면 비디오 로드 시작 (모바일에서는 이미지만 표시하므로 즉시 true)
+  useEffect(() => {
+    if (isMobile) {
+      setShouldLoadVideos(true);
+      return;
+    }
+
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShouldLoadVideos(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0, rootMargin: '200px' } // 200px 미리 로드 시작
+    );
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [isMobile]);
 
   // 통계 섹션 스크롤 감지
   useEffect(() => {
@@ -342,8 +351,8 @@ export default function VideoMarquee({ videos }: VideoMarqueeProps) {
         </p>
       </div>
 
-      {/* 비디오 월 - 살짝 기울임 (비디오 있을 때만) */}
-      {hasVideos && (
+      {/* 비디오 월 - 살짝 기울임 (비디오 있을 때만, 뷰포트 진입 후 로드) */}
+      {hasVideos && shouldLoadVideos && (
         <div className="relative -rotate-2 space-y-4">
           {/* Row 1: 오른쪽으로 이동 */}
           <div className="overflow-hidden">
