@@ -37,7 +37,12 @@ export default function HeroTextContent() {
           onClick={() => {
             const modelSection = document.getElementById('model-lineup');
             if (modelSection) {
-              modelSection.scrollIntoView({ behavior: 'smooth' });
+              const navbarHeight = 80;
+              const elementPosition = modelSection.getBoundingClientRect().top + window.scrollY;
+              window.scrollTo({
+                top: elementPosition - navbarHeight,
+                behavior: 'smooth'
+              });
             }
           }}
           className="btn-primary text-base lg:text-lg whitespace-nowrap"
