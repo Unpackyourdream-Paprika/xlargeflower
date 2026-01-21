@@ -274,6 +274,18 @@ export default function ShowcaseManagement() {
               쇼케이스
             </Link>
             <Link
+              href="/admin/hero"
+              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
+            >
+              히어로
+            </Link>
+            <Link
+              href="/admin/before-after"
+              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
+            >
+              Before/After
+            </Link>
+            <Link
               href="/admin/artists"
               className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
             >

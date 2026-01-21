@@ -163,9 +163,16 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
           <PhoneMockupFrame>
             {assets.length > 0 && currentAsset ? (
               <div className="relative w-full h-full">
+                {/* WebP 썸네일 - 비디오 로드 전 먼저 표시 */}
+                <img
+                  src={getPosterUrl(currentAsset.video_url)}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover z-0"
+                />
+
                 {/* Current Video - 페이드 아웃 */}
                 <div
-                  className={`absolute inset-0 transition-opacity duration-800 ease-in-out ${
+                  className={`absolute inset-0 transition-opacity duration-800 ease-in-out z-10 ${
                     isDissolving ? 'opacity-0' : 'opacity-100'
                   }`}
                   style={{ transitionDuration: '800ms' }}
@@ -189,9 +196,15 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                 {/* Next Video - 페이드 인 (디졸브 시에만 표시) */}
                 {isDissolving && nextAsset && (
                   <div
-                    className="absolute inset-0 transition-opacity duration-800 ease-in-out opacity-100"
+                    className="absolute inset-0 transition-opacity duration-800 ease-in-out opacity-100 z-20"
                     style={{ transitionDuration: '800ms' }}
                   >
+                    {/* Next 썸네일 */}
+                    <img
+                      src={getPosterUrl(nextAsset.video_url)}
+                      alt=""
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
                     <video
                       key={`next-${nextAsset.id}`}
                       src={optimizeVideoUrl(nextAsset.video_url, isMobile)}
@@ -202,7 +215,7 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                       preload={isMobile ? 'metadata' : 'auto'}
                       onLoadedData={(e) => playVideoSafely(e.currentTarget)}
                       onCanPlay={(e) => playVideoSafely(e.currentTarget)}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover relative z-10"
                     />
                   </div>
                 )}

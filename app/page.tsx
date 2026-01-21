@@ -7,22 +7,25 @@ import VideoMarquee from '@/components/VideoMarquee';
 import ArtistLineup from '@/components/ArtistLineup';
 import MainHeroContainer from '@/components/hero/MainHeroContainer';
 import { triggerOpenChat } from '@/components/GlobalChatButton';
-import { getShowcaseVideos, ShowcaseVideo, getFeaturedCaseStudies, XLargeFlowerPortfolio } from '@/lib/supabase';
+import { getShowcaseVideos, ShowcaseVideo, getFeaturedCaseStudies, XLargeFlowerPortfolio, getBeforeAfterAsset, BeforeAfterAsset } from '@/lib/supabase';
 
 export default function Home() {
   const [showcaseVideos, setShowcaseVideos] = useState<ShowcaseVideo[]>([]);
   const [caseStudies, setCaseStudies] = useState<XLargeFlowerPortfolio[]>([]);
+  const [beforeAfterAsset, setBeforeAfterAsset] = useState<BeforeAfterAsset | null>(null);
   const [paymentType, setPaymentType] = useState<'card' | 'invoice'>('card');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [videos, cases] = await Promise.all([
+        const [videos, cases, beforeAfter] = await Promise.all([
           getShowcaseVideos(),
-          getFeaturedCaseStudies()
+          getFeaturedCaseStudies(),
+          getBeforeAfterAsset()
         ]);
         setShowcaseVideos(videos);
         setCaseStudies(cases);
+        setBeforeAfterAsset(beforeAfter);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       }
@@ -101,7 +104,7 @@ export default function Home() {
                   <div className="bg-[#0A0A0A] border border-[#222222] rounded-xl p-8 h-full hover:grayscale transition-all duration-500">
                     <div className="aspect-video bg-[#111111] rounded-lg overflow-hidden mb-6">
                       <img
-                        src="/images/nikedunk.webp"
+                        src={beforeAfterAsset?.before_image_url || '/images/nikedunk.webp'}
                         alt="원본 제품 사진"
                         className="w-full h-full object-cover"
                       />
@@ -135,23 +138,31 @@ export default function Home() {
                     <div className="absolute inset-0 bg-[#0A0A0A]/80 backdrop-blur-sm border-2 border-[#00F5A0]/40 rounded-xl shadow-[0_0_60px_rgba(0,245,160,0.15),inset_0_0_60px_rgba(0,245,160,0.05)]"></div>
                     <div className="relative p-8">
                       <div className="aspect-video rounded-lg overflow-hidden relative group shadow-[0_0_40px_rgba(0,245,160,0.2)]">
+                        {/* WebP 썸네일 먼저 표시, 그 위에 비디오 */}
+                        {beforeAfterAsset?.after_video_webp_url && (
+                          <img
+                            src={beforeAfterAsset.after_video_webp_url}
+                            alt=""
+                            className="absolute inset-0 w-full h-full object-cover"
+                          />
+                        )}
                         <video
                           autoPlay
                           muted
                           loop
                           playsInline
-                          className="w-full h-full object-cover"
-                        >
-                          <source src="https://assets.mixkit.co/videos/preview/mixkit-pouring-milk-into-a-bowl-with-cereals-seen-up-42017-large.mp4" type="video/mp4" />
-                        </video>
+                          preload="metadata"
+                          className="w-full h-full object-cover relative z-10"
+                          src={beforeAfterAsset?.after_video_url || 'https://assets.mixkit.co/videos/preview/mixkit-pouring-milk-into-a-bowl-with-cereals-seen-up-42017-large.mp4'}
+                        />
                         {/* Video indicator */}
-                        <div className="absolute top-3 right-3">
+                        <div className="absolute top-3 right-3 z-20">
                           <span className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-white text-xs font-bold rounded shadow-lg">
                             <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
                             LIVE
                           </span>
                         </div>
-                        <div className="absolute bottom-3 left-3 flex gap-2">
+                        <div className="absolute bottom-3 left-3 flex gap-2 z-20">
                           <span className="px-2.5 py-1 bg-black/70 text-white text-xs rounded backdrop-blur-sm">6s</span>
                           <span className="px-2.5 py-1 bg-black/70 text-white text-xs rounded backdrop-blur-sm">15s</span>
                           <span className="px-2.5 py-1 bg-black/70 text-white text-xs rounded backdrop-blur-sm">30s</span>

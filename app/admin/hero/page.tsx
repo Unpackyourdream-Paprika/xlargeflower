@@ -501,6 +501,12 @@ export default function HeroManagement() {
               히어로 관리
             </Link>
             <Link
+              href="/admin/before-after"
+              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
+            >
+              Before/After
+            </Link>
+            <Link
               href="/admin/artists"
               className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
             >

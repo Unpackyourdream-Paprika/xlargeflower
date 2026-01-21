@@ -519,3 +519,80 @@ export async function getHeroConfig(): Promise<HeroConfig> {
     assets
   };
 }
+
+// ============================================
+// Before & After 섹션 관련 타입 및 함수
+// ============================================
+
+export interface BeforeAfterAsset {
+  id?: string;
+  created_at?: string;
+  updated_at?: string;
+  title?: string;
+  before_image_url: string;      // 원본 이미지 (RAW INPUT)
+  after_video_url: string;       // 결과 영상 (RENDERED OUTPUT)
+  after_video_webp_url?: string; // 영상 WebP 썸네일
+  is_active: boolean;
+}
+
+// Before & After 에셋 조회
+export async function getBeforeAfterAsset(): Promise<BeforeAfterAsset | null> {
+  const { data, error } = await supabase
+    .from('xlarge_flower_before_after')
+    .select('*')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') return null; // No rows found
+    throw error;
+  }
+  return data as BeforeAfterAsset;
+}
+
+// Before & After 에셋 전체 조회 (어드민용)
+export async function getAllBeforeAfterAssets(): Promise<BeforeAfterAsset[]> {
+  const { data, error } = await supabase
+    .from('xlarge_flower_before_after')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data as BeforeAfterAsset[];
+}
+
+// Before & After 에셋 생성
+export async function createBeforeAfterAsset(data: Omit<BeforeAfterAsset, 'id' | 'created_at' | 'updated_at'>) {
+  const { data: asset, error } = await supabase
+    .from('xlarge_flower_before_after')
+    .insert([data])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return asset as BeforeAfterAsset;
+}
+
+// Before & After 에셋 수정
+export async function updateBeforeAfterAsset(id: string, data: Partial<BeforeAfterAsset>) {
+  const { error } = await supabase
+    .from('xlarge_flower_before_after')
+    .update({ ...data, updated_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) throw error;
+  return true;
+}
+
+// Before & After 에셋 삭제
+export async function deleteBeforeAfterAsset(id: string) {
+  const { error } = await supabase
+    .from('xlarge_flower_before_after')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+  return true;
+}
