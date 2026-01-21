@@ -154,7 +154,7 @@ export default function LandingPortfolioManagement() {
       uploadFormData.append('signature', signature);
       uploadFormData.append('timestamp', timestamp.toString());
       uploadFormData.append('api_key', apiKey);
-      uploadFormData.append('folder', 'xlarge-landing');
+      uploadFormData.append('folder', 'xlarge-showcase');
 
       const uploadRes = await fetch(
         `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`,

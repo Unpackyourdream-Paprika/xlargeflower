@@ -216,10 +216,10 @@ export default function Home() {
                       backgroundImage: 'linear-gradient(90deg, #00F5A0, #00D9F5)',
                     }}
                   >
-                    무제한
+                    8-15초
                   </span>
                 </p>
-                <p className="text-white/60 text-base sm:text-lg md:text-xl mt-3">바리에이션</p>
+                <p className="text-white/60 text-base sm:text-lg md:text-xl mt-3">숏폼 최적화</p>
               </div>
             </div>
           </ScrollReveal>
@@ -303,14 +303,10 @@ export default function Home() {
                       <video
                         src={item.video_url}
                         className="w-full h-full object-cover"
+                        autoPlay
                         muted
                         loop
                         playsInline
-                        onMouseEnter={(e) => e.currentTarget.play()}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.pause();
-                          e.currentTarget.currentTime = 0;
-                        }}
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center">

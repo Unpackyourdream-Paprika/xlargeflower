@@ -291,7 +291,7 @@ function CustomModelCard({ index, onOpenModal }: { index: number; onOpenModal: (
               독점 라이선스
             </span>
             <span className="px-2 py-1 text-[10px] font-medium bg-white/5 rounded-full text-white/50">
-              무제한 수정
+              수정 3회
             </span>
           </div>
         </div>

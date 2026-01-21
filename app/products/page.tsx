@@ -93,7 +93,7 @@ const products: Product[] = [
       '3개월 파트너십 (총 12개 영상 제작)',
       '브랜드 전속 AI 모델 독점 개발',
       '월간 성과 리포트 및 전략 컨설팅',
-      'VIP 전용 핫라인 및 무제한 수정',
+      'VIP 전용 핫라인 및 수정 5회',
       '전담 팀 배정',
       '계약 기간 내 영구 라이선스',
     ],
@@ -260,7 +260,7 @@ export default function ProductsPage() {
             <div className="p-6 bg-[#0A0A0A] border border-[#222] rounded-xl">
               <h3 className="font-semibold text-white mb-2">수정은 어떻게 되나요?</h3>
               <p className="text-gray-400 text-sm">
-                패키지별로 수정 횟수가 포함되어 있으며, 자막/텍스트 변경, 색상 조정, 길이 편집 등이 가능합니다. VIP PARTNER 플랜은 무제한 수정이 지원됩니다.
+                패키지별로 수정 횟수가 포함되어 있으며, 자막/텍스트 변경, 색상 조정, 길이 편집 등이 가능합니다. VIP PARTNER 플랜은 수정 5회가 지원됩니다.
               </p>
             </div>
             <div className="p-6 bg-[#0A0A0A] border border-[#222] rounded-xl">
