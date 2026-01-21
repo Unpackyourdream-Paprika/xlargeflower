@@ -347,7 +347,7 @@ export default function ArtistLineup() {
   const showPlaceholders = filteredArtists.length === 0 && !isLoading;
 
   return (
-    <section className="section-spacing relative overflow-hidden">
+    <section id="model-lineup" className="section-spacing relative overflow-hidden">
       {/* Deep Violet 그라데이션 배경 */}
       <div className="absolute inset-0 pointer-events-none">
         <div

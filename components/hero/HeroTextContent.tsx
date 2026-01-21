@@ -34,13 +34,18 @@ export default function HeroTextContent() {
 
       <div className="mt-8 lg:mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
         <button
-          onClick={() => triggerOpenChat('find_model')}
+          onClick={() => {
+            const modelSection = document.getElementById('model-lineup');
+            if (modelSection) {
+              modelSection.scrollIntoView({ behavior: 'smooth' });
+            }
+          }}
           className="btn-primary text-base lg:text-lg whitespace-nowrap"
         >
           내 브랜드에 맞는 모델 찾기
         </button>
         <Link href="/portfolio" className="btn-secondary text-base lg:text-lg whitespace-nowrap">
-          MODEL LINEUP 보기
+          포트폴리오 보기
         </Link>
       </div>
     </div>
