@@ -16,7 +16,18 @@ export default function AdminPortfolioPage() {
 
   // 간단 편집 모달
   const [editingItem, setEditingItem] = useState<XLargeFlowerPortfolio | null>(null);
-  const [editForm, setEditForm] = useState({ client_name: '', category: '', title: '', description: '' });
+  const [editForm, setEditForm] = useState({
+    client_name: '',
+    category: '',
+    title: '',
+    description: '',
+    campaign_date: '',
+    metric_1_value: '',
+    metric_1_label: '',
+    metric_2_value: '',
+    metric_2_label: '',
+    category_color: ''
+  });
 
   const fetchPortfolios = useCallback(async () => {
     try {
@@ -169,7 +180,13 @@ export default function AdminPortfolioPage() {
           client_name: editForm.client_name || null,
           category: editForm.category || '기타',
           title: editForm.title || editingItem.title,
-          description: editForm.description || null
+          description: editForm.description || null,
+          campaign_date: editForm.campaign_date || null,
+          metric_1_value: editForm.metric_1_value || null,
+          metric_1_label: editForm.metric_1_label || null,
+          metric_2_value: editForm.metric_2_value || null,
+          metric_2_label: editForm.metric_2_label || null,
+          category_color: editForm.category_color || null
         })
         .eq('id', editingItem.id);
 
@@ -277,6 +294,12 @@ export default function AdminPortfolioPage() {
             </Link>
             <Link href="/admin/showcase" className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap">
               쇼케이스
+            </Link>
+            <Link href="/admin/hero" className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap">
+              히어로
+            </Link>
+            <Link href="/admin/before-after" className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap">
+              Before/After
             </Link>
             <Link href="/admin/artists" className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap">
               아티스트
@@ -412,7 +435,13 @@ export default function AdminPortfolioPage() {
                           client_name: item.client_name || '',
                           category: item.category || '',
                           title: item.title || '',
-                          description: item.description || ''
+                          description: item.description || '',
+                          campaign_date: item.campaign_date || '',
+                          metric_1_value: item.metric_1_value || '',
+                          metric_1_label: item.metric_1_label || '',
+                          metric_2_value: item.metric_2_value || '',
+                          metric_2_label: item.metric_2_label || '',
+                          category_color: item.category_color || ''
                         });
                       }}
                       className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
@@ -495,60 +524,142 @@ export default function AdminPortfolioPage() {
         )}
       </main>
 
-      {/* Edit Modal - 간단 */}
+      {/* Edit Modal - 성과 지표 포함 */}
       {editingItem && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0A0A0A] border border-[#222] rounded-2xl p-6 w-full max-w-sm">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-[#0A0A0A] border border-[#222] rounded-2xl p-6 w-full max-w-lg my-8">
             <h3 className="text-lg font-bold text-white mb-4">정보 수정</h3>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">클라이언트명 (상단 표시)</label>
-                <input
-                  type="text"
-                  value={editForm.client_name}
-                  onChange={(e) => setEditForm({ ...editForm, client_name: e.target.value })}
-                  className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white"
-                  placeholder="예: 국민건강보험공단"
-                />
+            <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+              {/* 기본 정보 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">클라이언트명</label>
+                  <input
+                    type="text"
+                    value={editForm.client_name}
+                    onChange={(e) => setEditForm({ ...editForm, client_name: e.target.value })}
+                    className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                    placeholder="예: BEAUTY D사"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">캠페인 날짜</label>
+                  <input
+                    type="text"
+                    value={editForm.campaign_date}
+                    onChange={(e) => setEditForm({ ...editForm, campaign_date: e.target.value })}
+                    className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                    placeholder="예: 2024.12 캠페인"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">카테고리</label>
+                  <select
+                    value={editForm.category}
+                    onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                    className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                  >
+                    <option value="기타">기타</option>
+                    <option value="뷰티">뷰티</option>
+                    <option value="패션">패션</option>
+                    <option value="F&B">F&B</option>
+                    <option value="테크">테크</option>
+                    <option value="D2C">D2C</option>
+                    <option value="라이프스타일">라이프스타일</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">카테고리 색상</label>
+                  <select
+                    value={editForm.category_color}
+                    onChange={(e) => setEditForm({ ...editForm, category_color: e.target.value })}
+                    className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                  >
+                    <option value="">기본 (민트)</option>
+                    <option value="#FF69B4">핑크 (뷰티)</option>
+                    <option value="#FFA500">오렌지 (F&B)</option>
+                    <option value="#9B59B6">보라 (D2C)</option>
+                    <option value="#3498DB">파랑 (테크)</option>
+                    <option value="#00F5A0">민트 (기본)</option>
+                  </select>
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">카테고리</label>
-                <select
-                  value={editForm.category}
-                  onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                  className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white"
-                >
-                  <option value="기타">기타</option>
-                  <option value="뷰티">뷰티</option>
-                  <option value="패션">패션</option>
-                  <option value="F&B">F&B</option>
-                  <option value="테크">테크</option>
-                  <option value="라이프스타일">라이프스타일</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">제목 (하단 표시)</label>
+                <label className="block text-sm text-gray-400 mb-2">제목</label>
                 <input
                   type="text"
                   value={editForm.title}
                   onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                  className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white"
-                  placeholder="예: 건강보험 캠페인"
+                  className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                  placeholder="예: 인플루언서 대비 ROAS 3배 달성"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">설명 (하단 표시)</label>
+                <label className="block text-sm text-gray-400 mb-2">설명</label>
                 <input
                   type="text"
                   value={editForm.description}
                   onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white"
-                  placeholder="예: AI 모델로 제작한 건강보험 광고"
+                  className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                  placeholder="예: 기존 인플루언서 협찬 대비 동일 매체비로 전환율 3배 상승"
                 />
+              </div>
+
+              {/* 성과 지표 */}
+              <div className="border-t border-[#333] pt-4 mt-4">
+                <p className="text-sm text-[#00F5A0] font-medium mb-3">성과 지표 (REAL PORTFOLIO 섹션에 표시)</p>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">지표 1 값</label>
+                    <input
+                      type="text"
+                      value={editForm.metric_1_value}
+                      onChange={(e) => setEditForm({ ...editForm, metric_1_value: e.target.value })}
+                      className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                      placeholder="예: +312%"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">지표 1 라벨</label>
+                    <input
+                      type="text"
+                      value={editForm.metric_1_label}
+                      onChange={(e) => setEditForm({ ...editForm, metric_1_label: e.target.value })}
+                      className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                      placeholder="예: ROAS 상승"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">지표 2 값</label>
+                    <input
+                      type="text"
+                      value={editForm.metric_2_value}
+                      onChange={(e) => setEditForm({ ...editForm, metric_2_value: e.target.value })}
+                      className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                      placeholder="예: ₩4,200"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">지표 2 라벨</label>
+                    <input
+                      type="text"
+                      value={editForm.metric_2_label}
+                      onChange={(e) => setEditForm({ ...editForm, metric_2_label: e.target.value })}
+                      className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                      placeholder="예: CPA 달성"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
