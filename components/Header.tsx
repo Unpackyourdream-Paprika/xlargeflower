@@ -2,10 +2,20 @@
 
 import Link from 'next/link';
 import { useState, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Active 링크 스타일
+  const getLinkClass = (href: string) => {
+    const isActive = pathname === href || (href === '/' && pathname === '/');
+    return isActive
+      ? 'text-[#00F5A0] font-semibold text-sm drop-shadow-[0_0_8px_rgba(0,245,160,0.6)]'
+      : 'text-white/70 hover:text-white transition-colors text-sm';
+  };
 
   // 부드러운 스크롤 핸들러 (헤더 높이 고려)
   const handleSmoothScroll = useCallback((e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
@@ -34,7 +44,7 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
-            <Link href="/" className="text-white/70 hover:text-white transition-colors text-sm">
+            <Link href="/" className={getLinkClass('/')}>
               HOME
             </Link>
             <a
@@ -44,13 +54,13 @@ export default function Header() {
             >
               WHY AI?
             </a>
-            <Link href="/portfolio" className="text-white/70 hover:text-white transition-colors text-sm">
+            <Link href="/portfolio" className={getLinkClass('/portfolio')}>
               PORTFOLIO
             </Link>
-            <Link href="/products" className="text-white/70 hover:text-white transition-colors text-sm">
+            <Link href="/products" className={getLinkClass('/products')}>
               PRICING
             </Link>
-            <Link href="/contact" className="btn-primary text-sm py-2 px-5">
+            <Link href="/contact" className={pathname === '/contact' ? 'btn-primary text-sm py-2 px-5 ring-2 ring-[#00F5A0]/50' : 'btn-primary text-sm py-2 px-5'}>
               VIP ACCESS
             </Link>
           </div>
@@ -101,7 +111,7 @@ export default function Header() {
                   >
                     <Link
                       href="/"
-                      className="text-white/70 hover:text-white transition-colors text-sm block"
+                      className={`${getLinkClass('/')} block`}
                       onClick={() => setIsMenuOpen(false)}
                     >
                       HOME
@@ -131,7 +141,7 @@ export default function Header() {
                   >
                     <Link
                       href="/portfolio"
-                      className="text-white/70 hover:text-white transition-colors text-sm block"
+                      className={`${getLinkClass('/portfolio')} block`}
                       onClick={() => setIsMenuOpen(false)}
                     >
                       PORTFOLIO
@@ -146,7 +156,7 @@ export default function Header() {
                   >
                     <Link
                       href="/products"
-                      className="text-white/70 hover:text-white transition-colors text-sm block"
+                      className={`${getLinkClass('/products')} block`}
                       onClick={() => setIsMenuOpen(false)}
                     >
                       PRICING

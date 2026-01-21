@@ -691,3 +691,181 @@ export async function updateLandingPortfolioOrders(orders: { id: string; sort_or
   }
   return true;
 }
+
+// ============================================
+// 프로모션 설정 관련 타입 및 함수
+// ============================================
+
+export interface PromotionSettings {
+  id?: string;
+  created_at?: string;
+  updated_at?: string;
+  title: string;                 // 프로모션명 (예: "2월 반값 할인")
+  discount_rate: number;         // 할인율 (예: 50)
+  start_date: string;            // 시작 일시 (ISO 8601)
+  end_date: string;              // 종료 일시 (ISO 8601)
+  is_active: boolean;            // 활성화 여부
+  badge_text?: string;           // 뱃지 텍스트 (예: "2.15까지 50%")
+}
+
+// 현재 활성화된 프로모션 조회 (프론트엔드용)
+export async function getActivePromotion(): Promise<PromotionSettings | null> {
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from('xlarge_flower_promotions')
+    .select('*')
+    .eq('is_active', true)
+    .lte('start_date', now)
+    .gte('end_date', now)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') return null; // No rows found
+    throw error;
+  }
+  return data as PromotionSettings;
+}
+
+// 프로모션 전체 조회 (어드민용)
+export async function getAllPromotions(): Promise<PromotionSettings[]> {
+  const { data, error } = await supabase
+    .from('xlarge_flower_promotions')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data as PromotionSettings[];
+}
+
+// 프로모션 생성
+export async function createPromotion(data: Omit<PromotionSettings, 'id' | 'created_at' | 'updated_at'>) {
+  const { data: promotion, error } = await supabase
+    .from('xlarge_flower_promotions')
+    .insert([data])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return promotion as PromotionSettings;
+}
+
+// 프로모션 수정
+export async function updatePromotion(id: string, data: Partial<PromotionSettings>) {
+  const { error } = await supabase
+    .from('xlarge_flower_promotions')
+    .update({ ...data, updated_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) throw error;
+  return true;
+}
+
+// 프로모션 삭제
+export async function deletePromotion(id: string) {
+  const { error } = await supabase
+    .from('xlarge_flower_promotions')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+  return true;
+}
+
+// ============================================
+// 가격 플랜 관련 타입 및 함수
+// ============================================
+
+export interface PricingPlan {
+  id?: string;
+  created_at?: string;
+  updated_at?: string;
+  title: string;                    // 플랜명 (예: Starter)
+  subtitle?: string;                // 부제목 (예: 테스트 도입을 위한 베이직 플랜)
+  price: number;                    // 기본 가격 (예: 3300000)
+  price_suffix?: string;            // 가격 접미사 (예: "~", "/월")
+  features: string[];               // 기능 목록
+  highlighted_features?: number[];  // 강조할 기능 인덱스 (예: [0, 2])
+  is_featured: boolean;             // 'Best Choice' 뱃지 노출 여부
+  badge_text?: string;              // 커스텀 뱃지 텍스트 (예: "BEST CHOICE", "NEW")
+  badge_color?: string;             // 뱃지 색상 (예: "#00F5A0")
+  button_text: string;              // 버튼 텍스트 (예: 시작하기)
+  button_action?: string;           // 버튼 액션 타입 (link, chat, custom)
+  button_link?: string;             // 버튼 링크 URL
+  chat_trigger?: string;            // 챗봇 트리거 ID
+  card_style?: string;              // 카드 스타일 (default, featured, purple, gold)
+  sort_order: number;               // 정렬 순서
+  is_active: boolean;               // 활성화 여부
+}
+
+// 활성화된 가격 플랜 조회 (프론트엔드용)
+export async function getPricingPlans(): Promise<PricingPlan[]> {
+  const { data, error } = await supabase
+    .from('xlarge_flower_pricing_plans')
+    .select('*')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true });
+
+  if (error) throw error;
+  return data as PricingPlan[];
+}
+
+// 전체 가격 플랜 조회 (어드민용)
+export async function getAllPricingPlans(): Promise<PricingPlan[]> {
+  const { data, error } = await supabase
+    .from('xlarge_flower_pricing_plans')
+    .select('*')
+    .order('sort_order', { ascending: true });
+
+  if (error) throw error;
+  return data as PricingPlan[];
+}
+
+// 가격 플랜 생성
+export async function createPricingPlan(data: Omit<PricingPlan, 'id' | 'created_at' | 'updated_at'>) {
+  const { data: plan, error } = await supabase
+    .from('xlarge_flower_pricing_plans')
+    .insert([data])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return plan as PricingPlan;
+}
+
+// 가격 플랜 수정
+export async function updatePricingPlan(id: string, data: Partial<PricingPlan>) {
+  const { error } = await supabase
+    .from('xlarge_flower_pricing_plans')
+    .update({ ...data, updated_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) throw error;
+  return true;
+}
+
+// 가격 플랜 삭제
+export async function deletePricingPlan(id: string) {
+  const { error } = await supabase
+    .from('xlarge_flower_pricing_plans')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+  return true;
+}
+
+// 가격 플랜 순서 일괄 업데이트
+export async function updatePricingPlanOrders(orders: { id: string; sort_order: number }[]) {
+  for (const order of orders) {
+    const { error } = await supabase
+      .from('xlarge_flower_pricing_plans')
+      .update({ sort_order: order.sort_order })
+      .eq('id', order.id);
+
+    if (error) throw error;
+  }
+  return true;
+}

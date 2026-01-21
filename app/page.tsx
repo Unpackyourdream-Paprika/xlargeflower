@@ -7,25 +7,32 @@ import VideoMarquee from '@/components/VideoMarquee';
 import ArtistLineup from '@/components/ArtistLineup';
 import MainHeroContainer from '@/components/hero/MainHeroContainer';
 import { triggerOpenChat } from '@/components/GlobalChatButton';
-import { getShowcaseVideos, ShowcaseVideo, getBeforeAfterAsset, BeforeAfterAsset, getLandingPortfolios, LandingPortfolio } from '@/lib/supabase';
+import { getShowcaseVideos, ShowcaseVideo, getBeforeAfterAsset, BeforeAfterAsset, getLandingPortfolios, LandingPortfolio, getActivePromotion, PromotionSettings, getPricingPlans, PricingPlan } from '@/lib/supabase';
+import PricingCard from '@/components/PricingCard';
 
 export default function Home() {
   const [showcaseVideos, setShowcaseVideos] = useState<ShowcaseVideo[]>([]);
   const [landingPortfolios, setLandingPortfolios] = useState<LandingPortfolio[]>([]);
   const [beforeAfterAsset, setBeforeAfterAsset] = useState<BeforeAfterAsset | null>(null);
   const [paymentType, setPaymentType] = useState<'card' | 'invoice'>('card');
+  const [promotion, setPromotion] = useState<PromotionSettings | null>(null);
+  const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [videos, portfolios, beforeAfter] = await Promise.all([
+        const [videos, portfolios, beforeAfter, promo, plans] = await Promise.all([
           getShowcaseVideos(),
           getLandingPortfolios(),
-          getBeforeAfterAsset()
+          getBeforeAfterAsset(),
+          getActivePromotion(),
+          getPricingPlans()
         ]);
         setShowcaseVideos(videos);
         setLandingPortfolios(portfolios);
         setBeforeAfterAsset(beforeAfter);
+        setPromotion(promo);
+        setPricingPlans(plans);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       }
@@ -33,8 +40,25 @@ export default function Home() {
     fetchData();
   }, []);
 
-  // 가격 계산 (세금계산서 발행 시 10% 할인)
+  // 가격 계산 (프로모션 할인 > 세금계산서 할인 순으로 적용)
   const getPrice = (basePrice: number) => {
+    let price = basePrice;
+
+    // 프로모션 할인 적용
+    if (promotion) {
+      price = Math.round(price * (100 - promotion.discount_rate) / 100);
+    }
+
+    // 세금계산서 할인 추가 적용
+    if (paymentType === 'invoice') {
+      price = Math.round(price * 0.9);
+    }
+
+    return price;
+  };
+
+  // 원래 가격 (프로모션 없을 때 세금계산서 할인만 적용)
+  const getOriginalPrice = (basePrice: number) => {
     if (paymentType === 'invoice') {
       return Math.round(basePrice * 0.9);
     }
@@ -559,14 +583,26 @@ export default function Home() {
               <h2 className="text-3xl sm:text-4xl font-bold text-white">귀사의 클래스에 맞는 플랜</h2>
               <p className="text-white/60 mt-4">프리미엄 AI 크리에이티브 솔루션</p>
 
+              {/* 프로모션 배너 */}
+              {promotion && (
+                <div className="mt-6 inline-block px-6 py-3 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/50 rounded-xl animate-pulse">
+                  <p className="text-sm font-bold">
+                    <span className="text-yellow-400">{promotion.badge_text || `${promotion.discount_rate}% OFF`}</span>
+                    <span className="text-white ml-2">기간 한정 특별 할인 진행중!</span>
+                  </p>
+                </div>
+              )}
+
               {/* 가격 비교 문구 */}
-              <div className="mt-6 inline-block px-6 py-3 bg-[#0A0A0A] border border-[#00F5A0]/30 rounded-xl">
-                <p className="text-sm text-white/80">
-                  <span className="text-[#00F5A0] font-bold">300만 원</span>으로
-                  <span className="text-white font-bold"> 3,000만 원</span>의 효과
-                  <span className="text-white/60"> (모델 섭외비 + 스튜디오 렌탈비 절감)</span>
-                </p>
-              </div>
+              {!promotion && (
+                <div className="mt-6 inline-block px-6 py-3 bg-[#0A0A0A] border border-[#00F5A0]/30 rounded-xl">
+                  <p className="text-sm text-white/80">
+                    <span className="text-[#00F5A0] font-bold">300만 원</span>으로
+                    <span className="text-white font-bold"> 3,000만 원</span>의 효과
+                    <span className="text-white/60"> (모델 섭외비 + 스튜디오 렌탈비 절감)</span>
+                  </p>
+                </div>
+              )}
 
               {/* 결제 방식 토글 */}
               <div className="mt-8 flex justify-center">
@@ -601,151 +637,191 @@ export default function Home() {
             </div>
           </ScrollReveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* STARTER */}
-            <ScrollReveal delay={0.1} direction="up">
-              <div className="card h-full flex flex-col">
-                <p className="label-tag mb-4">STARTER</p>
-                <div className="mb-1">
-                  {paymentType === 'invoice' && (
-                    <span className="text-white/40 text-sm line-through mr-2">₩3,300,000</span>
+          {/* DB에서 가져온 플랜 사용, 없으면 기본 플랜 표시 */}
+          {pricingPlans.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {pricingPlans.filter(p => p.card_style !== 'gold').map((plan, index) => (
+                <ScrollReveal key={plan.id} delay={0.1 * (index + 1)} direction="up">
+                  <PricingCard plan={plan} promotion={promotion} paymentType={paymentType} />
+                </ScrollReveal>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Fallback: 하드코딩 플랜 (DB 데이터가 없을 때) */}
+              {/* STARTER */}
+              <ScrollReveal delay={0.1} direction="up">
+                <div className="card h-full flex flex-col">
+                  {promotion && (
+                    <div className="mb-3">
+                      <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs font-bold rounded animate-pulse">
+                        {promotion.badge_text || `${promotion.discount_rate}% OFF`}
+                      </span>
+                    </div>
                   )}
-                  <h3 className="text-2xl font-bold text-white inline">
-                    ₩{formatPrice(getPrice(3300000))}~
-                  </h3>
+                  <p className="label-tag mb-4">STARTER</p>
+                  <div className="mb-1">
+                    {(paymentType === 'invoice' || promotion) && (
+                      <span className="text-white/40 text-sm line-through mr-2">₩{formatPrice(getOriginalPrice(3300000))}</span>
+                    )}
+                    <h3 className="text-2xl font-bold text-white inline">
+                      ₩{formatPrice(getPrice(3300000))}~
+                    </h3>
+                  </div>
+                  <p className="text-white/60 text-sm mb-6">테스트 도입을 위한 베이직 플랜</p>
+                  <ul className="feature-list mb-8 flex-1">
+                    <li>AI 인플루언서 영상 1종 (15초)</li>
+                    <li>기본 배경/의상 제공</li>
+                    <li>비독점 라이선스 (1년)</li>
+                    <li>수정 1회 (단순 편집)</li>
+                  </ul>
+                  <Link href="/products" className="btn-secondary w-full text-center block">
+                    시작하기
+                  </Link>
                 </div>
-                <p className="text-white/60 text-sm mb-6">테스트 도입을 위한 베이직 플랜</p>
-                <ul className="feature-list mb-8 flex-1">
-                  <li>AI 인플루언서 영상 1종 (15초)</li>
-                  <li>기본 배경/의상 제공</li>
-                  <li>비독점 라이선스 (1년)</li>
-                  <li>수정 1회 (단순 편집)</li>
-                </ul>
-                <Link href="/products" className="btn-secondary w-full text-center block">
-                  시작하기
-                </Link>
-              </div>
-            </ScrollReveal>
+              </ScrollReveal>
 
-            {/* GROWTH - Best Choice */}
-            <ScrollReveal delay={0.2} direction="up">
-              <div className="card-featured relative h-full flex flex-col">
-                <span className="absolute -top-3 left-6 px-3 py-1 text-xs font-bold tracking-wide bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black rounded-sm">
-                  BEST CHOICE
-                </span>
-                <p className="label-tag mb-4">GROWTH</p>
-                <div className="mb-1">
-                  {paymentType === 'invoice' && (
-                    <span className="text-white/40 text-sm line-through mr-2">₩5,500,000</span>
+              {/* GROWTH */}
+              <ScrollReveal delay={0.2} direction="up">
+                <div className="card-featured relative h-full flex flex-col">
+                  <span className="absolute -top-3 left-6 px-3 py-1 text-xs font-bold tracking-wide bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black rounded-sm">
+                    BEST CHOICE
+                  </span>
+                  {promotion && (
+                    <div className="mb-3">
+                      <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs font-bold rounded animate-pulse">
+                        {promotion.badge_text || `${promotion.discount_rate}% OFF`}
+                      </span>
+                    </div>
                   )}
-                  <h3 className="text-2xl font-bold text-white inline">
-                    ₩{formatPrice(getPrice(5500000))}
-                  </h3>
+                  <p className="label-tag mb-4">GROWTH</p>
+                  <div className="mb-1">
+                    {(paymentType === 'invoice' || promotion) && (
+                      <span className="text-white/40 text-sm line-through mr-2">₩{formatPrice(getOriginalPrice(5500000))}</span>
+                    )}
+                    <h3 className="text-2xl font-bold text-white inline">
+                      ₩{formatPrice(getPrice(5500000))}
+                    </h3>
+                  </div>
+                  <p className="text-white/60 text-sm mb-6">본격적인 성과를 위한 주력 플랜</p>
+                  <ul className="feature-list mb-8 flex-1">
+                    <li><strong className="text-white">영상 1종 + 바리에이션 3종</strong> (총 4개)</li>
+                    <li><strong className="text-white">브랜드 맞춤 커스텀</strong> (의상/PPL)</li>
+                    <li><strong className="text-[#00F5A0]">영구 소장 라이선스</strong></li>
+                    <li>전담 매니저 배정</li>
+                    <li>수정 2회</li>
+                  </ul>
+                  <button onClick={() => triggerOpenChat('growth_inquiry')} className="btn-primary w-full">
+                    도입 문의하기
+                  </button>
                 </div>
-                <p className="text-white/60 text-sm mb-6">본격적인 성과를 위한 주력 플랜</p>
-                <ul className="feature-list mb-8 flex-1">
-                  <li><strong className="text-white">영상 1종 + 바리에이션 3종</strong> (총 4개)</li>
-                  <li><strong className="text-white">브랜드 맞춤 커스텀</strong> (의상/PPL)</li>
-                  <li><strong className="text-[#00F5A0]">영구 소장 라이선스</strong></li>
-                  <li>전담 매니저 배정</li>
-                  <li>수정 2회</li>
-                </ul>
-                <button
-                  onClick={() => triggerOpenChat('growth_inquiry')}
-                  className="btn-primary w-full"
-                >
-                  도입 문의하기
-                </button>
-              </div>
-            </ScrollReveal>
+              </ScrollReveal>
 
-            {/* PERFORMANCE */}
-            <ScrollReveal delay={0.3} direction="up">
-              <div className="card h-full flex flex-col border-[#00D9F5]/30">
-                <p className="label-tag mb-4 text-[#00D9F5]">PERFORMANCE</p>
-                <div className="mb-1">
-                  {paymentType === 'invoice' && (
-                    <span className="text-white/40 text-sm line-through mr-2">₩9,000,000</span>
+              {/* PERFORMANCE */}
+              <ScrollReveal delay={0.3} direction="up">
+                <div className="card h-full flex flex-col border-[#00D9F5]/30">
+                  {promotion && (
+                    <div className="mb-3">
+                      <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs font-bold rounded animate-pulse">
+                        {promotion.badge_text || `${promotion.discount_rate}% OFF`}
+                      </span>
+                    </div>
                   )}
-                  <h3 className="text-2xl font-bold text-white inline">
-                    ₩{formatPrice(getPrice(9000000))}
-                  </h3>
+                  <p className="label-tag mb-4 text-[#00D9F5]">PERFORMANCE</p>
+                  <div className="mb-1">
+                    {(paymentType === 'invoice' || promotion) && (
+                      <span className="text-white/40 text-sm line-through mr-2">₩{formatPrice(getOriginalPrice(9000000))}</span>
+                    )}
+                    <h3 className="text-2xl font-bold text-white inline">
+                      ₩{formatPrice(getPrice(9000000))}
+                    </h3>
+                  </div>
+                  <p className="text-white/60 text-sm mb-6">고퀄리티 연출이 필요한 프리미엄 플랜</p>
+                  <ul className="feature-list mb-8 flex-1">
+                    <li><strong className="text-white">영상 2종 + 바리에이션 6종</strong> (총 8개)</li>
+                    <li>전문 디렉터의 고퀄리티 연출</li>
+                    <li><strong className="text-[#00F5A0]">성과 저조 시 소재 교체(AS) 1회</strong></li>
+                    <li>영구 소장 라이선스</li>
+                    <li>우선 제작 (Fast Track)</li>
+                  </ul>
+                  <button onClick={() => triggerOpenChat('performance_inquiry')} className="btn-secondary w-full text-center">
+                    도입 상담받기
+                  </button>
                 </div>
-                <p className="text-white/60 text-sm mb-6">고퀄리티 연출이 필요한 프리미엄 플랜</p>
-                <ul className="feature-list mb-8 flex-1">
-                  <li><strong className="text-white">영상 2종 + 바리에이션 6종</strong> (총 8개)</li>
-                  <li>전문 디렉터의 고퀄리티 연출</li>
-                  <li><strong className="text-[#00F5A0]">성과 저조 시 소재 교체(AS) 1회</strong></li>
-                  <li>영구 소장 라이선스</li>
-                  <li>우선 제작 (Fast Track)</li>
-                </ul>
-                <button
-                  onClick={() => triggerOpenChat('performance_inquiry')}
-                  className="btn-secondary w-full text-center"
-                >
-                  도입 상담받기
-                </button>
-              </div>
-            </ScrollReveal>
+              </ScrollReveal>
 
-            {/* PERFORMANCE ADS PACK - NEW */}
-            <ScrollReveal delay={0.4} direction="up">
-              <div className="card h-full flex flex-col bg-gradient-to-b from-[#1a1a1a] to-[#0A0A0A] border-purple-500/40">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-purple-400 text-xs font-bold tracking-wider">PERFORMANCE ADS</span>
-                  <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-[10px] font-bold rounded">NEW</span>
-                </div>
-                <div className="mb-1">
-                  {paymentType === 'invoice' && (
-                    <span className="text-white/40 text-sm line-through mr-2">₩15,000,000~</span>
+              {/* PERFORMANCE ADS */}
+              <ScrollReveal delay={0.4} direction="up">
+                <div className="card h-full flex flex-col bg-gradient-to-b from-[#1a1a1a] to-[#0A0A0A] border-purple-500/40">
+                  {promotion && (
+                    <div className="mb-3">
+                      <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs font-bold rounded animate-pulse">
+                        {promotion.badge_text || `${promotion.discount_rate}% OFF`}
+                      </span>
+                    </div>
                   )}
-                  <h3 className="text-2xl font-bold text-white inline">
-                    ₩{formatPrice(getPrice(15000000))}~
-                  </h3>
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-purple-400 text-xs font-bold tracking-wider">PERFORMANCE ADS</span>
+                    <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-[10px] font-bold rounded">NEW</span>
+                  </div>
+                  <div className="mb-1">
+                    {(paymentType === 'invoice' || promotion) && (
+                      <span className="text-white/40 text-sm line-through mr-2">₩{formatPrice(getOriginalPrice(15000000))}~</span>
+                    )}
+                    <h3 className="text-2xl font-bold text-white inline">
+                      ₩{formatPrice(getPrice(15000000))}~
+                    </h3>
+                  </div>
+                  <p className="text-purple-300/80 text-sm mb-6">영상 제작 + 광고 운영 올인원</p>
+                  <ul className="space-y-2 mb-8 flex-1">
+                    <li className="flex items-start gap-2 text-sm text-gray-300">
+                      <svg className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span><strong className="text-white">AI 모델 영상 제작 (5종)</strong></span>
+                    </li>
+                    <li className="flex items-start gap-2 text-sm text-gray-300">
+                      <svg className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>A/B 테스트용 바리에이션 (10종)</span>
+                    </li>
+                    <li className="flex items-start gap-2 text-sm text-gray-300">
+                      <svg className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span><strong className="text-purple-300">메타/틱톡/유튜브 광고 세팅</strong></span>
+                    </li>
+                    <li className="flex items-start gap-2 text-sm text-gray-300">
+                      <svg className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>타겟 오디언스 정밀 세팅</span>
+                    </li>
+                    <li className="flex items-start gap-2 text-sm text-gray-300">
+                      <svg className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>ROAS 분석 리포트 제공</span>
+                    </li>
+                  </ul>
+                  <p className="text-xs text-white/40 mb-4 text-center">영상만 만든다고 팔리지 않습니다.</p>
+                  <button onClick={() => triggerOpenChat('ads_package')} className="block w-full text-center py-3 rounded-full font-medium bg-gradient-to-r from-purple-500 to-purple-400 text-white hover:opacity-90 transition-all">
+                    광고 패키지 상담
+                  </button>
                 </div>
-                <p className="text-purple-300/80 text-sm mb-6">영상 제작 + 광고 운영 올인원</p>
-                <ul className="space-y-2 mb-8 flex-1">
-                  <li className="flex items-start gap-2 text-sm text-gray-300">
-                    <svg className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span><strong className="text-white">AI 모델 영상 제작 (5종)</strong></span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm text-gray-300">
-                    <svg className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span>A/B 테스트용 바리에이션 (10종)</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm text-gray-300">
-                    <svg className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span><strong className="text-purple-300">메타/틱톡/유튜브 광고 세팅</strong></span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm text-gray-300">
-                    <svg className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span>타겟 오디언스 정밀 세팅</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm text-gray-300">
-                    <svg className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span>ROAS 분석 리포트 제공</span>
-                  </li>
-                </ul>
-                <p className="text-xs text-white/40 mb-4 text-center">영상만 만든다고 팔리지 않습니다.</p>
-                <button
-                  onClick={() => triggerOpenChat('ads_package')}
-                  className="block w-full text-center py-3 rounded-full font-medium bg-gradient-to-r from-purple-500 to-purple-400 text-white hover:opacity-90 transition-all"
-                >
-                  광고 패키지 상담
-                </button>
+              </ScrollReveal>
+            </div>
+          )}
+
+          {/* VIP 플랜 (DB에서 gold 스타일인 것 또는 fallback) */}
+          {pricingPlans.filter(p => p.card_style === 'gold').map((plan) => (
+            <ScrollReveal key={plan.id} delay={0.5}>
+              <div className="mt-8">
+                <PricingCard plan={plan} promotion={promotion} paymentType={paymentType} />
               </div>
             </ScrollReveal>
-          </div>
+          ))}
 
           {/* VIP PARTNER - Full Width */}
           <ScrollReveal delay={0.5}>
