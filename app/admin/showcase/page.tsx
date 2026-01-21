@@ -248,7 +248,7 @@ export default function ShowcaseManagement() {
       {/* Navigation */}
       <nav className="bg-[#0A0A0A] border-b border-[#222] overflow-x-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-4 sm:gap-6 min-w-max">
+          <div className="flex gap-4 sm:gap-6 min-w-max items-center">
             <Link
               href="/admin"
               className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
@@ -262,10 +262,10 @@ export default function ShowcaseManagement() {
               주문 관리
             </Link>
             <Link
-              href="/admin/portfolio"
+              href="/admin/hero"
               className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
             >
-              포트폴리오
+              히어로
             </Link>
             <Link
               href="/admin/showcase"
@@ -274,17 +274,24 @@ export default function ShowcaseManagement() {
               쇼케이스
             </Link>
             <Link
-              href="/admin/hero"
-              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
-            >
-              히어로
-            </Link>
-            <Link
               href="/admin/before-after"
               className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
             >
               Before/After
             </Link>
+            <Link
+              href="/admin/landing-portfolio"
+              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
+            >
+              랜딩 포트폴리오
+            </Link>
+            <Link
+              href="/admin/portfolio"
+              className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"
+            >
+              포트폴리오
+            </Link>
+            <span className="text-gray-600 text-sm">|</span>
             <Link
               href="/admin/artists"
               className="py-4 border-b-2 border-transparent text-gray-500 hover:text-white font-medium text-sm transition-colors whitespace-nowrap"

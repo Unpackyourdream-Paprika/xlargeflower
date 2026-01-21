@@ -596,3 +596,98 @@ export async function deleteBeforeAfterAsset(id: string) {
   if (error) throw error;
   return true;
 }
+
+// ============================================
+// 랜딩 포트폴리오 3종 (REAL PORTFOLIO 섹션)
+// ============================================
+
+export interface LandingPortfolio {
+  id?: string;
+  created_at?: string;
+  updated_at?: string;
+  client_name: string;           // 예: "BEAUTY D사"
+  category: string;              // 예: "뷰티"
+  category_color?: string;       // 예: "#FF69B4"
+  campaign_date: string;         // 예: "2024.12 캠페인"
+  title: string;                 // 예: "인플루언서 대비 ROAS 3배 달성"
+  description?: string;          // 예: "기존 인플루언서 협찬 대비..."
+  video_url?: string;            // 영상 URL
+  thumbnail_url?: string;        // 썸네일 URL
+  metric_1_value?: string;       // 예: "+312%"
+  metric_1_label?: string;       // 예: "ROAS 상승"
+  metric_2_value?: string;       // 예: "₩4,200"
+  metric_2_label?: string;       // 예: "CPA 달성"
+  sort_order: number;            // 정렬 순서 (0, 1, 2)
+  is_active: boolean;
+}
+
+// 랜딩 포트폴리오 조회 (메인 페이지용 - 활성화된 3개)
+export async function getLandingPortfolios(): Promise<LandingPortfolio[]> {
+  const { data, error } = await supabase
+    .from('xlarge_flower_landing_portfolio')
+    .select('*')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+    .limit(3);
+
+  if (error) throw error;
+  return data as LandingPortfolio[];
+}
+
+// 랜딩 포트폴리오 전체 조회 (어드민용)
+export async function getAllLandingPortfolios(): Promise<LandingPortfolio[]> {
+  const { data, error } = await supabase
+    .from('xlarge_flower_landing_portfolio')
+    .select('*')
+    .order('sort_order', { ascending: true });
+
+  if (error) throw error;
+  return data as LandingPortfolio[];
+}
+
+// 랜딩 포트폴리오 생성
+export async function createLandingPortfolio(data: Omit<LandingPortfolio, 'id' | 'created_at' | 'updated_at'>) {
+  const { data: portfolio, error } = await supabase
+    .from('xlarge_flower_landing_portfolio')
+    .insert([data])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return portfolio as LandingPortfolio;
+}
+
+// 랜딩 포트폴리오 수정
+export async function updateLandingPortfolio(id: string, data: Partial<LandingPortfolio>) {
+  const { error } = await supabase
+    .from('xlarge_flower_landing_portfolio')
+    .update({ ...data, updated_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) throw error;
+  return true;
+}
+
+// 랜딩 포트폴리오 삭제
+export async function deleteLandingPortfolio(id: string) {
+  const { error } = await supabase
+    .from('xlarge_flower_landing_portfolio')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+  return true;
+}
+
+// 랜딩 포트폴리오 순서 일괄 업데이트
+export async function updateLandingPortfolioOrders(orders: { id: string; sort_order: number }[]) {
+  for (const order of orders) {
+    const { error } = await supabase
+      .from('xlarge_flower_landing_portfolio')
+      .update({ sort_order: order.sort_order })
+      .eq('id', order.id);
+
+    if (error) throw error;
+  }
+  return true;
+}

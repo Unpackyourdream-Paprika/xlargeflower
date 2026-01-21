@@ -7,24 +7,24 @@ import VideoMarquee from '@/components/VideoMarquee';
 import ArtistLineup from '@/components/ArtistLineup';
 import MainHeroContainer from '@/components/hero/MainHeroContainer';
 import { triggerOpenChat } from '@/components/GlobalChatButton';
-import { getShowcaseVideos, ShowcaseVideo, getFeaturedCaseStudies, XLargeFlowerPortfolio, getBeforeAfterAsset, BeforeAfterAsset } from '@/lib/supabase';
+import { getShowcaseVideos, ShowcaseVideo, getBeforeAfterAsset, BeforeAfterAsset, getLandingPortfolios, LandingPortfolio } from '@/lib/supabase';
 
 export default function Home() {
   const [showcaseVideos, setShowcaseVideos] = useState<ShowcaseVideo[]>([]);
-  const [caseStudies, setCaseStudies] = useState<XLargeFlowerPortfolio[]>([]);
+  const [landingPortfolios, setLandingPortfolios] = useState<LandingPortfolio[]>([]);
   const [beforeAfterAsset, setBeforeAfterAsset] = useState<BeforeAfterAsset | null>(null);
   const [paymentType, setPaymentType] = useState<'card' | 'invoice'>('card');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [videos, cases, beforeAfter] = await Promise.all([
+        const [videos, portfolios, beforeAfter] = await Promise.all([
           getShowcaseVideos(),
-          getFeaturedCaseStudies(),
+          getLandingPortfolios(),
           getBeforeAfterAsset()
         ]);
         setShowcaseVideos(videos);
-        setCaseStudies(cases);
+        setLandingPortfolios(portfolios);
         setBeforeAfterAsset(beforeAfter);
       } catch (error) {
         console.error('Failed to fetch data:', error);
@@ -240,139 +240,79 @@ export default function Home() {
             </div>
           </ScrollReveal>
 
-          {caseStudies.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {caseStudies.map((caseItem, index) => (
-                <ScrollReveal key={caseItem.id} delay={0.1 * (index + 1)} direction="up">
-                  <div className="group relative bg-[#0A0A0A] border border-white/10 rounded-2xl overflow-hidden hover:border-[#00F5A0]/30 transition-all duration-300">
-                    {/* Video/Image Area */}
-                    <div className="relative aspect-[9/16] max-h-[320px] overflow-hidden bg-[#111]">
-                      {caseItem.video_url ? (
-                        <video
-                          src={caseItem.video_url}
-                          className="w-full h-full object-cover"
-                          muted
-                          loop
-                          playsInline
-                          onMouseEnter={(e) => e.currentTarget.play()}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.pause();
-                            e.currentTarget.currentTime = 0;
-                          }}
-                        />
-                      ) : caseItem.thumbnail_url ? (
-                        <img
-                          src={caseItem.thumbnail_url}
-                          alt={caseItem.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-20 h-20 rounded-full bg-[#00F5A0]/10 flex items-center justify-center">
-                            <svg className="w-8 h-8 text-[#00F5A0]" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M8 5v14l11-7z"/>
-                            </svg>
-                          </div>
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent z-10 pointer-events-none" />
-
-                      {/* Client Logo or Name */}
-                      <div className="absolute top-4 left-4 z-20">
-                        {caseItem.client_logo_url ? (
-                          <img
-                            src={caseItem.client_logo_url}
-                            alt={caseItem.client_name || ''}
-                            className="h-8 object-contain bg-black/60 backdrop-blur-sm rounded-lg px-2 py-1"
-                          />
-                        ) : caseItem.client_name ? (
-                          <div className="px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-lg">
-                            <span className="text-white text-xs font-bold tracking-wider">{caseItem.client_name}</span>
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    {/* Info */}
-                    <div className="p-6">
-                      <div className="flex items-center gap-3 mb-4">
-                        <span
-                          className="px-2 py-1 text-xs font-bold rounded"
-                          style={{
-                            backgroundColor: caseItem.category_color ? `${caseItem.category_color}20` : 'rgba(0, 245, 160, 0.1)',
-                            color: caseItem.category_color || '#00F5A0'
-                          }}
-                        >
-                          {caseItem.category}
-                        </span>
-                        {caseItem.campaign_date && (
-                          <span className="text-white/40 text-xs">{caseItem.campaign_date}</span>
-                        )}
-                      </div>
-                      <h3 className="text-white font-bold text-lg mb-2">{caseItem.title}</h3>
-                      <p className="text-white/60 text-sm mb-4">{caseItem.description}</p>
-
-                      {/* Stats */}
-                      {(caseItem.metric_1_value || caseItem.metric_2_value) && (
-                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
-                          {caseItem.metric_1_value && (
-                            <div>
-                              <p className="text-2xl font-bold gradient-text">{caseItem.metric_1_value}</p>
-                              <p className="text-white/40 text-xs">{caseItem.metric_1_label}</p>
-                            </div>
-                          )}
-                          {caseItem.metric_2_value && (
-                            <div>
-                              <p className="text-2xl font-bold gradient-text">{caseItem.metric_2_value}</p>
-                              <p className="text-white/40 text-xs">{caseItem.metric_2_label}</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </ScrollReveal>
-              ))}
-            </div>
-          ) : (
-            /* 폴백: DB에 데이터가 없을 때 기본 카드 표시 */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[
-                {
-                  client: 'BEAUTY D사',
-                  category: '뷰티',
-                  categoryColor: '#00F5A0',
-                  date: '2024.12 캠페인',
-                  title: '인플루언서 대비 ROAS 3배 달성',
-                  desc: '기존 인플루언서 협찬 대비 동일 매체비로 전환율 3배 상승',
-                  metric1: { value: '+312%', label: 'ROAS 상승' },
-                  metric2: { value: '₩4,200', label: 'CPA 달성' }
-                },
-                {
-                  client: 'F&B M사',
-                  category: 'F&B',
-                  categoryColor: '#F97316',
-                  date: '2025.01 캠페인',
-                  title: 'CPA 67% 절감, 매출 2.5배',
-                  desc: '15,000원 → 5,000원 CPA 하락, 월 매출 2.5배 성장',
-                  metric1: { value: '-67%', label: 'CPA 절감' },
-                  metric2: { value: '2.5x', label: '매출 성장' }
-                },
-                {
-                  client: 'D2C C사',
-                  category: 'D2C',
-                  categoryColor: '#A855F7',
-                  date: '2024.11 ~ 현재',
-                  title: '1년간 영상 재사용, ROI 극대화',
-                  desc: '한 번 제작한 영상으로 12개월 광고 운영, 섭외비 절감',
-                  metric1: { value: '12개월', label: '영상 재사용' },
-                  metric2: { value: '₩0', label: '추가 섭외비' }
-                }
-              ].map((item, index) => (
-                <ScrollReveal key={index} delay={0.1 * (index + 1)} direction="up">
-                  <div className="group relative bg-[#0A0A0A] border border-white/10 rounded-2xl overflow-hidden hover:border-[#00F5A0]/30 transition-all duration-300">
-                    <div className="relative aspect-[9/16] max-h-[320px] overflow-hidden bg-[#111]">
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent z-10" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {(landingPortfolios.length > 0 ? landingPortfolios : [
+              // 폴백 데이터: DB에 데이터가 없을 때 기본 카드 표시
+              {
+                id: 'fallback-1',
+                client_name: 'BEAUTY D사',
+                category: '뷰티',
+                category_color: '#FF69B4',
+                campaign_date: '2024.12 캠페인',
+                title: '인플루언서 대비 ROAS 3배 달성',
+                description: '기존 인플루언서 협찬 대비 동일 매체비로 전환율 3배 상승',
+                metric_1_value: '+312%',
+                metric_1_label: 'ROAS 상승',
+                metric_2_value: '₩4,200',
+                metric_2_label: 'CPA 달성',
+                video_url: '',
+                thumbnail_url: '',
+                sort_order: 0,
+                is_active: true
+              },
+              {
+                id: 'fallback-2',
+                client_name: 'F&B M사',
+                category: 'F&B',
+                category_color: '#FFA500',
+                campaign_date: '2025.01 캠페인',
+                title: 'CPA 67% 절감, 매출 2.5배',
+                description: '15,000원 → 5,000원 CPA 하락, 월 매출 2.5배 성장',
+                metric_1_value: '-67%',
+                metric_1_label: 'CPA 절감',
+                metric_2_value: '2.5x',
+                metric_2_label: '매출 성장',
+                video_url: '',
+                thumbnail_url: '',
+                sort_order: 1,
+                is_active: true
+              },
+              {
+                id: 'fallback-3',
+                client_name: 'D2C C사',
+                category: 'D2C',
+                category_color: '#9B59B6',
+                campaign_date: '2024.11 ~ 현재',
+                title: '1년간 영상 재사용, ROI 극대화',
+                description: '한 번 제작한 영상으로 12개월 광고 운영, 섭외비 절감',
+                metric_1_value: '12개월',
+                metric_1_label: '영상 재사용',
+                metric_2_value: '₩0',
+                metric_2_label: '추가 섭외비',
+                video_url: '',
+                thumbnail_url: '',
+                sort_order: 2,
+                is_active: true
+              }
+            ] as LandingPortfolio[]).map((item, index) => (
+              <ScrollReveal key={item.id} delay={0.1 * (index + 1)} direction="up">
+                <div className="group relative bg-[#0A0A0A] border border-white/10 rounded-2xl overflow-hidden hover:border-[#00F5A0]/30 transition-all duration-300">
+                  {/* Video/Image Area - 1:1 비율 */}
+                  <div className="relative aspect-square overflow-hidden bg-[#111]">
+                    {item.video_url ? (
+                      <video
+                        src={item.video_url}
+                        className="w-full h-full object-cover"
+                        muted
+                        loop
+                        playsInline
+                        onMouseEnter={(e) => e.currentTarget.play()}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.pause();
+                          e.currentTarget.currentTime = 0;
+                        }}
+                      />
+                    ) : (
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="w-20 h-20 rounded-full bg-[#00F5A0]/10 flex items-center justify-center">
                           <svg className="w-8 h-8 text-[#00F5A0]" fill="currentColor" viewBox="0 0 24 24">
@@ -380,43 +320,58 @@ export default function Home() {
                           </svg>
                         </div>
                       </div>
-                      <div className="absolute top-4 left-4 z-20">
-                        <div className="px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-lg">
-                          <span className="text-white text-xs font-bold tracking-wider">{item.client}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-6">
-                      <div className="flex items-center gap-3 mb-4">
-                        <span
-                          className="px-2 py-1 text-xs font-bold rounded"
-                          style={{
-                            backgroundColor: `${item.categoryColor}20`,
-                            color: item.categoryColor
-                          }}
-                        >
-                          {item.category}
-                        </span>
-                        <span className="text-white/40 text-xs">{item.date}</span>
-                      </div>
-                      <h3 className="text-white font-bold text-lg mb-2">{item.title}</h3>
-                      <p className="text-white/60 text-sm mb-4">{item.desc}</p>
-                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
-                        <div>
-                          <p className="text-2xl font-bold gradient-text">{item.metric1.value}</p>
-                          <p className="text-white/40 text-xs">{item.metric1.label}</p>
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold gradient-text">{item.metric2.value}</p>
-                          <p className="text-white/40 text-xs">{item.metric2.label}</p>
-                        </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent z-10 pointer-events-none" />
+
+                    {/* Client Name */}
+                    <div className="absolute top-4 left-4 z-20">
+                      <div className="px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-lg">
+                        <span className="text-white text-xs font-bold tracking-wider">{item.client_name}</span>
                       </div>
                     </div>
                   </div>
-                </ScrollReveal>
-              ))}
-            </div>
-          )}
+
+                  {/* Info */}
+                  <div className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span
+                        className="px-2 py-1 text-xs font-bold rounded"
+                        style={{
+                          backgroundColor: item.category_color ? `${item.category_color}20` : 'rgba(0, 245, 160, 0.1)',
+                          color: item.category_color || '#00F5A0'
+                        }}
+                      >
+                        {item.category}
+                      </span>
+                      {item.campaign_date && (
+                        <span className="text-white/40 text-xs">{item.campaign_date}</span>
+                      )}
+                    </div>
+                    <h3 className="text-white font-bold text-lg mb-2">{item.title}</h3>
+                    <p className="text-white/60 text-sm mb-4">{item.description}</p>
+
+                    {/* Stats */}
+                    {(item.metric_1_value || item.metric_2_value) && (
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                        {item.metric_1_value && (
+                          <div>
+                            <p className="text-2xl font-bold gradient-text">{item.metric_1_value}</p>
+                            <p className="text-white/40 text-xs">{item.metric_1_label}</p>
+                          </div>
+                        )}
+                        {item.metric_2_value && (
+                          <div>
+                            <p className="text-2xl font-bold gradient-text">{item.metric_2_value}</p>
+                            <p className="text-white/40 text-xs">{item.metric_2_label}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
 
           {/* CTA */}
           <ScrollReveal delay={0.4}>
