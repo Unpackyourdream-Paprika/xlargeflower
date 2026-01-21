@@ -86,6 +86,14 @@ function generateRandomProfile(styleKeyword: string, gender: Gender): ModelProfi
   };
 }
 
+// 레퍼런스 이미지 타입
+interface ReferenceImage {
+  file: File;
+  preview: string;
+  base64: string;
+  mimeType: string;
+}
+
 export default function CustomModelModal({ isOpen, onClose }: CustomModelModalProps) {
   const [step, setStep] = useState<ModalStep>('SELECT');
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
@@ -95,6 +103,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
   const [modelProfile, setModelProfile] = useState<ModelProfile | null>(null);
   const [customModelName, setCustomModelName] = useState('');
   const [gender, setGender] = useState<Gender>('female'); // 성별 선택 (유지됨)
+  const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]); // 레퍼런스 이미지 (최대 2장)
 
   // Contact form state
   const [formData, setFormData] = useState({
@@ -118,9 +127,57 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
       setCustomModelName('');
       setFormData({ name: '', company: '', email: '', phone: '', message: '' });
       setIsSubmitted(false);
+      // 레퍼런스 이미지 preview URL 해제 및 초기화
+      referenceImages.forEach(img => URL.revokeObjectURL(img.preview));
+      setReferenceImages([]);
       // 성별(gender)은 초기화하지 않음 - 유지
     }
   }, [isOpen]);
+
+  // 레퍼런스 이미지 추가 핸들러
+  const handleReferenceImageAdd = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const newImages: ReferenceImage[] = [];
+
+    for (let i = 0; i < files.length && referenceImages.length + newImages.length < 2; i++) {
+      const file = files[i];
+      if (!file.type.startsWith('image/')) continue;
+
+      // base64로 변환
+      const base64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          // data:image/png;base64, 부분 제거
+          const base64Data = result.split(',')[1];
+          resolve(base64Data);
+        };
+        reader.readAsDataURL(file);
+      });
+
+      newImages.push({
+        file,
+        preview: URL.createObjectURL(file),
+        base64,
+        mimeType: file.type
+      });
+    }
+
+    setReferenceImages(prev => [...prev, ...newImages].slice(0, 2));
+    e.target.value = ''; // 같은 파일 다시 선택 가능하게
+  };
+
+  // 레퍼런스 이미지 삭제 핸들러
+  const handleReferenceImageRemove = (index: number) => {
+    setReferenceImages(prev => {
+      const newImages = [...prev];
+      URL.revokeObjectURL(newImages[index].preview);
+      newImages.splice(index, 1);
+      return newImages;
+    });
+  };
 
   // ESC 키로 모달 닫기
   useEffect(() => {
@@ -139,11 +196,6 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
 
   // AI 이미지 생성
   const handleGenerate = async () => {
-    if (!prompt.trim()) {
-      setError('원하는 스타일을 입력해주세요.');
-      return;
-    }
-
     // 이미 생성 중이면 무시
     if (isGenerating) return;
 
@@ -153,12 +205,19 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
     setModelProfile(null);
 
     try {
+      // 레퍼런스 이미지 데이터 준비
+      const refImagesData = referenceImages.map(img => ({
+        base64: img.base64,
+        mimeType: img.mimeType
+      }));
+
       const response = await fetch('/api/generate-model', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: prompt.trim(),
-          gender: gender
+          gender: gender,
+          referenceImages: refImagesData
         }),
       });
 
@@ -407,7 +466,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                   {/* Prompt Input */}
                   <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-400 mb-2">
-                      원하는 스타일
+                      원하는 스타일 <span className="text-white/40">(선택)</span>
                     </label>
                     <input
                       type="text"
@@ -433,11 +492,61 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                     </div>
                   </div>
 
+                  {/* Reference Images */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                      레퍼런스 이미지 <span className="text-white/40">(선택, 최대 2장)</span>
+                    </label>
+                    <p className="text-xs text-white/40 mb-3">
+                      원하는 스타일의 참고 이미지를 업로드하면 비슷한 느낌으로 생성됩니다.
+                    </p>
+
+                    <div className="flex gap-3">
+                      {/* 업로드된 이미지 미리보기 */}
+                      {referenceImages.map((img, index) => (
+                        <div key={index} className="relative w-20 h-20 rounded-lg overflow-hidden border border-[#333] group">
+                          <img
+                            src={img.preview}
+                            alt={`Reference ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleReferenceImageRemove(index)}
+                            className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                            disabled={isGenerating}
+                          >
+                            <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* 업로드 버튼 (2장 미만일 때만 표시) */}
+                      {referenceImages.length < 2 && (
+                        <label className={`w-20 h-20 rounded-lg border-2 border-dashed border-[#333] hover:border-purple-500/50 flex flex-col items-center justify-center cursor-pointer transition-colors ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                          <svg className="w-6 h-6 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          <span className="text-[10px] text-white/40 mt-1">추가</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleReferenceImageAdd}
+                            className="hidden"
+                            disabled={isGenerating}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Generate Button */}
                   <button
                     type="button"
                     onClick={handleGenerate}
-                    disabled={isGenerating || !prompt.trim()}
+                    disabled={isGenerating}
                     className="w-full py-4 rounded-xl font-bold text-black bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] hover:shadow-[0_0_30px_rgba(0,245,160,0.4)] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
                     {isGenerating ? (

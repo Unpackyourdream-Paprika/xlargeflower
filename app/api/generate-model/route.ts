@@ -1,19 +1,142 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Gemini 2.5 Flash Image Preview 모델 사용 (nanobanana와 동일)
+// Gemini 2.5 Flash Image Preview 모델 사용
 const MODEL = 'gemini-2.0-flash-exp-image-generation';
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
+// 디폴트 프롬프트 (하이패션 런웨이 모델 캐스팅 보드)
+const DEFAULT_PROMPT = `Create a realistic high-fashion runway model casting image.
+
+SUBJECT
+One female high-fashion runway model only.
+She must clearly read as a professional runway model,
+not a civilian, not commercial, not influencer-like.
+
+Ethnicity is RANDOM per generation:
+Asian or non-Asian.
+
+AGE & IMPRESSION
+Legally adult (18–22),
+but visually very young.
+Late-teen to early-twenties impression.
+
+FACIAL CHARACTER (CORE)
+The face must be striking, sharp, and memorable.
+
+Mandatory facial traits:
+– strong bone structure
+– defined cheekbones
+– sharp or elongated jawline
+– narrow or distinctive facial proportions
+– subtle asymmetry (fashion-level, not deformity)
+– intense, distant eyes
+– neutral, serious expression
+
+Prohibited facial traits:
+– soft or cute beauty
+– friendly smile
+– influencer or commercial prettiness
+– generic AI symmetry
+
+MODEL BODY TRAITS
+– tall, elongated proportions
+– long neck and limbs
+– narrow frame
+– strong vertical silhouette
+– clean, upright posture
+
+HAIR (FLEXIBLE BUT CONTROLLED)
+Hairstyle may vary freely:
+– tied hair (low ponytail, bun, pulled back)
+– short hair or bob
+– medium-length hair
+– long straight or lightly textured hair
+– center part or side part
+
+Hair angles, direction, and balance may vary naturally.
+
+Hair must feel:
+– fashionable
+– believable
+– runway-appropriate
+
+Hair must NOT be:
+– messy in an ugly way
+– extreme, sculptural, or art-hair
+– cartoonish or fantasy-styled
+
+HAIR COLOR
+Hair color is flexible.
+Natural tones are common.
+Uncommon or dyed tones are allowed
+if they still feel elegant, modern, and high-fashion.
+No neon or cosplay colors.
+
+EYES
+Eye color may vary naturally or subtly.
+Rare eye colors allowed if understated and editorial.
+
+CLOTHING (RUNWAY CASTING UNIFORM)
+Plain black fitted T-shirt.
+Black straight or slim jeans.
+Simple black shoes.
+No accessories.
+No jewelry.
+
+SCENE & LIGHTING
+Neutral studio.
+White or very light gray background.
+Soft, even, neutral studio lighting.
+No mood lighting.
+No cinematic drama.
+
+LAYOUT (CASTING BOARD STYLE)
+One image with three views:
+
+LEFT
+– Full-body front view (head to toe)
+
+RIGHT TOP
+– Upper-body portrait
+– Neutral, distant runway gaze
+
+RIGHT BOTTOM
+– Right-side profile
+– Clear jawline, nose, and neck silhouette
+
+All views must show the SAME model.
+
+CAMERA
+Eye-level camera.
+Natural lens perspective.
+No wide-angle distortion.
+
+STYLE & QUALITY
+Ultra-realistic photography.
+Professional high-fashion runway casting board quality.
+Clean, sharp, minimal.
+No illustration, no CG, no glamour retouching.
+
+ABSOLUTE FAILURE CONDITIONS
+If the model looks:
+– like a normal person
+– cute or friendly
+– influencer-like
+– fashion editorial gimmick
+
+the result is INVALID.
+
+FINAL INTENT
+A randomly generated but consistently striking
+female high-fashion runway model,
+very young in appearance,
+with a sharp, unconventional face,
+flexible but tasteful hairstyle,
+presented in a clean professional casting board layout.`;
+
 export async function POST(request: NextRequest) {
   try {
-    const { prompt, gender } = await request.json();
-
-    if (!prompt || typeof prompt !== 'string') {
-      return NextResponse.json(
-        { error: '프롬프트를 입력해주세요.' },
-        { status: 400 }
-      );
-    }
+    const { prompt, gender, referenceImages } = await request.json();
 
     const apiKey = process.env.GOOGLE_AI_API_KEY;
     if (!apiKey) {
@@ -26,38 +149,67 @@ export async function POST(request: NextRequest) {
 
     // 성별에 따른 프롬프트 조정
     const genderText = gender === 'male' ? 'male' : 'female';
-    const genderKorean = gender === 'male' ? '남성' : '여성';
 
-    // 프롬프트 강화: 모델 에이전시 컴포지트 카드 스타일 (전신 + 정면얼굴 + 측면얼굴)
-    const enhancedPrompt = `Create a ultra-realistic model agency composite card photo in square format (1:1 aspect ratio). Layout divided into two sections:
+    // 최종 프롬프트 구성: 사용자 프롬프트를 최상단에 배치
+    let finalPrompt = '';
 
-LEFT HALF (50%): Full body shot - ${genderText} Korean fashion model standing, full body from head to toe, wearing simple black outfit, neutral pose facing camera
+    // 1. 사용자 프롬프트가 있으면 최상단에 배치
+    if (prompt && prompt.trim()) {
+      finalPrompt = `USER REQUEST (HIGHEST PRIORITY):
+${prompt.trim()}
 
-RIGHT HALF (50%) divided vertically into two parts:
-- TOP RIGHT (25%): Close-up headshot portrait, face facing camera directly, front view of face
-- BOTTOM RIGHT (25%): Close-up headshot portrait, side profile view of face, looking left
+---
 
-CRITICAL Requirements:
-- ${genderText} Korean model, ${prompt}
-- SAME PERSON in all three photos with IDENTICAL face features
-- ULTRA PHOTOREALISTIC like real DSLR photography
-- Professional model agency composite card style (like "SHARP RUNWAY" reference)
-- Clean solid white or light gray studio background
-- Professional studio lighting, soft shadows
-- Model wearing simple black t-shirt or black outfit
-- High-end fashion model look, tall slim physique
-- 8K quality, sharp details, natural skin texture
-- NO anime, NO cartoon, NO illustration - REAL photography only`;
+`;
+    }
 
-    // Gemini API 요청 (nanobanana와 동일한 방식)
+    // 2. 성별 조정 (male인 경우)
+    let basePrompt = DEFAULT_PROMPT;
+    if (gender === 'male') {
+      basePrompt = basePrompt
+        .replace(/female/g, 'male')
+        .replace(/She must/g, 'He must')
+        .replace(/her /g, 'his ');
+    }
+
+    // 3. 디폴트 프롬프트 추가
+    finalPrompt += basePrompt;
+
+    // Gemini API 요청 - parts 배열 구성
+    const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [];
+
+    // 레퍼런스 이미지가 있으면 먼저 추가 (최대 2장)
+    if (referenceImages && Array.isArray(referenceImages) && referenceImages.length > 0) {
+      const validImages = referenceImages.slice(0, 2); // 최대 2장
+
+      for (const img of validImages) {
+        if (img && img.base64 && img.mimeType) {
+          parts.push({
+            inlineData: {
+              mimeType: img.mimeType,
+              data: img.base64
+            }
+          });
+        }
+      }
+
+      // 레퍼런스 이미지가 있으면 프롬프트에 안내 추가
+      if (parts.length > 0) {
+        finalPrompt = `REFERENCE IMAGES PROVIDED: Use the attached ${parts.length} image(s) as style/appearance reference. The generated model should have similar features, style, or mood as shown in the reference images.
+
+---
+
+${finalPrompt}`;
+      }
+    }
+
+    // 텍스트 프롬프트 추가
+    parts.push({ text: finalPrompt });
+
     const payload = {
       contents: [
         {
-          parts: [
-            {
-              text: enhancedPrompt,
-            },
-          ],
+          parts: parts,
         },
       ],
       generationConfig: {
@@ -109,9 +261,9 @@ CRITICAL Requirements:
       );
     }
 
-    // parts에서 이미지 데이터 찾기
-    const parts = candidates[0]?.content?.parts;
-    if (!parts || parts.length === 0) {
+    // responseParts에서 이미지 데이터 찾기
+    const responseParts = candidates[0]?.content?.parts;
+    if (!responseParts || responseParts.length === 0) {
       return NextResponse.json(
         { error: '이미지 데이터를 찾을 수 없습니다.' },
         { status: 500 }
@@ -119,7 +271,7 @@ CRITICAL Requirements:
     }
 
     // inlineData에서 base64 이미지 추출
-    const imagePart = parts.find((part: { inlineData?: { mimeType: string; data: string } }) => part.inlineData);
+    const imagePart = responseParts.find((part: { inlineData?: { mimeType: string; data: string } }) => part.inlineData);
     if (!imagePart || !imagePart.inlineData) {
       return NextResponse.json(
         { error: '이미지 데이터를 찾을 수 없습니다.' },
@@ -133,7 +285,7 @@ CRITICAL Requirements:
     return NextResponse.json({
       success: true,
       imageUrl,
-      prompt: enhancedPrompt,
+      prompt: finalPrompt,
     });
   } catch (error) {
     console.error('Generate model error:', error);
