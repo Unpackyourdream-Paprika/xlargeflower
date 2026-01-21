@@ -608,21 +608,21 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                       <div className="p-6">
                         {/* 이름 입력 */}
                         <div className="mb-4">
-                          <label className="block text-[10px] text-white/40 uppercase tracking-wider mb-2">
-                            MODEL NAME (직접 입력 가능)
-                          </label>
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="text"
-                              value={customModelName}
-                              onChange={(e) => setCustomModelName(e.target.value.toUpperCase())}
-                              placeholder={modelProfile.name}
-                              className="flex-1 px-4 py-2 bg-[#0A0A0A] border border-[#333] rounded-xl text-2xl font-bold text-white placeholder-white/30 focus:border-[#00F5A0] focus:outline-none transition-colors uppercase tracking-tight"
-                            />
-                            <span className="px-3 py-1 bg-[#00F5A0]/10 border border-[#00F5A0]/30 rounded-full text-xs text-[#00F5A0]">
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-[10px] text-white/40 uppercase tracking-wider">
+                              MODEL NAME (직접 입력 가능)
+                            </label>
+                            <span className="px-2 py-0.5 bg-[#00F5A0]/10 border border-[#00F5A0]/30 rounded-full text-[10px] text-[#00F5A0]">
                               EXCLUSIVE
                             </span>
                           </div>
+                          <input
+                            type="text"
+                            value={customModelName}
+                            onChange={(e) => setCustomModelName(e.target.value.toUpperCase())}
+                            placeholder={modelProfile.name}
+                            className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#333] rounded-xl text-xl sm:text-2xl font-bold text-white placeholder-white/30 focus:border-[#00F5A0] focus:outline-none transition-colors uppercase tracking-tight"
+                          />
                           {!customModelName && (
                             <p className="mt-1 text-xs text-white/40">
                               자동 생성: {modelProfile.name} ({modelProfile.nameKo})

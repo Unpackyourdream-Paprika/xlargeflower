@@ -4,65 +4,135 @@ import { NextRequest, NextResponse } from 'next/server';
 const MODEL = 'gemini-2.5-flash-image';
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
-// 디폴트 프롬프트 (리얼리스틱 패션 모델 포트레이트)
-const DEFAULT_PROMPT = `Create a realistic fashion model portrait photograph.
+// 디폴트 프롬프트 (하이패션 런웨이 모델 캐스팅 보드)
+const DEFAULT_PROMPT = `Create a realistic high-fashion runway model casting image.
 
 SUBJECT
-One female fashion model in a single full-body photograph.
-She should look like a real person photographed by a professional photographer.
-Natural, authentic appearance - not overly perfect or artificial.
+One female high-fashion runway model only.
+She must clearly read as a professional runway model,
+not a civilian, not commercial, not influencer-like.
 
-ETHNICITY
-Randomly Asian or non-Asian per generation.
+Ethnicity is RANDOM per generation:
+Asian or non-Asian.
 
-AGE
-Young adult, 20-25 years old appearance.
-Natural, youthful look.
+AGE & IMPRESSION
+Legally adult (18–22),
+but visually very young.
+Late-teen to early-twenties impression.
 
-FACE
-- Natural, photogenic face
-- Clear skin with natural texture
-- Subtle natural makeup or no makeup
-- Calm, confident expression
-- Natural eye contact with camera
+FACIAL CHARACTER (CORE)
+The face must be striking, sharp, and memorable.
 
-BODY
-- Slim, model-like proportions
-- Natural standing pose
-- Relaxed, confident posture
+Mandatory facial traits:
+– strong bone structure
+– defined cheekbones
+– sharp or elongated jawline
+– narrow or distinctive facial proportions
+– subtle asymmetry (fashion-level, not deformity)
+– intense, distant eyes
+– neutral, serious expression
 
-HAIR
-Natural hairstyle, can vary:
-- Straight, wavy, or slightly textured
-- Any natural hair color
-- Neatly styled but not overly done
+Prohibited facial traits:
+– soft or cute beauty
+– friendly smile
+– influencer or commercial prettiness
+– generic AI symmetry
 
-CLOTHING
-Simple, minimal outfit:
-- Plain white or black t-shirt
-- Dark jeans or simple pants
-- Clean, casual style
+MODEL BODY TRAITS
+– tall, elongated proportions
+– long neck and limbs
+– narrow frame
+– strong vertical silhouette
+– clean, upright posture
 
-SETTING
-- Professional photo studio
-- Clean white or light gray seamless background
-- Soft, even studio lighting
-- No harsh shadows
+HAIR (FLEXIBLE BUT CONTROLLED)
+Hairstyle may vary freely:
+– tied hair (low ponytail, bun, pulled back)
+– short hair or bob
+– medium-length hair
+– long straight or lightly textured hair
+– center part or side part
 
-CAMERA & QUALITY
-- Full-body shot, head to toe visible
-- Eye-level camera angle
-- Professional DSLR quality
-- Sharp focus on face and body
-- Natural color grading
+Hair angles, direction, and balance may vary naturally.
 
-IMPORTANT
-- Must look like a REAL photograph of a REAL person
-- No uncanny valley effects
-- No distorted features
-- No multiple views or split images
-- Single person, single pose, single photograph
-- Photorealistic quality only`;
+Hair must feel:
+– fashionable
+– believable
+– runway-appropriate
+
+Hair must NOT be:
+– messy in an ugly way
+– extreme, sculptural, or art-hair
+– cartoonish or fantasy-styled
+
+HAIR COLOR
+Hair color is flexible.
+Natural tones are common.
+Uncommon or dyed tones are allowed
+if they still feel elegant, modern, and high-fashion.
+No neon or cosplay colors.
+
+EYES
+Eye color may vary naturally or subtly.
+Rare eye colors allowed if understated and editorial.
+
+CLOTHING (RUNWAY CASTING UNIFORM)
+Plain black fitted T-shirt.
+Black straight or slim jeans.
+Simple black shoes.
+No accessories.
+No jewelry.
+
+SCENE & LIGHTING
+Neutral studio.
+White or very light gray background.
+Soft, even, neutral studio lighting.
+No mood lighting.
+No cinematic drama.
+
+LAYOUT (CASTING BOARD STYLE)
+One image with three views:
+
+LEFT
+– Full-body front view (head to toe)
+
+RIGHT TOP
+– Upper-body portrait
+– Neutral, distant runway gaze
+
+RIGHT BOTTOM
+– Right-side profile
+– Clear jawline, nose, and neck silhouette
+
+All views must show the SAME model.
+
+CAMERA
+Eye-level camera.
+Natural lens perspective.
+No wide-angle distortion.
+
+STYLE & QUALITY
+Ultra-realistic photography.
+Professional high-fashion runway casting board quality.
+Clean, sharp, minimal.
+No illustration, no CG, no glamour retouching.
+
+ABSOLUTE FAILURE CONDITIONS
+If the model looks:
+– like a normal person
+– cute or friendly
+– influencer-like
+– fashion editorial gimmick
+
+the result is INVALID.
+
+FINAL INTENT
+A randomly generated but consistently striking
+female high-fashion runway model,
+very young in appearance,
+with a sharp, unconventional face,
+flexible but tasteful hairstyle,
+presented in a clean professional casting board layout.`;
 
 export async function POST(request: NextRequest) {
   try {
