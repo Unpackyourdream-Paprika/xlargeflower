@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ScrollReveal from './animations/ScrollReveal';
 import { getArtistModels, ArtistModel, ArtistCategory } from '@/lib/supabase';
-import { triggerOpenChat } from './GlobalChatButton';
+import CustomModelModal from './CustomModelModal';
 
 // 카테고리 탭 정의
 const CATEGORIES: { key: ArtistCategory; label: string; labelKo: string }[] = [
@@ -235,14 +235,14 @@ function PlaceholderCard({ index }: { index: number }) {
 }
 
 // 커스텀 모델 제작 CTA 카드
-function CustomModelCard({ index }: { index: number }) {
+function CustomModelCard({ index, onOpenModal }: { index: number; onOpenModal: () => void }) {
   return (
     <ScrollReveal delay={index * 0.1} direction="up">
       <motion.div
         className="group relative cursor-pointer overflow-hidden rounded-2xl bg-gradient-to-b from-[#1a0a2e] to-[#0A0A0A] border border-purple-500/30 hover:border-[#00F5A0]/50 transition-all duration-500"
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.3 }}
-        onClick={() => triggerOpenChat('find_model')}
+        onClick={onOpenModal}
       >
         {/* 글로우 효과 */}
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
@@ -305,6 +305,7 @@ export default function ArtistLineup() {
   const [activeCategory, setActiveCategory] = useState<ArtistCategory>('ALL');
   const [isLoading, setIsLoading] = useState(true);
   const [useDemoData, setUseDemoData] = useState(false);
+  const [isCustomModelModalOpen, setIsCustomModelModalOpen] = useState(false);
 
   useEffect(() => {
     async function fetchArtists() {
@@ -449,7 +450,10 @@ export default function ArtistLineup() {
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <CustomModelCard index={filteredArtists.length} />
+                  <CustomModelCard
+                    index={filteredArtists.length}
+                    onOpenModal={() => setIsCustomModelModalOpen(true)}
+                  />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -463,6 +467,12 @@ export default function ArtistLineup() {
           </p>
         )}
       </div>
+
+      {/* Custom Model Modal */}
+      <CustomModelModal
+        isOpen={isCustomModelModalOpen}
+        onClose={() => setIsCustomModelModalOpen(false)}
+      />
     </section>
   );
 }

@@ -43,6 +43,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
+        <meta name="naver-site-verification" content="10b9b9b7a25c91eb7bcdf5221c87782d57917c45" />
         <link
           rel="stylesheet"
           as="style"
