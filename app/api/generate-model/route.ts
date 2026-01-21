@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Gemini 2.5 Flash Preview 모델 사용
-const MODEL = 'gemini-2.5-flash-preview-04-17';
+// Gemini 2.5 Flash Image 모델 사용 (나노 바나나)
+const MODEL = 'gemini-2.5-flash-image';
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
 // 디폴트 프롬프트 (리얼리스틱 패션 모델 포트레이트)
