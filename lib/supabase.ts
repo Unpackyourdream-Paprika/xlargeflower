@@ -723,8 +723,8 @@ export async function getActivePromotion(): Promise<PromotionSettings | null> {
     .single();
 
   if (error) {
-    if (error.code === 'PGRST116') return null; // No rows found
-    throw error;
+    // 테이블 없거나 데이터 없으면 null 반환
+    return null;
   }
   return data as PromotionSettings;
 }
@@ -808,7 +808,11 @@ export async function getPricingPlans(): Promise<PricingPlan[]> {
     .eq('is_active', true)
     .order('sort_order', { ascending: true });
 
-  if (error) throw error;
+  // 테이블이 없거나 에러 시 빈 배열 반환 (fallback 데이터 사용)
+  if (error) {
+    console.warn('Pricing plans table not found, using fallback');
+    return [];
+  }
   return data as PricingPlan[];
 }
 
