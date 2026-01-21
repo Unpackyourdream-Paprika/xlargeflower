@@ -98,7 +98,7 @@ export default function Home() {
                   <div className="absolute -top-3 left-6 z-10">
                     <span className="label-tag px-4 py-1.5 bg-[#0A0A0A]">RAW INPUT</span>
                   </div>
-                  <div className="bg-[#0A0A0A] border border-[#222222] rounded-xl p-8 h-full grayscale hover:grayscale-0 transition-all duration-500">
+                  <div className="bg-[#0A0A0A] border border-[#222222] rounded-xl p-8 h-full hover:grayscale transition-all duration-500">
                     <div className="aspect-video bg-[#111111] rounded-lg overflow-hidden mb-6">
                       <img
                         src="/images/nikedunk.webp"
