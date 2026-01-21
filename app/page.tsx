@@ -99,15 +99,12 @@ export default function Home() {
                     <span className="label-tag px-4 py-1.5 bg-[#0A0A0A]">RAW INPUT</span>
                   </div>
                   <div className="bg-[#0A0A0A] border border-[#222222] rounded-xl p-8 h-full grayscale hover:grayscale-0 transition-all duration-500">
-                    <div className="aspect-video bg-[#111111] rounded-lg border border-dashed border-[#333333] flex items-center justify-center mb-6">
-                      <div className="text-center">
-                        <div className="w-20 h-20 mx-auto mb-4 bg-[#1a1a1a] rounded-lg flex items-center justify-center">
-                          <svg className="w-10 h-10 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                        </div>
-                        <p className="text-white/40 text-sm">product.jpg</p>
-                      </div>
+                    <div className="aspect-video bg-[#111111] rounded-lg overflow-hidden mb-6">
+                      <img
+                        src="/images/nikedunk.webp"
+                        alt="원본 제품 사진"
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <p className="text-white font-bold text-center text-lg">원본 사진</p>
                     <p className="text-white/40 text-sm text-center mt-2">폰 촬영 OK</p>
