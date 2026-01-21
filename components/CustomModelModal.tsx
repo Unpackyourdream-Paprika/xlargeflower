@@ -489,8 +489,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
                         <div className="flex justify-between text-xs text-white/60">
                           <span>FULL BODY</span>
-                          <span>3/4 VIEW</span>
-                          <span>SIDE PROFILE</span>
+                          <span>FRONT / SIDE</span>
                         </div>
                       </div>
                     </div>

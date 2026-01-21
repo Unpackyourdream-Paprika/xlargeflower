@@ -28,24 +28,26 @@ export async function POST(request: NextRequest) {
     const genderText = gender === 'male' ? 'male' : 'female';
     const genderKorean = gender === 'male' ? '남성' : '여성';
 
-    // 프롬프트 강화: 실사 품질의 전신 3컷 (전신/3/4뷰/측면) - 정사각형 비율
-    const enhancedPrompt = `Create a ultra-realistic photography composite image in square format (1:1 aspect ratio). The image shows THREE separate full-body shots of the SAME ${genderKorean} Korean fashion model arranged horizontally side by side:
+    // 프롬프트 강화: 모델 에이전시 컴포지트 카드 스타일 (전신 + 정면얼굴 + 측면얼굴)
+    const enhancedPrompt = `Create a ultra-realistic model agency composite card photo in square format (1:1 aspect ratio). Layout divided into two sections:
 
-LEFT: Full body front view - model standing facing camera directly, full body from head to toe visible
-CENTER: 3/4 angle view - model standing at 45 degree angle, full body visible, natural pose
-RIGHT: Side profile view - model standing sideways, full body silhouette visible
+LEFT HALF (50%): Full body shot - ${genderText} Korean fashion model standing, full body from head to toe, wearing simple black outfit, neutral pose facing camera
 
-Requirements:
+RIGHT HALF (50%) divided vertically into two parts:
+- TOP RIGHT (25%): Close-up headshot portrait, face facing camera directly, front view of face
+- BOTTOM RIGHT (25%): Close-up headshot portrait, side profile view of face, looking left
+
+CRITICAL Requirements:
 - ${genderText} Korean model, ${prompt}
-- ULTRA PHOTOREALISTIC, looks like actual photograph taken with DSLR camera
-- Professional fashion model physique, tall and slim
-- Wearing simple elegant outfit (black or neutral toned clothing)
-- Clean solid gray or white studio background
-- Professional studio lighting with soft shadows
-- Same person with CONSISTENT face, body, and outfit across all three views
-- High-end fashion editorial quality, like photos from modeling agency portfolio
-- 8K resolution quality, sharp details, natural skin texture
-- NO anime, NO cartoon, NO illustration - ONLY photorealistic human photography`;
+- SAME PERSON in all three photos with IDENTICAL face features
+- ULTRA PHOTOREALISTIC like real DSLR photography
+- Professional model agency composite card style (like "SHARP RUNWAY" reference)
+- Clean solid white or light gray studio background
+- Professional studio lighting, soft shadows
+- Model wearing simple black t-shirt or black outfit
+- High-end fashion model look, tall slim physique
+- 8K quality, sharp details, natural skin texture
+- NO anime, NO cartoon, NO illustration - REAL photography only`;
 
     // Gemini API 요청 (nanobanana와 동일한 방식)
     const payload = {
