@@ -21,8 +21,9 @@ export default function VerticalMarquee({
   const baseY = useMotionValue(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // 아이템을 3번 반복하여 무한 루프 효과
-  const repeatedItems = [...items, ...items, ...items];
+  // 아이템을 최소 3번 반복하여 무한 루프 효과 (1개일 때는 더 많이 반복)
+  const repeatCount = items.length === 1 ? 6 : 3;
+  const repeatedItems = Array(repeatCount).fill(items).flat();
   const itemHeight = 280; // 대략적인 카드 높이 + gap
   const totalHeight = items.length * itemHeight;
 
