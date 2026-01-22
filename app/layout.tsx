@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'XLARGE | 매출을 부르는 AI 광고 모델 & 숏폼 소재 제작 솔루션',
     description: '인플루언서 거품을 뺀 합리적 비용. 초상권 걱정 없는 브랜드 전속 AI 모델로 귀사의 ROAS를 극대화하세요.',
-    images: ['/og-image.svg'],
+    images: ['/images/xlargeflower_og.png'],
     type: 'website',
     locale: 'ko_KR',
     siteName: 'XLARGE',
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'XLARGE | 매출을 부르는 AI 광고 모델 & 숏폼 소재 제작 솔루션',
     description: '인플루언서 거품을 뺀 합리적 비용. 초상권 걱정 없는 브랜드 전속 AI 모델로 귀사의 ROAS를 극대화하세요.',
-    images: ['/og-image.svg'],
+    images: ['/images/xlargeflower_og.png'],
   },
   robots: {
     index: true,
