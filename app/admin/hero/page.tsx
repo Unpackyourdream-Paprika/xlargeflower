@@ -256,22 +256,61 @@ export default function HeroManagement() {
           continue;
         }
 
-        setUploadStatus(`[${i + 1}/${totalFiles}] ${file.name} 업로드 중...`);
-
-        // Upload to Cloudinary
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const uploadRes = await fetch('/api/upload-video', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!uploadRes.ok) {
-          throw new Error('Cloudinary 업로드 실패');
+        // 파일 크기 체크 (100MB 제한)
+        const maxSize = 100 * 1024 * 1024; // 100MB
+        if (file.size > maxSize) {
+          setError(`${file.name}의 크기가 너무 큽니다. 100MB 이하의 파일만 업로드 가능합니다. (현재: ${Math.round(file.size / 1024 / 1024)}MB)`);
+          continue;
         }
 
-        const result = await uploadRes.json();
+        setUploadStatus(`[${i + 1}/${totalFiles}] ${file.name} 업로드 중... (${Math.round(file.size / 1024 / 1024)}MB)`);
+
+        // 클라이언트 직접 업로드 (큰 파일 지원)
+        // 1. 서명 받기
+        const signRes = await fetch('/api/upload-video');
+        if (!signRes.ok) {
+          throw new Error('서명 생성 실패');
+        }
+        const { signature, timestamp, cloudName, apiKey } = await signRes.json();
+
+        // 2. Cloudinary에 직접 업로드
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('signature', signature);
+        formData.append('timestamp', timestamp.toString());
+        formData.append('api_key', apiKey);
+        formData.append('folder', 'xlarge-showcase');
+
+        const uploadRes = await fetch(
+          `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`,
+          {
+            method: 'POST',
+            body: formData,
+          }
+        );
+
+        if (!uploadRes.ok) {
+          const errorData = await uploadRes.json().catch(() => ({}));
+          throw new Error(errorData.error?.message || `업로드 실패 (${uploadRes.status}): 파일이 너무 크거나 서버 오류가 발생했습니다.`);
+        }
+
+        const uploadResult = await uploadRes.json();
+
+        // 3. URL 생성
+        const videoUrl = uploadResult.secure_url;
+        const webpUrl = videoUrl
+          .replace('/upload/', '/upload/w_480,q_auto,f_webp,fl_awebp/')
+          .replace(/\.[^.]+$/, '.webp');
+        const thumbnailUrl = videoUrl
+          .replace('/upload/', '/upload/w_720,q_auto,so_0,f_webp/')
+          .replace(/\.[^.]+$/, '.webp');
+
+        const result = {
+          videoUrl,
+          webpUrl,
+          thumbnailUrl,
+          publicId: uploadResult.public_id,
+        };
 
         // Get next sort order
         const maxSortOrder = assets.reduce((max, a) => Math.max(max, a.sort_order || 0), 0);
