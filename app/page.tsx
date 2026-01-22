@@ -846,7 +846,7 @@ export default function Home() {
 
           {/* VAT Notice */}
           <p className="text-center text-white/40 text-sm mt-8">
-            ※ 모든 금액은 VAT 별도이며, 착수금 50% 납입 시 프로젝트가 시작됩니다.
+            ※ 모든 금액은 VAT 별도이며, 착수금 50% 납입 시 프로젝트가 시작됩니다. (50% 이상 할인 기간에는 전액 선결제)
           </p>
         </div>
       </section>
