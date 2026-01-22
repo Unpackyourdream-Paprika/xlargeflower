@@ -68,6 +68,14 @@ export default function Home() {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('ko-KR').format(price);
   };
+
+  // 프로모션 종료 날짜 포맷
+  const formatEndDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${month}/${day}`;
+  };
   return (
     <div className="min-h-screen bg-[#050505] main-content">
       {/* Hero Section - Dynamic Layout */}
@@ -588,7 +596,12 @@ export default function Home() {
                 <div className="mt-6 inline-block px-6 py-3 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/50 rounded-xl animate-pulse">
                   <p className="text-sm font-bold">
                     <span className="text-yellow-400">{promotion.badge_text || `${promotion.discount_rate}% OFF`}</span>
-                    <span className="text-white ml-2">기간 한정 특별 할인 진행중!</span>
+                    <span className="text-white ml-2">
+                      {promotion.end_date
+                        ? `${formatEndDate(promotion.end_date)}까지 특별 할인 진행중!`
+                        : '기간 한정 특별 할인 진행중!'
+                      }
+                    </span>
                   </p>
                 </div>
               )}
