@@ -116,6 +116,7 @@ html, body {
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  text-align: center;
 }
 
 .btn-primary::before {
