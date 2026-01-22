@@ -1,8 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { submitContact } from '@/lib/supabase';
+
+// 상품명 매핑
+const PRODUCT_NAMES: { [key: string]: string } = {
+  'STARTER': 'STARTER 플랜',
+  'GROWTH': 'GROWTH 플랜',
+  'PERFORMANCE': 'PERFORMANCE 플랜',
+  'PERFORMANCE_ADS': 'PERFORMANCE ADS 패키지',
+  'VIP_PARTNER': 'VIP PARTNER 플랜'
+};
+
+// SearchParams를 사용하는 컴포넌트
+function ContactForm({ onProductChange }: { onProductChange: (product: string) => void }) {
+  const searchParams = useSearchParams();
+  const productParam = searchParams.get('product');
+
+  useEffect(() => {
+    if (productParam && PRODUCT_NAMES[productParam]) {
+      onProductChange(PRODUCT_NAMES[productParam]);
+    }
+  }, [productParam, onProductChange]);
+
+  return null;
+}
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -10,8 +34,17 @@ export default function ContactPage() {
     company: '',
     email: '',
     phone: '',
-    message: ''
+    message: '',
+    selectedProduct: ''
   });
+
+  const handleProductChange = (product: string) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedProduct: product
+    }));
+  };
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -27,7 +60,7 @@ export default function ContactPage() {
         email: formData.email,
         phone: formData.phone || null,
         budget: null,
-        product_interest: null,
+        product_interest: formData.selectedProduct || null,
         message: formData.message
       });
       setIsSubmitted(true);
@@ -41,6 +74,11 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-[#050505]">
+      {/* Suspense로 searchParams 처리 */}
+      <Suspense fallback={null}>
+        <ContactForm onProductChange={handleProductChange} />
+      </Suspense>
+
       {/* Header */}
       <header className="bg-[#0A0A0A] border-b border-[#222] sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -192,6 +230,27 @@ export default function ContactPage() {
                         placeholder="010-1234-5678"
                       />
                     </div>
+                  </div>
+
+                  {/* 관심 상품 선택 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                      관심 상품
+                    </label>
+                    <select
+                      value={formData.selectedProduct}
+                      onChange={(e) => setFormData({ ...formData, selectedProduct: e.target.value })}
+                      className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white focus:border-[#00F5A0] focus:outline-none transition-colors appearance-none cursor-pointer"
+                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23666'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.5rem' }}
+                    >
+                      <option value="">선택하세요 (선택사항)</option>
+                      <option value="STARTER 플랜">STARTER 플랜</option>
+                      <option value="GROWTH 플랜">GROWTH 플랜</option>
+                      <option value="PERFORMANCE 플랜">PERFORMANCE 플랜</option>
+                      <option value="PERFORMANCE ADS 패키지">PERFORMANCE ADS 패키지</option>
+                      <option value="VIP PARTNER 플랜">VIP PARTNER 플랜</option>
+                      <option value="기타 문의">기타 문의</option>
+                    </select>
                   </div>
 
                   <div>

@@ -675,7 +675,7 @@ export default function Home() {
                     <li>비독점 라이선스 (1년)</li>
                     <li>수정 1회 (단순 편집)</li>
                   </ul>
-                  <Link href="/products" className="btn-secondary w-full text-center block">
+                  <Link href="/contact?product=STARTER" className="btn-secondary w-full text-center block">
                     시작하기
                   </Link>
                 </div>
@@ -684,7 +684,7 @@ export default function Home() {
               {/* GROWTH */}
               <ScrollReveal delay={0.2} direction="up">
                 <div className="card-featured relative h-full flex flex-col">
-                  <span className="absolute -top-3 left-6 px-3 py-1 text-xs font-bold tracking-wide bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black rounded-sm">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 text-xs font-bold tracking-wide bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black rounded-sm whitespace-nowrap">
                     BEST CHOICE
                   </span>
                   {promotion && (
@@ -711,9 +711,9 @@ export default function Home() {
                     <li>전담 매니저 배정</li>
                     <li>수정 2회</li>
                   </ul>
-                  <button onClick={() => triggerOpenChat('growth_inquiry')} className="btn-primary w-full">
-                    도입 문의하기
-                  </button>
+                  <Link href="/contact?product=GROWTH" className="btn-primary w-full text-center block">
+                    시작하기
+                  </Link>
                 </div>
               </ScrollReveal>
 
@@ -744,9 +744,9 @@ export default function Home() {
                     <li>영구 소장 라이선스</li>
                     <li>우선 제작 (Fast Track)</li>
                   </ul>
-                  <button onClick={() => triggerOpenChat('performance_inquiry')} className="btn-secondary w-full text-center">
-                    도입 상담받기
-                  </button>
+                  <Link href="/contact?product=PERFORMANCE" className="btn-secondary w-full text-center block">
+                    시작하기
+                  </Link>
                 </div>
               </ScrollReveal>
 
@@ -806,9 +806,9 @@ export default function Home() {
                     </li>
                   </ul>
                   <p className="text-xs text-white/40 mb-4 text-center">영상만 만든다고 팔리지 않습니다.</p>
-                  <button onClick={() => triggerOpenChat('ads_package')} className="block w-full text-center py-3 rounded-full font-medium bg-gradient-to-r from-purple-500 to-purple-400 text-white hover:opacity-90 transition-all">
-                    광고 패키지 상담
-                  </button>
+                  <Link href="/contact?product=PERFORMANCE_ADS" className="block w-full text-center py-3 rounded-full font-medium bg-gradient-to-r from-purple-500 to-purple-400 text-white hover:opacity-90 transition-all">
+                    시작하기
+                  </Link>
                 </div>
               </ScrollReveal>
             </div>
