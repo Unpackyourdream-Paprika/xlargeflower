@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { submitContact } from '@/lib/supabase';
@@ -47,6 +47,31 @@ export default function ContactPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const productOptions = [
+    { value: '', label: '선택하세요 (선택사항)' },
+    { value: 'STARTER 플랜', label: 'STARTER 플랜' },
+    { value: 'GROWTH 플랜', label: 'GROWTH 플랜' },
+    { value: 'PERFORMANCE 플랜', label: 'PERFORMANCE 플랜' },
+    { value: 'PERFORMANCE ADS 패키지', label: 'PERFORMANCE ADS 패키지' },
+    { value: 'VIP PARTNER 플랜', label: 'VIP PARTNER 플랜' },
+    { value: '기타 문의', label: '기타 문의' }
+  ];
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // 드롭다운 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -232,25 +257,51 @@ export default function ContactPage() {
                     </div>
                   </div>
 
-                  {/* 관심 상품 선택 */}
-                  <div>
+                  {/* 관심 상품 선택 - 커스텀 드롭다운 */}
+                  <div className="relative" ref={dropdownRef}>
                     <label className="block text-sm font-medium text-gray-400 mb-2">
                       관심 상품
                     </label>
-                    <select
-                      value={formData.selectedProduct}
-                      onChange={(e) => setFormData({ ...formData, selectedProduct: e.target.value })}
-                      className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white focus:border-[#00F5A0] focus:outline-none transition-colors appearance-none cursor-pointer"
-                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23666'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.5rem' }}
+                    <button
+                      type="button"
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white focus:border-[#00F5A0] focus:outline-none transition-colors text-left flex items-center justify-between"
                     >
-                      <option value="">선택하세요 (선택사항)</option>
-                      <option value="STARTER 플랜">STARTER 플랜</option>
-                      <option value="GROWTH 플랜">GROWTH 플랜</option>
-                      <option value="PERFORMANCE 플랜">PERFORMANCE 플랜</option>
-                      <option value="PERFORMANCE ADS 패키지">PERFORMANCE ADS 패키지</option>
-                      <option value="VIP PARTNER 플랜">VIP PARTNER 플랜</option>
-                      <option value="기타 문의">기타 문의</option>
-                    </select>
+                      <span className={formData.selectedProduct ? 'text-white' : 'text-gray-500'}>
+                        {formData.selectedProduct || '선택하세요 (선택사항)'}
+                      </span>
+                      <svg
+                        className={`w-5 h-5 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    {/* 드롭다운 메뉴 */}
+                    {isDropdownOpen && (
+                      <div className="absolute z-50 w-full mt-2 bg-[#111] border border-[#333] rounded-xl overflow-hidden shadow-lg">
+                        {productOptions.map((option) => (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => {
+                              setFormData({ ...formData, selectedProduct: option.value });
+                              setIsDropdownOpen(false);
+                            }}
+                            className={`w-full px-4 py-3 text-left transition-colors ${
+                              formData.selectedProduct === option.value
+                                ? 'bg-[#00F5A0]/20 text-[#00F5A0]'
+                                : 'text-white hover:bg-[#222]'
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div>
