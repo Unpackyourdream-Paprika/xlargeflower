@@ -9,9 +9,10 @@ interface PricingCardProps {
   plan: PricingPlan;
   promotion?: PromotionSettings | null;
   paymentType: 'card' | 'invoice';
+  onPlanSelect?: (planName: string) => void;
 }
 
-export default function PricingCard({ plan, promotion, paymentType }: PricingCardProps) {
+export default function PricingCard({ plan, promotion, paymentType, onPlanSelect }: PricingCardProps) {
   const formatPrice = (price: number) => new Intl.NumberFormat('ko-KR').format(price);
 
   // 가격 계산 (프로모션 할인 > 세금계산서 할인 순으로 적용)
@@ -89,6 +90,14 @@ export default function PricingCard({ plan, promotion, paymentType }: PricingCar
 
     if (plan.button_action === 'chat' && plan.chat_trigger) {
       triggerOpenChat(plan.chat_trigger as ChatContext);
+    } else if (onPlanSelect) {
+      // 컨택트 폼으로 스크롤하고 플랜 선택
+      onPlanSelect(plan.title);
+      // 컨택트 폼으로 스크롤
+      const contactSection = document.getElementById('contact-form');
+      if (contactSection) {
+        contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
   };
 

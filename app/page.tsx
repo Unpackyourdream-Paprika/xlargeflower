@@ -125,6 +125,11 @@ export default function Home() {
       setIsSubmitting(false);
     }
   };
+
+  // 플랜 선택 핸들러
+  const handlePlanSelect = (planName: string) => {
+    setFormData({ ...formData, selectedProduct: planName });
+  };
   return (
     <div className="min-h-screen bg-[#050505] main-content">
       {/* Hero Section - Dynamic Layout */}
@@ -682,7 +687,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {pricingPlans.filter(p => p.card_style !== 'gold').map((plan, index) => (
                 <ScrollReveal key={plan.id} delay={0.1 * (index + 1)} direction="up">
-                  <PricingCard plan={plan} promotion={promotion} paymentType={paymentType} />
+                  <PricingCard plan={plan} promotion={promotion} paymentType={paymentType} onPlanSelect={handlePlanSelect} />
                 </ScrollReveal>
               ))}
             </div>
@@ -970,7 +975,7 @@ export default function Home() {
 
 
       {/* Contact Form Section */}
-      <section className="section-spacing bg-[#050505]">
+      <section id="contact-form" className="section-spacing bg-[#050505]">
         <div className="max-w-4xl mx-auto px-6">
           <ScrollReveal>
             <div className="bg-[#0A0A0A] border border-[#222] rounded-2xl p-8">
