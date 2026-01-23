@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { PricingPlan, PromotionSettings } from '@/lib/supabase';
 import { triggerOpenChat, ChatContext } from '@/components/GlobalChatButton';
 import { trackConversion } from '@/lib/analytics';
@@ -88,6 +87,7 @@ export default function PricingCard({ plan, promotion, paymentType, onPlanSelect
     // GA4 + Meta Pixel 전환 추적
     trackConversion.planCheckoutClick(plan.title, finalPrice);
 
+    // 항상 컨택트 폼으로 스크롤 (chat 버튼 제외)
     if (plan.button_action === 'chat' && plan.chat_trigger) {
       triggerOpenChat(plan.chat_trigger as ChatContext);
     } else if (onPlanSelect) {
@@ -116,15 +116,9 @@ export default function PricingCard({ plan, promotion, paymentType, onPlanSelect
             <h3 className="text-2xl font-bold text-white mb-2">{plan.subtitle}</h3>
             <p className="text-[#FFD700]/80 text-sm">{plan.features?.join(' + ')}</p>
           </div>
-          {plan.button_action === 'link' ? (
-            <Link href={plan.button_link || '/contact'} className={`shrink-0 ${getButtonClass()}`}>
-              {plan.button_text}
-            </Link>
-          ) : (
-            <button onClick={handleButtonClick} className={`shrink-0 ${getButtonClass()}`}>
-              {plan.button_text}
-            </button>
-          )}
+          <button onClick={handleButtonClick} className={`shrink-0 ${getButtonClass()}`}>
+            {plan.button_text}
+          </button>
         </div>
       </div>
     );
@@ -197,16 +191,10 @@ export default function PricingCard({ plan, promotion, paymentType, onPlanSelect
         </ul>
       )}
 
-      {/* Button */}
-      {plan.button_action === 'link' ? (
-        <Link href={plan.button_link || '/products'} className={getButtonClass()}>
-          {plan.button_text}
-        </Link>
-      ) : (
-        <button onClick={handleButtonClick} className={getButtonClass()}>
-          {plan.button_text}
-        </button>
-      )}
+      {/* Button - 항상 버튼으로 처리 (컨택트 폼 스크롤) */}
+      <button onClick={handleButtonClick} className={getButtonClass()}>
+        {plan.button_text}
+      </button>
     </div>
   );
 }
