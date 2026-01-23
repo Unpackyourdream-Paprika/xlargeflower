@@ -413,6 +413,7 @@ export interface HeroMediaAsset {
   thumbnail_url: string;
   video_url: string;
   thumbnail_webp_url?: string;
+  blurhash?: string;  // BlurHash 문자열 (20-30 bytes)
   sort_order: number;
   is_active: boolean;
 }

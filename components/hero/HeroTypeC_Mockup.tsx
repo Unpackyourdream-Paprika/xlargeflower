@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import HeroTextContent from './HeroTextContent';
 import PhoneMockupFrame from './PhoneMockupFrame';
 import { HeroMediaAsset } from '@/lib/supabase';
+import { decode } from 'blurhash';
 
 // iOS 저전력 모드 대응 비디오 재생 함수
 function playVideoSafely(video: HTMLVideoElement) {
@@ -34,13 +35,35 @@ function optimizeVideoUrl(url: string, isMobile: boolean): string {
   return url.replace('/upload/', `/upload/${transformation}/`);
 }
 
-// Mux-style: 극소량 픽셀화 이미지를 base64 Data URI로 변환
-// 네트워크 요청 없이 HTML에 인라인 삽입
+// BlurHash를 canvas로 디코딩해서 Data URI 생성
+// 네트워크 요청 0, HTML 인라인
+function getBlurHashDataUrl(blurhash: string | undefined, width: number, height: number): string {
+  if (!blurhash) {
+    // BlurHash 없으면 Cloudinary 폴백
+    return '';
+  }
+
+  try {
+    const pixels = decode(blurhash, width, height);
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return '';
+
+    const imageData = ctx.createImageData(width, height);
+    imageData.data.set(pixels);
+    ctx.putImageData(imageData, 0, 0);
+
+    return canvas.toDataURL('image/jpeg', 0.1);
+  } catch (e) {
+    return '';
+  }
+}
+
+// Cloudinary 폴백 (BlurHash 없을 때)
 function getPosterUrl(url: string): string {
   if (!url.includes('cloudinary.com')) return '';
-
-  // 8x14px 픽셀화 + 최저 품질로 1kb 미만
-  // e_pixelate:10 = 10x10 픽셀 블록으로 모자이크
   return url.replace('/upload/', '/upload/w_8,h_14,c_fill,e_pixelate:10,f_jpg,q_1,so_0/');
 }
 
@@ -66,9 +89,34 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [nextIndex, setNextIndex] = useState(1);
   const [isDissolving, setIsDissolving] = useState(false);
+  const [blurDataUrl, setBlurDataUrl] = useState<string>('');
+  const [nextBlurDataUrl, setNextBlurDataUrl] = useState<string>('');
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+
+  const currentAsset = assets[currentIndex];
+  const nextAsset = assets[nextIndex];
+
+  // BlurHash를 Data URI로 변환 (클라이언트 사이드)
+  useEffect(() => {
+    if (currentAsset?.blurhash) {
+      const dataUrl = getBlurHashDataUrl(currentAsset.blurhash, 32, 56);
+      setBlurDataUrl(dataUrl);
+    } else if (currentAsset) {
+      // 폴백
+      setBlurDataUrl(getPosterUrl(currentAsset.video_url));
+    }
+  }, [currentIndex, currentAsset]);
+
+  useEffect(() => {
+    if (nextAsset?.blurhash) {
+      const dataUrl = getBlurHashDataUrl(nextAsset.blurhash, 32, 56);
+      setNextBlurDataUrl(dataUrl);
+    } else if (nextAsset) {
+      setNextBlurDataUrl(getPosterUrl(nextAsset.video_url));
+    }
+  }, [nextIndex, nextAsset]);
 
   const nextAssetIndex = useCallback((current: number) => {
     return (current + 1) % assets.length;
@@ -144,9 +192,6 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
     };
   }, []);
 
-  const currentAsset = assets[currentIndex];
-  const nextAsset = assets[nextIndex];
-
   return (
     <div ref={containerRef} className="relative z-10 w-full min-h-screen flex items-center">
       {/* max-w-7xl 컨테이너로 navbar와 기준점 맞춤 */}
@@ -169,20 +214,19 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
           <PhoneMockupFrame>
             {assets.length > 0 && currentAsset ? (
               <div className="relative w-full h-full">
-                {/* Mux-style Blur Placeholder - 극소량 픽셀화 이미지 (네트워크 요청 최소화) */}
-                <img
-                  src={getPosterUrl(currentAsset.video_url)}
-                  alt=""
-                  fetchPriority="high"
-                  loading="eager"
-                  decoding="async"
-                  className="absolute inset-0 w-full h-full object-cover z-0"
-                  style={{
-                    imageRendering: 'pixelated',
-                    filter: 'blur(8px)',
-                    transform: 'scale(1.1)'
-                  }}
-                />
+                {/* BlurHash Placeholder - 네트워크 요청 0, HTML 인라인 */}
+                {blurDataUrl && (
+                  <img
+                    src={blurDataUrl}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover z-0"
+                    style={{
+                      imageRendering: 'pixelated',
+                      filter: 'blur(20px)',
+                      transform: 'scale(1.1)'
+                    }}
+                  />
+                )}
 
                 {/* Current Video - 즉시 스트리밍 시작 */}
                 <div
@@ -212,20 +256,19 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                     className="absolute inset-0 transition-opacity duration-800 ease-in-out opacity-100 z-20"
                     style={{ transitionDuration: '800ms' }}
                   >
-                    {/* Next Blur Placeholder */}
-                    <img
-                      src={getPosterUrl(nextAsset.video_url)}
-                      alt=""
-                      fetchPriority="high"
-                      loading="eager"
-                      decoding="async"
-                      className="absolute inset-0 w-full h-full object-cover"
-                      style={{
-                        imageRendering: 'pixelated',
-                        filter: 'blur(8px)',
-                        transform: 'scale(1.1)'
-                      }}
-                    />
+                    {/* Next BlurHash Placeholder */}
+                    {nextBlurDataUrl && (
+                      <img
+                        src={nextBlurDataUrl}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-cover"
+                        style={{
+                          imageRendering: 'pixelated',
+                          filter: 'blur(20px)',
+                          transform: 'scale(1.1)'
+                        }}
+                      />
+                    )}
                     <video
                       key={`next-${nextAsset.id}`}
                       src={optimizeVideoUrl(nextAsset.video_url, isMobile)}
