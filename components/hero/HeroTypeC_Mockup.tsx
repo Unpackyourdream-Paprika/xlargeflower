@@ -21,21 +21,21 @@ function playVideoSafely(video: HTMLVideoElement) {
   }
 }
 
-// Cloudinary URL 최적화 함수 - MP4 유지 (호환성)
+// Cloudinary URL 최적화 함수 - 히어로 영상은 최대한 빠르게 로드
 function optimizeVideoUrl(url: string, isMobile: boolean): string {
   if (!url.includes('cloudinary.com')) return url;
-  // 모바일: 낮은 해상도 + 비트레이트 제한
-  // 데스크톱: 적정 해상도
+  // 모바일: 더 낮은 비트레이트로 빠른 로딩
+  // 데스크톱: 적당한 품질 유지하면서 빠르게
   const transformation = isMobile
-    ? 'w_270,h_480,c_limit,q_auto:eco,br_400k'
-    : 'w_360,h_640,c_limit,q_auto:low,br_800k';
+    ? 'w_270,h_480,c_limit,q_auto:low,br_300k'
+    : 'w_360,h_640,c_limit,q_auto:low,br_600k';
   return url.replace('/upload/', `/upload/${transformation}/`);
 }
 
-// WebP 포스터 URL 생성
+// WebP 포스터 URL 생성 - 작은 해상도로 즉시 표시
 function getPosterUrl(url: string): string {
   if (!url.includes('cloudinary.com')) return '';
-  return url.replace('/upload/', '/upload/w_360,h_640,c_limit,f_webp,q_auto,so_0/');
+  return url.replace('/upload/', '/upload/w_270,h_480,c_limit,f_webp,q_40,so_0/');
 }
 
 // 모바일 감지 훅
@@ -167,6 +167,7 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                 <img
                   src={getPosterUrl(currentAsset.video_url)}
                   alt=""
+                  fetchPriority="high"
                   className="absolute inset-0 w-full h-full object-cover z-0"
                 />
 
@@ -185,7 +186,7 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                     autoPlay
                     muted
                     playsInline
-                    preload={isMobile ? 'metadata' : 'auto'}
+                    preload="auto"
                     onEnded={handleVideoEnded}
                     onLoadedData={(e) => playVideoSafely(e.currentTarget)}
                     onCanPlay={(e) => playVideoSafely(e.currentTarget)}
@@ -203,6 +204,7 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                     <img
                       src={getPosterUrl(nextAsset.video_url)}
                       alt=""
+                      fetchPriority="high"
                       className="absolute inset-0 w-full h-full object-cover"
                     />
                     <video
@@ -212,7 +214,7 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                       autoPlay
                       muted
                       playsInline
-                      preload={isMobile ? 'metadata' : 'auto'}
+                      preload="auto"
                       onLoadedData={(e) => playVideoSafely(e.currentTarget)}
                       onCanPlay={(e) => playVideoSafely(e.currentTarget)}
                       className="w-full h-full object-cover relative z-10"

@@ -35,11 +35,11 @@ export default function HeroMediaCard({
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
 
-  // Cloudinary 비디오 URL 최적화 - 모바일에서 더 낮은 품질
+  // Cloudinary 비디오 URL 최적화 - 히어로가 아닌 카드는 지연 로드
   const optimizedVideoUrl = videoUrl.includes('cloudinary.com')
     ? videoUrl.replace('/upload/', isMobile
-        ? '/upload/w_240,q_auto:eco,br_300k/'
-        : '/upload/w_360,q_auto:low/')
+        ? '/upload/w_240,q_auto:eco,br_250k/'
+        : '/upload/w_360,q_auto:eco,br_500k/')
     : videoUrl;
 
   // IntersectionObserver로 뷰포트 진입 감지
