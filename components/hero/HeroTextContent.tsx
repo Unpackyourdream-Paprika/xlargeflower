@@ -27,10 +27,10 @@ export default function HeroTextContent() {
         style={{ fontSize: 'clamp(1.875rem, 4vw, 3.75rem)' }}
       >
         <span className="block" style={{ wordBreak: 'keep-all' }}>
-          모델 섭외 없는
+          상상했던 모든 컨셉,
         </span>
         <span className="block" style={{ wordBreak: 'keep-all' }}>
-          AI 숏폼 광고 제작
+          이곳에선 현실이 됩니다.
         </span>
       </h1>
 
@@ -41,7 +41,7 @@ export default function HeroTextContent() {
         {currentDescription}
       </p>
 
-      <div className="mt-8 lg:mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+      <div className="mt-8 lg:mt-10 hidden lg:flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
         <Link href="/portfolio" className="btn-primary text-base lg:text-lg whitespace-nowrap">
           제작 가능한 영상 보기
         </Link>

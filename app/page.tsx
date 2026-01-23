@@ -31,6 +31,8 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [showBottomSheet, setShowBottomSheet] = useState(false);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
 
   const productOptions = [
     { value: '', label: '선택하세요 (선택사항)' },
@@ -62,6 +64,25 @@ export default function Home() {
       }
     };
     fetchData();
+  }, []);
+
+  // Scroll listener for bottom sheet visibility
+  useEffect(() => {
+    const handleScroll = () => {
+      const howItWorksSection = document.querySelector('[data-section="how-it-works"]');
+      if (howItWorksSection) {
+        const rect = howItWorksSection.getBoundingClientRect();
+        // 섹션의 상단이 뷰포트 상단 근처(80% 지점)에 도달했을 때 표시
+        // 섹션보다 위로 스크롤하면 다시 숨김
+        const triggerPoint = window.innerHeight * 0.8;
+        const isInView = rect.top < triggerPoint;
+        setShowBottomSheet(isInView);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Initial check
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   // 가격 계산 (프로모션 할인 > 세금계산서 할인 순으로 적용)
@@ -130,6 +151,17 @@ export default function Home() {
   const handlePlanSelect = (planName: string) => {
     setFormData({ ...formData, selectedProduct: planName });
   };
+
+  // 바텀 시트 열기/닫기
+  const openContactModal = () => {
+    setIsContactModalOpen(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeContactModal = () => {
+    setIsContactModalOpen(false);
+    document.body.style.overflow = '';
+  };
   return (
     <div className="min-h-screen bg-[#050505] main-content">
       {/* Hero Section - Dynamic Layout */}
@@ -142,14 +174,14 @@ export default function Home() {
       <ArtistLineup />
 
       {/* Before & After Section */}
-      <section className="section-spacing bg-[#050505]">
+      <section className="section-spacing bg-[#050505]" data-section="how-it-works">
         <div className="max-w-7xl mx-auto px-6">
           <ScrollReveal>
             <div className="text-center mb-20">
               <p className="label-tag mb-4">HOW IT WORKS</p>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white">
-                XLARGE를 통하면<br />
-                당신의 제품이 릴스. 광고 영상이 됩니다.
+                제품 이미지를 보내주시면,<br />
+                AI가 릴스·광고 영상으로 변환해드립니다.
               </h2>
             </div>
           </ScrollReveal>
@@ -1125,18 +1157,205 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Sticky Mobile CTA */}
-      <div className="sticky-mobile-cta">
+      {/* Sticky Mobile CTA - HOW IT WORKS 섹션부터 표시 */}
+      <div className={`sticky-mobile-cta transition-transform duration-300 ${showBottomSheet ? 'translate-y-0' : 'translate-y-full'}`}>
         <button
           onClick={() => {
             trackConversion.consultClick('sticky_mobile_cta');
-            triggerOpenChat('vip_consult');
+            openContactModal();
           }}
           className="btn-primary w-full text-center"
         >
-          VIP 상담 신청하기
+          문의
         </button>
       </div>
+
+      {/* Contact Form Bottom Sheet Modal */}
+      {isContactModalOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] animate-fadeIn"
+            onClick={closeContactModal}
+          />
+
+          {/* Bottom Sheet */}
+          <div className="fixed inset-x-0 bottom-0 z-[101] animate-slideUp">
+            <div className="bg-[#0A0A0A] border-t border-[#222] rounded-t-3xl max-h-[85vh] overflow-y-auto">
+              {/* Handle Bar */}
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-12 h-1 bg-gray-600 rounded-full" />
+              </div>
+
+              {/* Header */}
+              <div className="sticky top-0 bg-[#0A0A0A] border-b border-[#222] px-6 py-4 flex items-center justify-between">
+                <h2 className="text-xl font-bold text-white">도입 문의 / 견적서 요청</h2>
+                <button
+                  onClick={closeContactModal}
+                  className="w-8 h-8 rounded-full bg-[#111] border border-[#333] flex items-center justify-center hover:bg-[#222] transition-colors"
+                >
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="px-6 py-6">
+                <p className="text-gray-500 mb-6 text-sm">
+                  고액 결제는 담당 매니저가 견적서 및 세금계산서 발행을 도와드립니다.
+                  <br />
+                  <span className="text-gray-600">담당자가 확인 후 빠르게 연락드립니다.</span>
+                </p>
+
+                {isSubmitted ? (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] rounded-full flex items-center justify-center mx-auto mb-6">
+                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">문의가 접수되었습니다!</h3>
+                    <p className="text-gray-400 mb-6">빠른 시일 내에 연락드리겠습니다.</p>
+                    <button
+                      onClick={closeContactModal}
+                      className="px-6 py-3 bg-[#111] border border-[#333] text-white rounded-xl hover:border-[#00F5A0]/50 transition-colors"
+                    >
+                      닫기
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                          이름 <span className="text-[#00F5A0]">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
+                          placeholder="홍길동"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                          셀러 or 회사명
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.company}
+                          onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                          className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
+                          placeholder="(주)회사명"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                          이메일 <span className="text-[#00F5A0]">*</span>
+                        </label>
+                        <input
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
+                          placeholder="email@example.com"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                          연락처
+                        </label>
+                        <input
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
+                          placeholder="010-1234-5678"
+                        />
+                      </div>
+                    </div>
+
+                    {/* 관심 상품 선택 */}
+                    <div className="relative">
+                      <label className="block text-sm font-medium text-gray-400 mb-2">
+                        관심 상품
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                        className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white focus:border-[#00F5A0] focus:outline-none transition-colors text-left flex items-center justify-between"
+                      >
+                        <span className={formData.selectedProduct ? 'text-white' : 'text-gray-500'}>
+                          {formData.selectedProduct || '선택하세요 (선택사항)'}
+                        </span>
+                        <svg
+                          className={`w-5 h-5 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+
+                      {isDropdownOpen && (
+                        <div className="absolute z-50 w-full mt-2 bg-[#111] border border-[#333] rounded-xl overflow-hidden shadow-lg max-h-60 overflow-y-auto">
+                          {productOptions.map((option) => (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => {
+                                setFormData({ ...formData, selectedProduct: option.value });
+                                setIsDropdownOpen(false);
+                              }}
+                              className={`w-full px-4 py-3 text-left transition-colors ${
+                                formData.selectedProduct === option.value
+                                  ? 'bg-[#00F5A0]/20 text-[#00F5A0]'
+                                  : 'text-white hover:bg-[#222]'
+                              }`}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-2">
+                        문의 내용 <span className="text-[#00F5A0]">*</span>
+                      </label>
+                      <textarea
+                        value={formData.message}
+                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                        rows={4}
+                        className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors resize-none"
+                        placeholder="어떤 영상이 필요하신지 자유롭게 말씀해주세요."
+                        required
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full btn-primary disabled:opacity-50"
+                    >
+                      {isSubmitting ? '전송 중...' : '문의 보내기'}
+                    </button>
+                  </form>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
