@@ -10,12 +10,12 @@ interface PhoneMockupFrameProps {
 export default function PhoneMockupFrame({ children, className = '' }: PhoneMockupFrameProps) {
   return (
     <div className={`relative ${className}`}>
-      {/* Phone wrapper */}
-      <div className="relative">
+      {/* Phone wrapper - 패딩 추가로 glow와 버튼이 안쪽에 유지 */}
+      <div className="relative px-2">
         {/* Phone body - iPhone style */}
         <div className="relative w-[280px] sm:w-[300px] lg:w-[320px] bg-[#1a1a1a] rounded-[45px] p-[10px] shadow-2xl shadow-black/60">
-          {/* Outer glow */}
-          <div className="absolute -inset-1 bg-gradient-to-br from-[#00F5A0]/20 via-transparent to-[#00D9F5]/20 rounded-[50px] blur-xl opacity-60" />
+          {/* Outer glow - 부모 안쪽에 유지 */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#00F5A0]/20 via-transparent to-[#00D9F5]/20 rounded-[50px] blur-lg opacity-60" />
 
           {/* Phone frame border */}
           <div className="relative bg-[#0a0a0a] rounded-[38px] p-[3px] border border-[#333]">
@@ -36,12 +36,12 @@ export default function PhoneMockupFrame({ children, className = '' }: PhoneMock
             </div>
           </div>
 
-          {/* Side buttons - Volume */}
-          <div className="absolute left-[-2px] top-[100px] w-[3px] h-[30px] bg-[#333] rounded-l" />
-          <div className="absolute left-[-2px] top-[140px] w-[3px] h-[50px] bg-[#333] rounded-l" />
+          {/* Side buttons - Volume - 안쪽에 배치 */}
+          <div className="absolute left-0 top-[100px] w-[2px] h-[30px] bg-[#333] rounded-l" />
+          <div className="absolute left-0 top-[140px] w-[2px] h-[50px] bg-[#333] rounded-l" />
 
           {/* Side button - Power */}
-          <div className="absolute right-[-2px] top-[120px] w-[3px] h-[60px] bg-[#333] rounded-r" />
+          <div className="absolute right-0 top-[120px] w-[2px] h-[60px] bg-[#333] rounded-r" />
         </div>
 
         {/* Reflection effect */}
