@@ -34,6 +34,7 @@ interface VideoCardProps {
 
 function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -42,9 +43,9 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
     ? src.replace('/upload/', '/upload/w_280,h_500,c_limit,q_auto:low/')
     : src;
 
-  // 포스터/썸네일 이미지 URL (모바일에서는 이것만 표시)
-  const posterUrl = src.includes('cloudinary.com')
-    ? src.replace('/upload/', '/upload/w_180,h_320,c_limit,f_webp,q_70,so_0/')
+  // 비디오 첫 프레임 썸네일 (Cloudinary 자동 추출)
+  const thumbnailUrl = src.includes('cloudinary.com')
+    ? src.replace('/upload/', '/upload/w_180,h_320,c_fill,so_0,f_jpg,q_auto:eco/').replace('.mp4', '.jpg')
     : '';
 
   // 비디오 재생 함수 - 데스크톱 전용
@@ -91,16 +92,20 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
       onMouseEnter={() => !isMobile && setIsHovered(true)}
       onMouseLeave={() => !isMobile && setIsHovered(false)}
     >
-      {/* 모바일: 정적 이미지만 표시 (비디오 로드 없음) */}
-      {isMobile ? (
+      {/* 썸네일 - 비디오 로딩 완료 전까지 표시 */}
+      {thumbnailUrl && (
         <img
-          src={posterUrl}
+          src={thumbnailUrl}
           alt=""
-          className="w-full h-full object-cover"
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+            !isMobile && isVideoLoaded ? 'opacity-0' : 'opacity-100'
+          }`}
           loading="lazy"
         />
-      ) : (
-        /* 데스크톱: 비디오 재생 */
+      )}
+
+      {/* 데스크톱: 비디오 재생 */}
+      {!isMobile && (
         <video
           ref={videoRef}
           autoPlay
@@ -108,9 +113,9 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
           loop
           playsInline
           preload="metadata"
-          poster={posterUrl}
           onLoadedData={(e) => playVideo(e.currentTarget)}
-          className="w-full h-full object-cover"
+          onCanPlay={() => setIsVideoLoaded(true)}
+          className="w-full h-full object-cover relative z-10"
           src={optimizedVideoUrl}
         />
       )}
@@ -332,14 +337,6 @@ export default function VideoMarquee({ videos }: VideoMarqueeProps) {
       ref={containerRef}
       className="py-16 md:py-24 overflow-hidden bg-[#050505] relative"
     >
-      {/* 좌우 그라데이션 오버레이 (비디오 있을 때만) */}
-      {hasVideos && (
-        <>
-          <div className="absolute top-0 bottom-0 left-0 w-16 bg-gradient-to-r from-[#050505] to-transparent z-20 pointer-events-none" />
-          <div className="absolute top-0 bottom-0 right-0 w-16 bg-gradient-to-l from-[#050505] to-transparent z-20 pointer-events-none" />
-        </>
-      )}
-
       {/* 섹션 헤더 */}
       <div className="text-center mb-12 px-6 relative z-30">
         <p className="label-tag mb-4">AI-GENERATED CREATIVES</p>
