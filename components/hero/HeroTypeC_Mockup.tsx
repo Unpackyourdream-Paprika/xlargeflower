@@ -21,21 +21,21 @@ function playVideoSafely(video: HTMLVideoElement) {
   }
 }
 
-// Cloudinary URL 최적화 함수 - 히어로 영상은 최대한 빠르게 로드
+// Framer 스타일: 초저용량 버전으로 즉시 로드 후 고품질로 전환
 function optimizeVideoUrl(url: string, isMobile: boolean): string {
   if (!url.includes('cloudinary.com')) return url;
-  // 모바일: 더 낮은 비트레이트로 빠른 로딩
-  // 데스크톱: 적당한 품질 유지하면서 빠르게
+  // 매우 낮은 비트레이트 + 작은 해상도로 즉시 스트리밍 시작
   const transformation = isMobile
-    ? 'w_270,h_480,c_limit,q_auto:low,br_300k'
-    : 'w_360,h_640,c_limit,q_auto:low,br_600k';
+    ? 'w_240,h_426,c_fill,q_auto:low,br_200k,f_mp4'
+    : 'w_300,h_533,c_fill,q_auto:low,br_350k,f_mp4';
   return url.replace('/upload/', `/upload/${transformation}/`);
 }
 
-// WebP 포스터 URL 생성 - 작은 해상도로 즉시 표시
+// 극소량 blur placeholder (10kb 이하)
 function getPosterUrl(url: string): string {
   if (!url.includes('cloudinary.com')) return '';
-  return url.replace('/upload/', '/upload/w_270,h_480,c_limit,f_webp,q_40,so_0/');
+  // 매우 작은 blur 이미지로 즉시 표시
+  return url.replace('/upload/', '/upload/w_40,h_71,c_fill,e_blur:1000,f_webp,q_1,so_0/');
 }
 
 // 모바일 감지 훅
@@ -163,15 +163,15 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
           <PhoneMockupFrame>
             {assets.length > 0 && currentAsset ? (
               <div className="relative w-full h-full">
-                {/* WebP 썸네일 - 비디오 로드 전 먼저 표시 */}
+                {/* Blur Placeholder - 극소량으로 즉시 표시 */}
                 <img
                   src={getPosterUrl(currentAsset.video_url)}
                   alt=""
                   fetchPriority="high"
-                  className="absolute inset-0 w-full h-full object-cover z-0"
+                  className="absolute inset-0 w-full h-full object-cover scale-110 blur-sm z-0"
                 />
 
-                {/* Current Video - 페이드 아웃 */}
+                {/* Current Video - 즉시 스트리밍 시작 */}
                 <div
                   className={`absolute inset-0 transition-opacity duration-800 ease-in-out z-10 ${
                     isDissolving ? 'opacity-0' : 'opacity-100'
@@ -182,7 +182,6 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                     ref={videoRef}
                     key={`current-${currentAsset.id}`}
                     src={optimizeVideoUrl(currentAsset.video_url, isMobile)}
-                    poster={getPosterUrl(currentAsset.video_url)}
                     autoPlay
                     muted
                     playsInline
@@ -200,17 +199,16 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                     className="absolute inset-0 transition-opacity duration-800 ease-in-out opacity-100 z-20"
                     style={{ transitionDuration: '800ms' }}
                   >
-                    {/* Next 썸네일 */}
+                    {/* Next Blur Placeholder */}
                     <img
                       src={getPosterUrl(nextAsset.video_url)}
                       alt=""
                       fetchPriority="high"
-                      className="absolute inset-0 w-full h-full object-cover"
+                      className="absolute inset-0 w-full h-full object-cover scale-110 blur-sm"
                     />
                     <video
                       key={`next-${nextAsset.id}`}
                       src={optimizeVideoUrl(nextAsset.video_url, isMobile)}
-                      poster={getPosterUrl(nextAsset.video_url)}
                       autoPlay
                       muted
                       playsInline
