@@ -69,6 +69,20 @@ function getPosterUrl(url: string): string {
   return url.replace('/upload/', '/upload/w_8,h_14,c_fill,e_pixelate:10,f_jpg,q_1,so_0/');
 }
 
+// 비디오의 첫 프레임을 썸네일로 추출 (Cloudinary)
+function getVideoThumbnail(url: string, isMobile: boolean): string {
+  if (!url.includes('cloudinary.com')) return '';
+
+  // so_0 = 첫 프레임 (0초)
+  // f_jpg = JPEG 포맷
+  // q_auto:eco = 자동 품질 최적화 (저용량)
+  const transformation = isMobile
+    ? 'w_270,h_480,c_fill,so_0,f_jpg,q_auto:eco'
+    : 'w_320,h_568,c_fill,so_0,f_jpg,q_auto:eco';
+
+  return url.replace('/upload/', `/upload/${transformation}/`).replace('.mp4', '.jpg');
+}
+
 // 모바일 감지 훅
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -93,6 +107,7 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
   const [isDissolving, setIsDissolving] = useState(false);
   const [blurDataUrl, setBlurDataUrl] = useState<string>('');
   const [nextBlurDataUrl, setNextBlurDataUrl] = useState<string>('');
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false); // 비디오 로딩 상태
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
@@ -105,20 +120,27 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
     if (currentAsset?.blurhash) {
       const dataUrl = getBlurHashDataUrl(currentAsset.blurhash, 32, 56);
       setBlurDataUrl(dataUrl);
+    } else if (currentAsset?.thumbnail_url) {
+      // 썸네일 우선 사용 (DB에 저장된 경우)
+      setBlurDataUrl(currentAsset.thumbnail_url);
     } else if (currentAsset) {
-      // 폴백
-      setBlurDataUrl(getPosterUrl(currentAsset.video_url));
+      // Cloudinary에서 첫 프레임 자동 추출
+      setBlurDataUrl(getVideoThumbnail(currentAsset.video_url, isMobile));
     }
-  }, [currentIndex, currentAsset]);
+  }, [currentIndex, currentAsset, isMobile]);
 
   useEffect(() => {
     if (nextAsset?.blurhash) {
       const dataUrl = getBlurHashDataUrl(nextAsset.blurhash, 32, 56);
       setNextBlurDataUrl(dataUrl);
+    } else if (nextAsset?.thumbnail_url) {
+      // 썸네일 우선 사용 (DB에 저장된 경우)
+      setNextBlurDataUrl(nextAsset.thumbnail_url);
     } else if (nextAsset) {
-      setNextBlurDataUrl(getPosterUrl(nextAsset.video_url));
+      // Cloudinary에서 첫 프레임 자동 추출
+      setNextBlurDataUrl(getVideoThumbnail(nextAsset.video_url, isMobile));
     }
-  }, [nextIndex, nextAsset]);
+  }, [nextIndex, nextAsset, isMobile]);
 
   const nextAssetIndex = useCallback((current: number) => {
     return (current + 1) % assets.length;
@@ -135,6 +157,7 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
     setTimeout(() => {
       setCurrentIndex(nextAssetIndex(currentIndex));
       setIsDissolving(false);
+      setIsVideoLoaded(false); // 다음 비디오 로딩 대기
     }, 800); // 디졸브 시간
   }, [assets.length, currentIndex, nextAssetIndex]);
 
@@ -148,6 +171,7 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
     setTimeout(() => {
       setCurrentIndex(index);
       setIsDissolving(false);
+      setIsVideoLoaded(false); // 다음 비디오 로딩 대기
     }, 800);
   }, [currentIndex, isDissolving]);
 
@@ -223,17 +247,14 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                   }`}
                   style={{ transitionDuration: '800ms' }}
                 >
-                  {/* BlurHash Placeholder - 비디오 로딩 전까지만 표시 */}
+                  {/* 썸네일 - 비디오 로딩 완료 전까지 표시 */}
                   {blurDataUrl && (
                     <img
                       src={blurDataUrl}
                       alt=""
-                      className="absolute inset-0 w-full h-full object-cover"
-                      style={{
-                        imageRendering: 'pixelated',
-                        filter: 'blur(20px)',
-                        transform: 'scale(1.1)'
-                      }}
+                      className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+                        isVideoLoaded ? 'opacity-0' : 'opacity-100'
+                      }`}
                     />
                   )}
                   <video
@@ -247,7 +268,10 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                     webkit-playsinline="true"
                     onEnded={handleVideoEnded}
                     onLoadedData={(e) => playVideoSafely(e.currentTarget)}
-                    onCanPlay={(e) => playVideoSafely(e.currentTarget)}
+                    onCanPlay={(e) => {
+                      setIsVideoLoaded(true);
+                      playVideoSafely(e.currentTarget);
+                    }}
                     className="w-full h-full object-cover relative z-10"
                   />
                 </div>
@@ -258,17 +282,12 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                     className="absolute inset-0 transition-opacity duration-800 ease-in-out opacity-100 z-20"
                     style={{ transitionDuration: '800ms' }}
                   >
-                    {/* Next BlurHash Placeholder */}
+                    {/* Next 썸네일 - 비디오 로딩 전까지 표시 */}
                     {nextBlurDataUrl && (
                       <img
                         src={nextBlurDataUrl}
                         alt=""
                         className="absolute inset-0 w-full h-full object-cover"
-                        style={{
-                          imageRendering: 'pixelated',
-                          filter: 'blur(20px)',
-                          transform: 'scale(1.1)'
-                        }}
                       />
                     )}
                     <video
