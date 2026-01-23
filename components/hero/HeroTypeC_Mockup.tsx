@@ -15,11 +15,10 @@ function playVideoSafely(video: HTMLVideoElement) {
 
   const playPromise = video.play();
   if (playPromise !== undefined) {
-    playPromise.catch((error) => {
-      console.log('Video play failed, retrying...', error);
+    playPromise.catch(() => {
       // 재생 실패 시 약간의 지연 후 재시도
       setTimeout(() => {
-        video.play().catch((e) => console.log('Second play attempt failed:', e));
+        video.play().catch(() => {});
       }, 100);
     });
   }
@@ -35,9 +34,7 @@ function optimizeVideoUrl(url: string, isMobile: boolean): string {
     ? 'vc_auto,w_270,h_480,c_fill,br_400k,so_0,f_mp4'
     : 'vc_auto,w_320,h_568,c_fill,br_700k,so_0,f_mp4';
 
-  const optimizedUrl = url.replace('/upload/', `/upload/${transformation}/`);
-  console.log('Optimized video URL:', optimizedUrl, 'isMobile:', isMobile);
-  return optimizedUrl;
+  return url.replace('/upload/', `/upload/${transformation}/`);
 }
 
 // BlurHash를 canvas로 디코딩해서 Data URI 생성
@@ -246,19 +243,11 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                     autoPlay
                     muted
                     playsInline
-                    preload="auto"
+                    preload="metadata"
                     webkit-playsinline="true"
                     onEnded={handleVideoEnded}
-                    onLoadedData={(e) => {
-                      console.log('Video loaded:', e.currentTarget.src);
-                      playVideoSafely(e.currentTarget);
-                    }}
-                    onCanPlay={(e) => {
-                      console.log('Video can play:', e.currentTarget.src);
-                      playVideoSafely(e.currentTarget);
-                    }}
-                    onPlay={() => console.log('Video playing')}
-                    onError={(e) => console.error('Video error:', e)}
+                    onLoadedData={(e) => playVideoSafely(e.currentTarget)}
+                    onCanPlay={(e) => playVideoSafely(e.currentTarget)}
                     className="w-full h-full object-cover relative z-10"
                   />
                 </div>
@@ -288,11 +277,10 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                       autoPlay
                       muted
                       playsInline
-                      preload="auto"
+                      preload="metadata"
                       webkit-playsinline="true"
                       onLoadedData={(e) => playVideoSafely(e.currentTarget)}
                       onCanPlay={(e) => playVideoSafely(e.currentTarget)}
-                      onError={(e) => console.error('Next video error:', e)}
                       className="w-full h-full object-cover relative z-10"
                     />
                   </div>
