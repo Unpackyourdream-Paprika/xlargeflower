@@ -21,21 +21,26 @@ function playVideoSafely(video: HTMLVideoElement) {
   }
 }
 
-// Framer 스타일: 초저용량 버전으로 즉시 로드 후 고품질로 전환
+// Progressive Streaming 최적화 - Fast Start 활성화
 function optimizeVideoUrl(url: string, isMobile: boolean): string {
   if (!url.includes('cloudinary.com')) return url;
-  // 매우 낮은 비트레이트 + 작은 해상도로 즉시 스트리밍 시작
+
+  // sp_full = streaming profile full (progressive download with fast start)
+  // vs_<bitrate> = variable streaming
+  // 적당한 비트레이트로 품질 유지하면서 빠른 시작
   const transformation = isMobile
-    ? 'w_240,h_426,c_fill,q_auto:low,br_200k,f_mp4'
-    : 'w_300,h_533,c_fill,q_auto:low,br_350k,f_mp4';
+    ? 'sp_full,vc_auto,w_270,h_480,c_fill,br_400k,f_mp4'
+    : 'sp_full,vc_auto,w_320,h_568,c_fill,br_700k,f_mp4';
+
   return url.replace('/upload/', `/upload/${transformation}/`);
 }
 
-// 극소량 blur placeholder (10kb 이하)
+// Base64 인라인 blur placeholder (네트워크 요청 0)
 function getPosterUrl(url: string): string {
   if (!url.includes('cloudinary.com')) return '';
-  // 매우 작은 blur 이미지로 즉시 표시
-  return url.replace('/upload/', '/upload/w_40,h_71,c_fill,e_blur:1000,f_webp,q_1,so_0/');
+
+  // 극소량 blur placeholder - 20px로 더 작게
+  return url.replace('/upload/', '/upload/w_20,h_36,c_fill,e_blur:2000,f_jpg,q_1,so_0/');
 }
 
 // 모바일 감지 훅
@@ -163,12 +168,15 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
           <PhoneMockupFrame>
             {assets.length > 0 && currentAsset ? (
               <div className="relative w-full h-full">
-                {/* Blur Placeholder - 극소량으로 즉시 표시 */}
+                {/* Blur Placeholder - 극소량으로 즉시 표시 (네트워크 요청 최소화) */}
                 <img
                   src={getPosterUrl(currentAsset.video_url)}
                   alt=""
                   fetchPriority="high"
-                  className="absolute inset-0 w-full h-full object-cover scale-110 blur-sm z-0"
+                  loading="eager"
+                  decoding="async"
+                  className="absolute inset-0 w-full h-full object-cover scale-125 z-0"
+                  style={{ filter: 'blur(20px)' }}
                 />
 
                 {/* Current Video - 즉시 스트리밍 시작 */}
@@ -204,7 +212,10 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                       src={getPosterUrl(nextAsset.video_url)}
                       alt=""
                       fetchPriority="high"
-                      className="absolute inset-0 w-full h-full object-cover scale-110 blur-sm"
+                      loading="eager"
+                      decoding="async"
+                      className="absolute inset-0 w-full h-full object-cover scale-125"
+                      style={{ filter: 'blur(20px)' }}
                     />
                     <video
                       key={`next-${nextAsset.id}`}
