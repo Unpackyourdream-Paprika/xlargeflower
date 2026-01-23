@@ -979,8 +979,12 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-6">
           <ScrollReveal>
             <div className="bg-[#0A0A0A] border border-[#222] rounded-2xl p-8">
-              <h2 className="text-2xl font-bold text-white mb-2 text-center">문의하기</h2>
-              <p className="text-gray-500 mb-8 text-center">담당자가 확인 후 빠르게 연락드립니다.</p>
+              <h2 className="text-2xl font-bold text-white mb-2 text-center">도입 문의 / 견적서 요청</h2>
+              <p className="text-gray-500 mb-8 text-center">
+                고액 결제는 담당 매니저가 견적서 및 세금계산서 발행을 도와드립니다.
+                <br className="hidden sm:block" />
+                <span className="text-gray-600 text-sm">담당자가 확인 후 빠르게 연락드립니다.</span>
+              </p>
 
               {isSubmitted ? (
                 <div className="text-center py-12">

@@ -87,13 +87,30 @@ export default function PricingCard({ plan, promotion, paymentType, onPlanSelect
     // GA4 + Meta Pixel 전환 추적
     trackConversion.planCheckoutClick(plan.title, finalPrice);
 
-    // 항상 컨택트 폼으로 스크롤 (chat 버튼 제외)
+    // Chat 버튼 처리
     if (plan.button_action === 'chat' && plan.chat_trigger) {
       triggerOpenChat(plan.chat_trigger as ChatContext);
-    } else if (onPlanSelect) {
-      // 컨택트 폼으로 스크롤하고 플랜 선택
-      onPlanSelect(plan.title);
-      // 컨택트 폼으로 스크롤
+      return;
+    }
+
+    // 가격 기준 결제 플로우 분기
+    // Starter (50만) / Growth (150만): 카드 결제
+    // Performance (450만) / VIP: 도입 문의
+    const CARD_PAYMENT_THRESHOLD = 2000000; // 200만 원 이하는 카드 결제
+
+    if (plan.price <= CARD_PAYMENT_THRESHOLD) {
+      // 소액 플랜: Stripe 카드 결제창 팝업
+      const confirmed = window.confirm(
+        '법인카드 결제 시 지출증빙용 영수증이 자동 발행됩니다.\n\n결제 페이지로 이동하시겠습니까?'
+      );
+      if (confirmed) {
+        window.location.href = `/checkout?plan=${encodeURIComponent(plan.title)}&price=${finalPrice}`;
+      }
+    } else {
+      // 고액 플랜: 도입 문의 폼으로 이동
+      if (onPlanSelect) {
+        onPlanSelect(plan.title);
+      }
       const contactSection = document.getElementById('contact-form');
       if (contactSection) {
         contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
