@@ -8,32 +8,10 @@ interface PhoneMockupFrameProps {
 }
 
 export default function PhoneMockupFrame({ children, className = '' }: PhoneMockupFrameProps) {
-  const [scrollY, setScrollY] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // 스크롤에 따른 패럴랙스 값 계산 (가로 회전 강화)
-  const parallaxY = scrollY * 0.15;
-  const parallaxRotateX = 5 + scrollY * 0.015;
-  const parallaxRotateY = -12 + scrollY * 0.04; // 가로 회전 강화: -12deg에서 시작, 스크롤 시 정면으로
-
   return (
-    <div className={`relative ${className}`} style={{ perspective: '1000px' }}>
-      {/* 3D Transform wrapper with parallax */}
-      <div
-        className="relative transform-gpu transition-transform duration-100 ease-out"
-        style={{
-          transform: `rotateY(${parallaxRotateY}deg) rotateX(${parallaxRotateX}deg) translateY(${-parallaxY}px)`,
-          transformStyle: 'preserve-3d',
-        }}
-      >
+    <div className={`relative ${className}`}>
+      {/* Phone wrapper */}
+      <div className="relative">
         {/* Phone body - iPhone style */}
         <div className="relative w-[280px] sm:w-[300px] lg:w-[320px] bg-[#1a1a1a] rounded-[45px] p-[10px] shadow-2xl shadow-black/60">
           {/* Outer glow */}

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
 
 // 모바일 감지 훅
 function useIsMobile() {
@@ -71,10 +70,9 @@ export default function HeroMediaCard({
   }, [isHovered, isInView]);
 
   return (
-    <motion.div
+    <div
       ref={containerRef}
       className={`relative overflow-hidden rounded-2xl border border-[rgba(0,245,160,0.15)] shadow-[0_0_20px_rgba(0,245,160,0.08)] ${className}`}
-      whileHover={{ scale: isMobile ? 1 : 1.03 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -112,6 +110,6 @@ export default function HeroMediaCard({
 
       {/* Bottom gradient */}
       <div className="absolute bottom-0 left-0 right-0 h-1/4 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
-    </motion.div>
+    </div>
   );
 }
