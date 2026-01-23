@@ -9,7 +9,7 @@ export default function Footer() {
           <div className="col-span-1 md:col-span-2">
             <span className="text-white font-bold text-xl tracking-tight">XLARGE FLOWER</span>
             <p className="text-white/60 mt-4 max-w-md text-sm">
-              퍼포먼스 마케팅을 위한 AI 생성 광고 소재.
+              유입을 위한 XLARGE FLOWER
               <br />
               촬영 없이 48시간 내 납품.
             </p>

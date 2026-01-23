@@ -341,7 +341,7 @@ export default function VideoMarquee({ videos }: VideoMarqueeProps) {
       <div className="text-center mb-12 px-6 relative z-30">
         <p className="label-tag mb-4">AI-GENERATED CREATIVES</p>
         <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
-          모두 AI가 만들었습니다
+          모두 XLARGE가 만들었습니다
         </h2>
         <p className="text-white/60 mt-4 max-w-xl mx-auto">
           촬영 없이, 모델 섭외 없이. 48시간 안에 이 퀄리티가 나옵니다.

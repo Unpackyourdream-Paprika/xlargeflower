@@ -75,19 +75,19 @@ export default function AuroraBackground() {
         }}
       />
 
-      {/* Aurora Orb 3 - Deep Violet accent */}
+      {/* Aurora Orb 3 - Bright Violet accent */}
       <div
         className="aurora-orb aurora-orb-3"
         style={{
-          background: 'radial-gradient(circle, rgba(91, 33, 182, 0.55) 0%, rgba(91, 33, 182, 0.15) 40%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(138, 43, 226, 0.65) 0%, rgba(138, 43, 226, 0.25) 40%, transparent 70%)',
         }}
       />
 
-      {/* Aurora Orb 4 - Secondary Mint */}
+      {/* Aurora Orb 4 - Bright Pink */}
       <div
         className="aurora-orb aurora-orb-4"
         style={{
-          background: 'radial-gradient(circle, rgba(0, 245, 160, 0.6) 0%, rgba(0, 245, 160, 0.15) 40%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(255, 105, 180, 0.6) 0%, rgba(255, 105, 180, 0.2) 40%, transparent 70%)',
         }}
       />
 

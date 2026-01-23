@@ -113,11 +113,10 @@ function ArtistCard({ artist, index }: ArtistCardProps) {
           {/* 썸네일 이미지 */}
           <div
             className={`absolute inset-0 bg-cover bg-center transition-all duration-700 ${
-              isHovered ? 'scale-105 grayscale-0' : 'scale-100 grayscale'
+              isHovered ? 'scale-105 grayscale' : 'scale-100 grayscale-0'
             }`}
             style={{
               backgroundImage: `url(${artist.thumbnail_url})`,
-              filter: isHovered ? 'brightness(1)' : 'brightness(0.7)',
             }}
           />
 
@@ -370,14 +369,14 @@ export default function ArtistLineup() {
         {/* 섹션 헤더 */}
         <ScrollReveal>
           <div className="text-center mb-16">
-            <span className="label-gradient">AI ARTIST LINEUP</span>
+            <span className="label-gradient">XLARGE AI ARTIST LINEUP</span>
             <h2 className="mt-4 text-4xl md:text-5xl font-bold text-white tracking-tight">
-              소속 AI 아티스트
+              소속 XLARGE 아티스트
             </h2>
             <p className="mt-4 text-lg text-white/60 max-w-2xl mx-auto">
-              브랜드에 최적화된 AI 모델을 선택하세요.
+              셀러와 브랜드에 최적화된 XLARGE 모델을 선택해보세요.
               <br className="hidden md:block" />
-              각 아티스트는 고유한 페르소나와 전문 분야를 가지고 있습니다.
+              XLARGE 아티스트는 고유한 페르소나와 전문 분야를 가지고 있습니다.
             </p>
           </div>
         </ScrollReveal>

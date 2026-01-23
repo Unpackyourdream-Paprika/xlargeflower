@@ -324,7 +324,7 @@ html, body {
   height: 800px;
   top: -20%;
   left: -10%;
-  animation: auroraFloat1 15s ease-in-out infinite;
+  animation: auroraFloat1 1.875s ease-in-out infinite;
 }
 
 /* Orb 2 - Cyan, right side */
@@ -333,7 +333,7 @@ html, body {
   height: 600px;
   top: 10%;
   right: -15%;
-  animation: auroraFloat2 18s ease-in-out infinite;
+  animation: auroraFloat2 2.25s ease-in-out infinite;
 }
 
 /* Orb 3 - Violet accent, bottom */
@@ -342,7 +342,7 @@ html, body {
   height: 500px;
   bottom: -10%;
   left: 30%;
-  animation: auroraFloat3 20s ease-in-out infinite;
+  animation: auroraFloat3 2.5s ease-in-out infinite;
 }
 
 /* Orb 4 - Secondary Mint, center-left */
@@ -351,7 +351,7 @@ html, body {
   height: 400px;
   top: 40%;
   left: 10%;
-  animation: auroraFloat4 12s ease-in-out infinite;
+  animation: auroraFloat4 1.5s ease-in-out infinite;
 }
 
 @keyframes auroraFloat1 {

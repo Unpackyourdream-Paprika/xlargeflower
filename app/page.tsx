@@ -7,7 +7,7 @@ import VideoMarquee from '@/components/VideoMarquee';
 import ArtistLineup from '@/components/ArtistLineup';
 import MainHeroContainer from '@/components/hero/MainHeroContainer';
 import { triggerOpenChat } from '@/components/GlobalChatButton';
-import { getShowcaseVideos, ShowcaseVideo, getBeforeAfterAsset, BeforeAfterAsset, getLandingPortfolios, LandingPortfolio, getActivePromotion, PromotionSettings, getPricingPlans, PricingPlan } from '@/lib/supabase';
+import { getShowcaseVideos, ShowcaseVideo, getBeforeAfterAsset, BeforeAfterAsset, getLandingPortfolios, LandingPortfolio, getActivePromotion, PromotionSettings, getPricingPlans, PricingPlan, submitContact } from '@/lib/supabase';
 import PricingCard from '@/components/PricingCard';
 import { trackConversion } from '@/lib/analytics';
 
@@ -18,6 +18,29 @@ export default function Home() {
   const [paymentType, setPaymentType] = useState<'card' | 'invoice'>('card');
   const [promotion, setPromotion] = useState<PromotionSettings | null>(null);
   const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
+
+  // Contact form state
+  const [formData, setFormData] = useState({
+    name: '',
+    company: '',
+    email: '',
+    phone: '',
+    message: '',
+    selectedProduct: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const productOptions = [
+    { value: '', label: '선택하세요 (선택사항)' },
+    { value: 'STARTER 플랜', label: 'STARTER 플랜' },
+    { value: 'GROWTH 플랜', label: 'GROWTH 플랜' },
+    { value: 'PERFORMANCE 플랜', label: 'PERFORMANCE 플랜' },
+    { value: 'PERFORMANCE ADS 패키지', label: 'PERFORMANCE ADS 패키지' },
+    { value: 'VIP PARTNER 플랜', label: 'VIP PARTNER 플랜' },
+    { value: '기타 문의', label: '기타 문의' }
+  ];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -77,6 +100,31 @@ export default function Home() {
     const day = date.getDate();
     return `${month}/${day}`;
   };
+
+  // Contact form submit handler
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.email || !formData.message) return;
+
+    setIsSubmitting(true);
+    try {
+      await submitContact({
+        name: formData.name,
+        company: formData.company || null,
+        email: formData.email,
+        phone: formData.phone || null,
+        budget: null,
+        product_interest: formData.selectedProduct || null,
+        message: formData.message
+      });
+      setIsSubmitted(true);
+    } catch (error) {
+      console.error('Submit error:', error);
+      alert('문의 전송 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   return (
     <div className="min-h-screen bg-[#050505] main-content">
       {/* Hero Section - Dynamic Layout */}
@@ -95,7 +143,8 @@ export default function Home() {
             <div className="text-center mb-20">
               <p className="label-tag mb-4">HOW IT WORKS</p>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white">
-                원본 사진이 광고 영상이 된다
+                XLARGE를 통하면<br />
+                당신의 제품이 릴스. 광고 영상이 됩니다.
               </h2>
             </div>
           </ScrollReveal>
@@ -266,10 +315,10 @@ export default function Home() {
             <div className="text-center mb-16">
               <p className="label-tag mb-4">REAL PORTFOLIO</p>
               <h2 className="text-3xl sm:text-4xl font-bold text-white">
-                이미 상위 1% 브랜드는<br />
+                이미 여러 브랜드는<br />
                 <span className="gradient-text">XLARGE와 함께 매출을 올리고 있습니다</span>
               </h2>
-              <p className="text-white/60 mt-4">가상 얼굴로 만든 실제 성공 사례를 확인하세요</p>
+              <p className="text-white/60 mt-4">셀러사 브랜드사의 얼굴로 만든 실제 성공 사례를 확인하세요.</p>
             </div>
           </ScrollReveal>
 
@@ -422,7 +471,7 @@ export default function Home() {
           <ScrollReveal>
             <div className="text-center mb-16">
               <p className="label-tag mb-4">WHY AI?</p>
-              <h2 className="text-3xl sm:text-4xl font-bold text-white">왜 인플루언서 거품을 믿으십니까?</h2>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white">왜 인플루언서 아직도 거품을 믿으십니까?</h2>
               <p className="text-white/60 mt-4">팔로워 10만? 알고리즘이 막으면 아무도 못 봅니다.</p>
             </div>
           </ScrollReveal>
@@ -548,8 +597,7 @@ export default function Home() {
           <ScrollReveal>
             <p className="label-tag mb-4">OUR POSITION</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
-              우리는 인플루언서의 &apos;입&apos;이 아니라,<br />
-              <span className="gradient-text">&apos;얼굴&apos;을 팝니다.</span>
+              엑스라지는 고객의 &apos;경험&apos;을 팝니다.
             </h2>
             <div className="max-w-2xl mx-auto">
               <p className="text-white/70 text-lg mb-8">
@@ -557,7 +605,8 @@ export default function Home() {
               </p>
               <p className="text-white/60 mb-12">
                 타겟팅은 귀사의 마케터가 제일 잘합니다.<br />
-                저희는 귀사의 마케터가 춤추게 할 <strong className="text-[#00F5A0]">&apos;압도적인 소재&apos;</strong>만 납품합니다.
+                저희는 귀사의 마케터가 춤추게 할 <strong className="text-[#00F5A0]">&apos;압도적인 소재&apos;</strong>만 납품합니다.<br />
+                만약 타겟팅 광고가 어려우시다면 저희에게 함께 문의를 주세요.
               </p>
 
               {/* 임팩트 있는 200% 배지 */}
@@ -592,7 +641,7 @@ export default function Home() {
           <ScrollReveal>
             <div className="text-center mb-12">
               <p className="label-tag mb-4">SELECT YOUR PLAN</p>
-              <h2 className="text-3xl sm:text-4xl font-bold text-white">귀사의 클래스에 맞는 플랜</h2>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white">여러분의 클래스에 맞는 플랜</h2>
               <p className="text-white/60 mt-4">프리미엄 AI 크리에이티브 솔루션</p>
 
               {/* 결제 방식 토글 */}
@@ -849,8 +898,8 @@ export default function Home() {
             <div className="text-center mb-16">
               <p className="label-tag mb-4">SOCIAL PROOF</p>
               <h2 className="text-3xl sm:text-4xl font-bold text-white">
-                이미 상위 1% 브랜드는<br />
-                <span className="gradient-text">&apos;얼굴&apos;을 갈아타기 시작했습니다</span>
+                지금 마케팅 시장은<br />
+                <span className="gradient-text">&apos;AI&apos;로 빠르게 이동 중입니다</span>
               </h2>
             </div>
           </ScrollReveal>
@@ -920,29 +969,155 @@ export default function Home() {
       </section>
 
 
-      {/* CTA Section - Premium */}
-      <section className="section-spacing bg-[#050505] spotlight-center relative overflow-hidden">
+      {/* Contact Form Section */}
+      <section className="section-spacing bg-[#050505]">
+        <div className="max-w-4xl mx-auto px-6">
+          <ScrollReveal>
+            <div className="bg-[#0A0A0A] border border-[#222] rounded-2xl p-8">
+              <h2 className="text-2xl font-bold text-white mb-2 text-center">문의하기</h2>
+              <p className="text-gray-500 mb-8 text-center">담당자가 확인 후 빠르게 연락드립니다.</p>
 
-        <ScrollReveal className="relative z-10 max-w-3xl mx-auto px-6 text-center">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
-            월 매출 1억을 더 만드는<br />가장 확실한 투자
-          </h2>
-          <p className="text-xl text-white/70 mb-2">
-            상위 1% 브랜드가 선택한 AI 마케팅 솔루션
-          </p>
-          <p className="text-white/40 mb-12">
-            법인카드 결제 가능 / 세금계산서 발행 / 48시간 납품
-          </p>
-          <button
-            onClick={() => {
-              trackConversion.consultClick('main_cta_section');
-              triggerOpenChat('vip_consult');
-            }}
-            className="btn-primary text-lg"
-          >
-            VIP 상담 신청하기
-          </button>
-        </ScrollReveal>
+              {isSubmitted ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">문의가 접수되었습니다!</h3>
+                  <p className="text-gray-400 mb-6">빠른 시일 내에 연락드리겠습니다.</p>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-2">
+                        이름 <span className="text-[#00F5A0]">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
+                        placeholder="홍길동"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-2">
+                        셀러 or 회사명
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.company}
+                        onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                        className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
+                        placeholder="(주)회사명"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-2">
+                        이메일 <span className="text-[#00F5A0]">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
+                        placeholder="email@example.com"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-2">
+                        연락처
+                      </label>
+                      <input
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
+                        placeholder="010-1234-5678"
+                      />
+                    </div>
+                  </div>
+
+                  {/* 관심 상품 선택 - 커스텀 드롭다운 */}
+                  <div className="relative">
+                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                      관심 상품
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white focus:border-[#00F5A0] focus:outline-none transition-colors text-left flex items-center justify-between"
+                    >
+                      <span className={formData.selectedProduct ? 'text-white' : 'text-gray-500'}>
+                        {formData.selectedProduct || '선택하세요 (선택사항)'}
+                      </span>
+                      <svg
+                        className={`w-5 h-5 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    {/* 드롭다운 메뉴 */}
+                    {isDropdownOpen && (
+                      <div className="absolute z-50 w-full mt-2 bg-[#111] border border-[#333] rounded-xl overflow-hidden shadow-lg">
+                        {productOptions.map((option) => (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => {
+                              setFormData({ ...formData, selectedProduct: option.value });
+                              setIsDropdownOpen(false);
+                            }}
+                            className={`w-full px-4 py-3 text-left transition-colors ${
+                              formData.selectedProduct === option.value
+                                ? 'bg-[#00F5A0]/20 text-[#00F5A0]'
+                                : 'text-white hover:bg-[#222]'
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                      문의 내용 <span className="text-[#00F5A0]">*</span>
+                    </label>
+                    <textarea
+                      value={formData.message}
+                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      rows={5}
+                      className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors resize-none"
+                      placeholder="어떤 영상이 필요하신지 자유롭게 말씀해주세요."
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full btn-primary disabled:opacity-50"
+                  >
+                    {isSubmitting ? '전송 중...' : '문의 보내기'}
+                  </button>
+                </form>
+              )}
+            </div>
+          </ScrollReveal>
+        </div>
       </section>
 
       {/* Sticky Mobile CTA */}
