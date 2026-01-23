@@ -12,7 +12,10 @@
       "Bash(GIT_EDITOR=true git rebase:*)",
       "Bash(ls:*)",
       "Bash(ffmpeg:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)",
+      "Bash(git stash pop:*)"
     ]
   }
 }

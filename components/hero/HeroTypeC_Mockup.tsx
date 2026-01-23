@@ -10,13 +10,16 @@ import { decode } from 'blurhash';
 function playVideoSafely(video: HTMLVideoElement) {
   video.muted = true;
   video.playsInline = true;
+  video.setAttribute('playsinline', '');
+  video.setAttribute('webkit-playsinline', '');
 
   const playPromise = video.play();
   if (playPromise !== undefined) {
-    playPromise.catch(() => {
+    playPromise.catch((error) => {
+      console.log('Video play failed, retrying...', error);
       // 재생 실패 시 약간의 지연 후 재시도
       setTimeout(() => {
-        video.play().catch(() => {});
+        video.play().catch((e) => console.log('Second play attempt failed:', e));
       }, 100);
     });
   }
@@ -26,13 +29,15 @@ function playVideoSafely(video: HTMLVideoElement) {
 function optimizeVideoUrl(url: string, isMobile: boolean): string {
   if (!url.includes('cloudinary.com')) return url;
 
-  // sp_full = streaming profile full (progressive download with fast start)
-  // 적당한 비트레이트로 품질 유지하면서 빠른 시작
+  // vc_auto = video codec auto
+  // so_0 = start offset 0 (fast start를 위해 메타데이터를 파일 시작 부분으로 이동)
   const transformation = isMobile
-    ? 'sp_full,vc_auto,w_270,h_480,c_fill,br_400k,f_mp4'
-    : 'sp_full,vc_auto,w_320,h_568,c_fill,br_700k,f_mp4';
+    ? 'vc_auto,w_270,h_480,c_fill,br_400k,so_0,f_mp4'
+    : 'vc_auto,w_320,h_568,c_fill,br_700k,so_0,f_mp4';
 
-  return url.replace('/upload/', `/upload/${transformation}/`);
+  const optimizedUrl = url.replace('/upload/', `/upload/${transformation}/`);
+  console.log('Optimized video URL:', optimizedUrl, 'isMobile:', isMobile);
+  return optimizedUrl;
 }
 
 // BlurHash를 canvas로 디코딩해서 Data URI 생성
@@ -214,20 +219,6 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
           <PhoneMockupFrame>
             {assets.length > 0 && currentAsset ? (
               <div className="relative w-full h-full">
-                {/* BlurHash Placeholder - 네트워크 요청 0, HTML 인라인 */}
-                {blurDataUrl && (
-                  <img
-                    src={blurDataUrl}
-                    alt=""
-                    className="absolute inset-0 w-full h-full object-cover z-0"
-                    style={{
-                      imageRendering: 'pixelated',
-                      filter: 'blur(20px)',
-                      transform: 'scale(1.1)'
-                    }}
-                  />
-                )}
-
                 {/* Current Video - 즉시 스트리밍 시작 */}
                 <div
                   className={`absolute inset-0 transition-opacity duration-800 ease-in-out z-10 ${
@@ -235,6 +226,19 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                   }`}
                   style={{ transitionDuration: '800ms' }}
                 >
+                  {/* BlurHash Placeholder - 비디오 로딩 전까지만 표시 */}
+                  {blurDataUrl && (
+                    <img
+                      src={blurDataUrl}
+                      alt=""
+                      className="absolute inset-0 w-full h-full object-cover"
+                      style={{
+                        imageRendering: 'pixelated',
+                        filter: 'blur(20px)',
+                        transform: 'scale(1.1)'
+                      }}
+                    />
+                  )}
                   <video
                     ref={videoRef}
                     key={`current-${currentAsset.id}`}
@@ -243,10 +247,19 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                     muted
                     playsInline
                     preload="auto"
+                    webkit-playsinline="true"
                     onEnded={handleVideoEnded}
-                    onLoadedData={(e) => playVideoSafely(e.currentTarget)}
-                    onCanPlay={(e) => playVideoSafely(e.currentTarget)}
-                    className="w-full h-full object-cover"
+                    onLoadedData={(e) => {
+                      console.log('Video loaded:', e.currentTarget.src);
+                      playVideoSafely(e.currentTarget);
+                    }}
+                    onCanPlay={(e) => {
+                      console.log('Video can play:', e.currentTarget.src);
+                      playVideoSafely(e.currentTarget);
+                    }}
+                    onPlay={() => console.log('Video playing')}
+                    onError={(e) => console.error('Video error:', e)}
+                    className="w-full h-full object-cover relative z-10"
                   />
                 </div>
 
@@ -276,8 +289,10 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                       muted
                       playsInline
                       preload="auto"
+                      webkit-playsinline="true"
                       onLoadedData={(e) => playVideoSafely(e.currentTarget)}
                       onCanPlay={(e) => playVideoSafely(e.currentTarget)}
+                      onError={(e) => console.error('Next video error:', e)}
                       className="w-full h-full object-cover relative z-10"
                     />
                   </div>
