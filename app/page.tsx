@@ -595,59 +595,6 @@ export default function Home() {
               <h2 className="text-3xl sm:text-4xl font-bold text-white">귀사의 클래스에 맞는 플랜</h2>
               <p className="text-white/60 mt-4">프리미엄 AI 크리에이티브 솔루션</p>
 
-              {/* 프로모션 배너 - 대형 강조 */}
-              {promotion && (
-                <div className="mt-8 relative">
-                  {/* 외곽 글로우 효과 */}
-                  <div className="absolute -inset-2 bg-gradient-to-r from-red-500/30 via-orange-500/30 to-yellow-500/30 rounded-2xl blur-xl animate-pulse"></div>
-
-                  {/* 메인 배너 */}
-                  <div className="relative bg-gradient-to-r from-red-600/20 via-orange-600/20 to-yellow-600/20 border-2 border-red-500/60 rounded-2xl p-6 sm:p-8 backdrop-blur-sm">
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-center sm:text-left">
-                      {/* 🔥 아이콘 */}
-                      <div className="text-5xl sm:text-6xl animate-bounce">🔥</div>
-
-                      <div className="flex-1">
-                        {/* 상단: 긴급 메시지 */}
-                        <p className="text-red-400 font-black text-lg sm:text-xl mb-2 tracking-tight">
-                          {promotion.end_date
-                            ? `${formatEndDate(promotion.end_date)}까지 단 ${Math.ceil((new Date(promotion.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}일 남음!`
-                            : '기간 한정 특별 할인!'
-                          }
-                        </p>
-
-                        {/* 하단: 가격 강조 */}
-                        <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-3">
-                          <span className="text-white/60 text-2xl sm:text-3xl line-through font-bold">
-                            최대 ₩{formatPrice(9000000)}
-                          </span>
-                          <svg className="w-6 h-6 text-red-400 rotate-0 sm:rotate-0 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                          </svg>
-                          <span className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-red-400 via-orange-400 to-yellow-400 bg-clip-text text-transparent">
-                            ₩{formatPrice(Math.round(9000000 * (100 - promotion.discount_rate) / 100))}
-                          </span>
-                          <span className="px-3 py-1 bg-red-500 text-white text-xl sm:text-2xl font-black rounded-lg animate-pulse">
-                            {promotion.discount_rate}% OFF
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 가격 비교 문구 */}
-              {!promotion && (
-                <div className="mt-6 inline-block px-6 py-3 bg-[#0A0A0A] border border-[#00F5A0]/30 rounded-xl">
-                  <p className="text-sm text-white/80">
-                    <span className="text-[#00F5A0] font-bold">300만 원</span>으로
-                    <span className="text-white font-bold"> 3,000만 원</span>의 효과
-                    <span className="text-white/60"> (모델 섭외비 + 스튜디오 렌탈비 절감)</span>
-                  </p>
-                </div>
-              )}
-
               {/* 결제 방식 토글 */}
               <div className="mt-8 flex justify-center">
                 <div className="inline-flex bg-[#0A0A0A] border border-[#222] rounded-full p-1">
