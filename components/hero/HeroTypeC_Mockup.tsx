@@ -26,7 +26,6 @@ function optimizeVideoUrl(url: string, isMobile: boolean): string {
   if (!url.includes('cloudinary.com')) return url;
 
   // sp_full = streaming profile full (progressive download with fast start)
-  // vs_<bitrate> = variable streaming
   // 적당한 비트레이트로 품질 유지하면서 빠른 시작
   const transformation = isMobile
     ? 'sp_full,vc_auto,w_270,h_480,c_fill,br_400k,f_mp4'
@@ -35,12 +34,14 @@ function optimizeVideoUrl(url: string, isMobile: boolean): string {
   return url.replace('/upload/', `/upload/${transformation}/`);
 }
 
-// Base64 인라인 blur placeholder (네트워크 요청 0)
+// Mux-style: 극소량 픽셀화 이미지를 base64 Data URI로 변환
+// 네트워크 요청 없이 HTML에 인라인 삽입
 function getPosterUrl(url: string): string {
   if (!url.includes('cloudinary.com')) return '';
 
-  // 극소량 blur placeholder - 20px로 더 작게
-  return url.replace('/upload/', '/upload/w_20,h_36,c_fill,e_blur:2000,f_jpg,q_1,so_0/');
+  // 8x14px 픽셀화 + 최저 품질로 1kb 미만
+  // e_pixelate:10 = 10x10 픽셀 블록으로 모자이크
+  return url.replace('/upload/', '/upload/w_8,h_14,c_fill,e_pixelate:10,f_jpg,q_1,so_0/');
 }
 
 // 모바일 감지 훅
@@ -168,15 +169,19 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
           <PhoneMockupFrame>
             {assets.length > 0 && currentAsset ? (
               <div className="relative w-full h-full">
-                {/* Blur Placeholder - 극소량으로 즉시 표시 (네트워크 요청 최소화) */}
+                {/* Mux-style Blur Placeholder - 극소량 픽셀화 이미지 (네트워크 요청 최소화) */}
                 <img
                   src={getPosterUrl(currentAsset.video_url)}
                   alt=""
                   fetchPriority="high"
                   loading="eager"
                   decoding="async"
-                  className="absolute inset-0 w-full h-full object-cover scale-125 z-0"
-                  style={{ filter: 'blur(20px)' }}
+                  className="absolute inset-0 w-full h-full object-cover z-0"
+                  style={{
+                    imageRendering: 'pixelated',
+                    filter: 'blur(8px)',
+                    transform: 'scale(1.1)'
+                  }}
                 />
 
                 {/* Current Video - 즉시 스트리밍 시작 */}
@@ -214,8 +219,12 @@ export default function HeroTypeC_Mockup({ assets }: HeroTypeC_MockupProps) {
                       fetchPriority="high"
                       loading="eager"
                       decoding="async"
-                      className="absolute inset-0 w-full h-full object-cover scale-125"
-                      style={{ filter: 'blur(20px)' }}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      style={{
+                        imageRendering: 'pixelated',
+                        filter: 'blur(8px)',
+                        transform: 'scale(1.1)'
+                      }}
                     />
                     <video
                       key={`next-${nextAsset.id}`}
