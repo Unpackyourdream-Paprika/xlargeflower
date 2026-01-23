@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { PricingPlan, PromotionSettings } from '@/lib/supabase';
 import { triggerOpenChat, ChatContext } from '@/components/GlobalChatButton';
+import { trackConversion } from '@/lib/analytics';
 
 interface PricingCardProps {
   plan: PricingPlan;
@@ -83,6 +84,9 @@ export default function PricingCard({ plan, promotion, paymentType }: PricingCar
   };
 
   const handleButtonClick = () => {
+    // GA4 + Meta Pixel 전환 추적
+    trackConversion.planCheckoutClick(plan.title, finalPrice);
+
     if (plan.button_action === 'chat' && plan.chat_trigger) {
       triggerOpenChat(plan.chat_trigger as ChatContext);
     }
