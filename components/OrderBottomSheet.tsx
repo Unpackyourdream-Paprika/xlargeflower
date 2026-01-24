@@ -477,9 +477,9 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
     return plan || null;
   };
 
-  // 총 금액 계산 (팩 가격 + 모델 가격 + 매체비)
+  // 공급가액 계산 (팩 가격 + 모델 가격 + 매체비) - VAT 별도
   // 할인은 상품(팩) 가격에만 적용, 모델/매체비는 할인 제외
-  const calculateTotalPrice = () => {
+  const calculateSubtotal = () => {
     const planInfo = getSelectedPlanInfo();
     const modelInfo = getSelectedModelInfo();
 
@@ -504,6 +504,16 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
     total += mediaData.mediaBudget;
 
     return total;
+  };
+
+  // VAT 계산 (10%)
+  const calculateVAT = () => {
+    return Math.round(calculateSubtotal() * 0.1);
+  };
+
+  // 총 금액 계산 (공급가액 + VAT 10%)
+  const calculateTotalPrice = () => {
+    return calculateSubtotal() + calculateVAT();
   };
 
   // 선택 항목 요약 생성
@@ -920,7 +930,7 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                 {!isSubmitted && (
                   <div className="mt-1">
                     <p className="text-sm text-[#00F5A0] font-medium">
-                      ₩{formatPrice(calculateTotalPrice())}
+                      ₩{formatPrice(calculateTotalPrice())} <span className="text-xs text-gray-500">(VAT 포함)</span>
                     </p>
                     {getSelectionSummary() && (
                       <p className="text-xs text-gray-500 mt-0.5">
@@ -1527,8 +1537,17 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                         <span className="text-white">{mediaData.platforms.join(', ') || '미정'}</span>
                       </div>
                       <div className="border-t border-[#333] my-3" />
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">공급가액</span>
+                        <span className="text-white">₩{formatPrice(calculateSubtotal())}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">부가세 (10%)</span>
+                        <span className="text-white">₩{formatPrice(calculateVAT())}</span>
+                      </div>
+                      <div className="border-t border-[#333] my-3" />
                       <div className="flex justify-between">
-                        <span className="text-gray-400 font-medium">총 금액</span>
+                        <span className="text-gray-400 font-medium">총 결제금액</span>
                         <span className="text-[#00F5A0] font-bold text-lg">₩{formatPrice(calculateTotalPrice())}</span>
                       </div>
                     </div>
@@ -1556,8 +1575,11 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                 >
                   {/* 결제 금액 표시 */}
                   <div className="text-center py-4">
-                    <p className="text-gray-400 text-sm mb-2">결제 금액</p>
+                    <p className="text-gray-400 text-sm mb-2">결제 금액 (VAT 포함)</p>
                     <p className="text-3xl font-bold text-white">₩{formatPrice(calculateTotalPrice())}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      공급가액 ₩{formatPrice(calculateSubtotal())} + VAT ₩{formatPrice(calculateVAT())}
+                    </p>
                     {getSelectionSummary() && (
                       <p className="text-sm text-gray-500 mt-1">({getSelectionSummary()})</p>
                     )}
@@ -1672,7 +1694,7 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                         </div>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">입금액</span>
+                        <span className="text-gray-500">입금액 (VAT 포함)</span>
                         <span className="text-white font-bold">₩{formatPrice(calculateTotalPrice())}</span>
                       </div>
                       <div className="flex justify-between">
