@@ -97,16 +97,16 @@ export default function ArtistDetailModal({ artist, isOpen, onClose, isLightThem
             onClick={onClose}
           />
 
-          {/* Modal - 전면 가득 + 둥근 모서리 */}
+          {/* Modal - 모바일: 전면, PC: 중앙 카드 */}
           <motion.div
             initial={{ opacity: 0, y: '100%' }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: '100%' }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="fixed inset-x-0 top-4 bottom-0 z-[101] pointer-events-auto overflow-y-auto rounded-t-3xl"
+            className="fixed inset-x-0 top-4 bottom-0 z-[101] pointer-events-auto overflow-y-auto rounded-t-3xl md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[480px] md:max-h-[85vh] md:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className={`min-h-full rounded-t-3xl ${isLightTheme ? 'bg-white' : 'bg-[#0A0A0A]'}`}>
+            <div className={`min-h-full md:min-h-0 rounded-t-3xl md:rounded-2xl ${isLightTheme ? 'bg-white' : 'bg-[#0A0A0A]'}`}>
               {/* Close Button */}
               <button
                 onClick={onClose}
@@ -121,8 +121,8 @@ export default function ArtistDetailModal({ artist, isOpen, onClose, isLightThem
                 </svg>
               </button>
 
-              {/* 프로필 사진 영역 - 1:1 비율, 위쪽 크롭 */}
-              <div className="relative w-full aspect-square overflow-hidden rounded-t-3xl">
+              {/* 프로필 사진 영역 - 모바일: 1:1, PC: 4:3 비율 */}
+              <div className="relative w-full aspect-square md:aspect-[4/3] overflow-hidden rounded-t-3xl md:rounded-t-2xl">
                 <div
                   className="absolute inset-0 bg-cover bg-top"
                   style={{ backgroundImage: `url(${artist.thumbnail_url})` }}
@@ -174,9 +174,9 @@ export default function ArtistDetailModal({ artist, isOpen, onClose, isLightThem
                   </p>
                 )}
 
-                {/* Shorts 영상 영역 - 태그 밑에 */}
+                {/* Shorts 영상 영역 - 태그 밑에, PC에서는 더 작게 */}
                 {(embedUrl || artist.hover_video_url) && (
-                  <div className="mt-4 relative aspect-[9/16] w-full max-w-sm mx-auto overflow-hidden bg-black rounded-2xl">
+                  <div className="mt-4 relative aspect-[9/16] w-full max-w-sm md:max-w-[200px] mx-auto overflow-hidden bg-black rounded-2xl md:rounded-xl">
                     {embedUrl && !isTikTok ? (
                       <iframe
                         src={embedUrl}

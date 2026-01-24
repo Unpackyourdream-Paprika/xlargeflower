@@ -221,17 +221,17 @@ function PlaceholderCard({ index }: { index: number }) {
   );
 }
 
-// 커스텀 모델 제작 CTA 카드
+// 커스텀 모델 제작 CTA 카드 - PC: 가로형 배너, 모바일: 세로형 카드
 function CustomModelCard({ index, onOpenModal, isLightTheme }: { index: number; onOpenModal: () => void; isLightTheme: boolean }) {
   return (
     <ScrollReveal delay={index * 0.1} direction="up">
       <motion.div
         className={`group relative cursor-pointer overflow-hidden rounded-2xl border transition-all duration-500 ${
           isLightTheme
-            ? 'bg-gradient-to-b from-[#F5F0FF] to-white border-purple-300 hover:border-purple-500'
-            : 'bg-gradient-to-b from-[#1a0a2e] to-[#0A0A0A] border-purple-500/30 hover:border-[#00F5A0]/50'
+            ? 'bg-gradient-to-r md:bg-gradient-to-r from-[#F5F0FF] to-white border-purple-300 hover:border-purple-500'
+            : 'bg-gradient-to-b md:bg-gradient-to-r from-[#1a0a2e] to-[#0A0A0A] border-purple-500/30 hover:border-[#00F5A0]/50'
         }`}
-        whileHover={{ scale: 1.02 }}
+        whileHover={{ scale: 1.01 }}
         transition={{ duration: 0.3 }}
         onClick={onOpenModal}
       >
@@ -240,50 +240,58 @@ function CustomModelCard({ index, onOpenModal, isLightTheme }: { index: number; 
           <div className="absolute inset-0 rounded-2xl shadow-[0_0_40px_rgba(0,245,160,0.2)]" />
         </div>
 
-        <div className="aspect-[4/5] relative flex flex-col items-center justify-center p-6">
-          {/* 아이콘 */}
-          <div className="w-20 h-20 rounded-full bg-gradient-to-r from-[#00F5A0]/20 to-purple-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-            <svg
-              className="w-10 h-10 text-[#00F5A0]"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
+        {/* 모바일: 세로 레이아웃, PC: 가로 레이아웃 */}
+        <div className="aspect-[4/5] md:aspect-auto md:py-8 relative flex flex-col md:flex-row items-center justify-center md:justify-between p-6 md:px-12 gap-4 md:gap-8">
+          {/* 왼쪽: 아이콘 + 텍스트 */}
+          <div className="flex flex-col md:flex-row items-center md:items-center gap-4 md:gap-6">
+            {/* 아이콘 */}
+            <div className="w-16 h-16 md:w-14 md:h-14 rounded-full bg-gradient-to-r from-[#00F5A0]/20 to-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+              <svg
+                className="w-8 h-8 md:w-7 md:h-7 text-[#00F5A0]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+            </div>
+
+            {/* 텍스트 */}
+            <div className="text-center md:text-left">
+              <span className={`text-[10px] font-bold tracking-[0.2em] uppercase ${isLightTheme ? 'text-purple-600' : 'text-purple-400'}`}>
+                CUSTOM MODEL
+              </span>
+              <h3 className={`text-xl md:text-2xl font-bold tracking-tight mt-1 ${isLightTheme ? 'text-gray-900' : 'text-white'}`}>
+                나만의 AI 모델 만들기
+              </h3>
+              <p className={`text-sm mt-1 ${isLightTheme ? 'text-gray-600' : 'text-white/60'}`}>
+                <span className="md:hidden">원하는 얼굴이 없나요?<br />브랜드 전용 AI 모델을 만들어 드립니다</span>
+                <span className="hidden md:inline">원하는 얼굴이 없나요? 브랜드 전용 AI 모델을 만들어 드립니다</span>
+              </p>
+            </div>
           </div>
 
-          {/* 텍스트 */}
-          <span className={`text-[10px] font-bold tracking-[0.2em] uppercase mb-2 ${isLightTheme ? 'text-purple-600' : 'text-purple-400'}`}>
-            CUSTOM MODEL
-          </span>
-          <h3 className={`text-xl font-bold tracking-tight text-center mb-2 ${isLightTheme ? 'text-gray-900' : 'text-white'}`}>
-            맞춤형 모델 제작
-          </h3>
-          <p className={`text-sm text-center leading-relaxed mb-4 ${isLightTheme ? 'text-gray-600' : 'text-white/60'}`}>
-            원하는 얼굴이 없나요?
-            <br />
-            브랜드 전용 AI 모델을 만들어 드립니다
-          </p>
+          {/* 오른쪽: 태그 + CTA 버튼 */}
+          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
+            {/* 특징 태그 */}
+            <div className="flex flex-wrap justify-center gap-2">
+              <span className={`px-3 py-1.5 text-xs font-medium rounded-full ${isLightTheme ? 'bg-purple-100 text-purple-600' : 'bg-white/10 text-white/70'}`}>
+                독점 라이선스
+              </span>
+              <span className={`px-3 py-1.5 text-xs font-medium rounded-full ${isLightTheme ? 'bg-purple-100 text-purple-600' : 'bg-white/10 text-white/70'}`}>
+                수정 3회
+              </span>
+            </div>
 
-          {/* CTA 버튼 */}
-          <div className="px-4 py-2 rounded-full bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black text-sm font-bold group-hover:shadow-[0_0_20px_rgba(0,245,160,0.4)] transition-all duration-300">
-            제작 문의하기
-          </div>
-
-          {/* 특징 태그 */}
-          <div className="flex flex-wrap justify-center gap-2 mt-4">
-            <span className={`px-2 py-1 text-[10px] font-medium rounded-full ${isLightTheme ? 'bg-purple-100 text-purple-600' : 'bg-white/5 text-white/50'}`}>
-              독점 라이선스
-            </span>
-            <span className={`px-2 py-1 text-[10px] font-medium rounded-full ${isLightTheme ? 'bg-purple-100 text-purple-600' : 'bg-white/5 text-white/50'}`}>
-              수정 3회
-            </span>
+            {/* CTA 버튼 */}
+            <div className="px-6 py-3 rounded-full bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black text-sm font-bold group-hover:shadow-[0_0_20px_rgba(0,245,160,0.4)] transition-all duration-300 whitespace-nowrap">
+              제작 문의하기 →
+            </div>
           </div>
         </div>
       </motion.div>
