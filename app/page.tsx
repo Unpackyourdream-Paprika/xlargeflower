@@ -1063,7 +1063,7 @@ export default function Home() {
               무엇이든 물어보세요.<br className="md:hidden" /> 5분 안에 답변해 드립니다.
             </h2>
             <p className="text-white/60 text-base md:text-lg mb-8 max-w-2xl mx-auto" style={{ wordBreak: 'keep-all' }}>
-              복잡한 절차 없이, 실시간 채팅으로 바로 궁금증을 해결하세요.
+              복잡한 절차 없이 전화, 실시간 채팅으로 바로 궁금증을 해결하세요.
             </p>
 
             {/* Phone Number - Highlighted */}
