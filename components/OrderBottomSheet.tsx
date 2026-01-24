@@ -60,6 +60,9 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
     features: []
   });
 
+  // 상품(팩) 선택 - 필수
+  const [selectedPlanId, setSelectedPlanId] = useState<string>('');
+
   // Step 2: 매체 선택 데이터
   const [mediaData, setMediaData] = useState({
     platforms: [] as string[],
@@ -166,22 +169,61 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
     return { name: '모델 없음', price: 0 };
   };
 
-  // 총 금액 계산
-  const calculateTotalPrice = () => {
-    const modelInfo = getSelectedModelInfo();
-    return modelInfo?.price || 0;
+  // 선택된 상품(팩) 정보
+  const getSelectedPlanInfo = () => {
+    const plan = pricingPlans.find(p => p.id === selectedPlanId);
+    return plan || null;
   };
 
-  // Step 1: 모델 선택 완료
+  // 총 금액 계산 (팩 가격 + 모델 가격)
+  const calculateTotalPrice = () => {
+    const planInfo = getSelectedPlanInfo();
+    const modelInfo = getSelectedModelInfo();
+
+    let total = planInfo?.price || 0;
+
+    // 모델 추가 비용 (기존 아티스트 선택 시)
+    if (modelOption === 'select' && modelInfo?.price) {
+      total += modelInfo.price;
+    }
+    // 커스텀 모델은 별도 가격
+    if (modelOption === 'custom') {
+      total += customModelSettings.price;
+    }
+
+    // 프로모션 할인 적용
+    if (promotion && promotion.discount_rate > 0) {
+      total = Math.round(total * (1 - promotion.discount_rate / 100));
+    }
+
+    return total;
+  };
+
+  // 상품명 생성
+  const getProductName = () => {
+    const plan = getSelectedPlanInfo();
+    const model = getSelectedModelInfo();
+
+    let name = plan?.title || '상품';
+    if (model?.name && modelOption !== 'none') {
+      name += ` + ${model.name}`;
+    }
+    return name;
+  };
+
+  // Step 1: 상품 + 모델 선택 완료
   const handleStep1Next = () => {
+    const planInfo = getSelectedPlanInfo();
     const modelInfo = getSelectedModelInfo();
     sendDiscordWebhook({
       step: 1,
-      action: '모델 선택 완료',
+      action: '상품 + 모델 선택 완료',
       details: {
+        '선택 상품': planInfo?.title || '없음',
+        '상품 가격': planInfo?.price ? `₩${formatPrice(planInfo.price)}` : '₩0',
         '모델 옵션': modelOption === 'select' ? '기존 아티스트' : modelOption === 'custom' ? '커스텀 모델' : '모델 없음',
         '선택된 모델': modelInfo?.name || '없음',
-        '모델 가격': modelInfo?.price ? `₩${formatPrice(modelInfo.price)}` : '₩0'
+        '총 금액': `₩${formatPrice(calculateTotalPrice())}`
       }
     });
     setStep(2);
@@ -279,6 +321,7 @@ ${formData.message || '(없음)'}`;
     // 주문 확인 이메일 발송 시도
     try {
       // 주문 정보를 DB에 저장하고 ID 받기
+      const planInfo = getSelectedPlanInfo();
       const modelInfo = getSelectedModelInfo();
       const orderData = {
         customer_name: formData.name,
@@ -286,15 +329,17 @@ ${formData.message || '(없음)'}`;
         customer_phone: formData.phone || null,
         customer_company: formData.company || null,
         order_summary: {
+          product: getProductName(),
+          plan: planInfo?.title,
           modelOption,
-          product: modelInfo?.name,
+          model: modelInfo?.name,
           platforms: mediaData.platforms.join(', '),
           mediaBudget: mediaData.mediaBudget,
           target_audience: mediaData.targetAudience,
           targetRegion: mediaData.targetRegion,
           estimated_price: calculateTotalPrice()
         },
-        selected_pack: modelOption === 'custom' ? 'EXCLUSIVE' : 'READY',
+        selected_pack: planInfo?.title || 'READY',
         final_price: calculateTotalPrice()
       };
 
@@ -339,16 +384,25 @@ ${formData.message || '(없음)'}`;
     });
 
     try {
+      const totalPrice = calculateTotalPrice();
+      const productName = getProductName();
+
+      // 필수 값 검증
+      if (!totalPrice || totalPrice <= 0) {
+        throw new Error('결제 금액이 유효하지 않습니다.');
+      }
+
       // Stripe Checkout 세션 생성
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: calculateTotalPrice(),
+          amount: totalPrice,
           customerName: formData.name,
           customerEmail: formData.email,
-          productName: getSelectedModelInfo()?.name || 'XLARGE 주문',
+          productName: productName,
           metadata: {
+            selectedPlan: getSelectedPlanInfo()?.title,
             modelOption,
             selectedModel: getSelectedModelInfo()?.name,
             platforms: mediaData.platforms.join(', '),
@@ -422,6 +476,7 @@ ${formData.message || '(없음)'}`;
   const handleClose = () => {
     setStep(1);
     setIsSubmitted(false);
+    setSelectedPlanId('');
     setModelOption('select');
     setSelectedArtistId('');
     setMediaData({ platforms: [], mediaBudget: '', targetAudience: '', targetRegion: '' });
@@ -435,8 +490,8 @@ ${formData.message || '(없음)'}`;
 
   if (!isOpen) return null;
 
-  // Step 1 유효성: 모델 선택 필요 (select 옵션일 때만 아티스트 필수)
-  const isStep1Valid = modelOption === 'none' || modelOption === 'custom' || (modelOption === 'select' && selectedArtistId);
+  // Step 1 유효성: 상품(팩) 필수 + 모델 선택 조건
+  const isStep1Valid = selectedPlanId && (modelOption === 'none' || modelOption === 'custom' || (modelOption === 'select' && selectedArtistId));
 
   // 진행률 표시
   const progressPercent = ((step - 1) / 3) * 100;
@@ -520,15 +575,87 @@ ${formData.message || '(없음)'}`;
           {/* Content - Scrollable */}
           <div className="flex-1 overflow-y-auto px-6 py-6">
             <AnimatePresence mode="wait">
-              {/* Step 1: 모델 선택 */}
+              {/* Step 1: 상품 + 모델 선택 */}
               {step === 1 && (
                 <motion.div
                   key="step1"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="space-y-4"
+                  className="space-y-6"
                 >
+                  {/* 상품(팩) 선택 - 필수 */}
+                  <div>
+                    <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+                      📦 상품 선택 <span className="text-[#00F5A0] text-xs">(필수)</span>
+                    </h3>
+                    <div className="space-y-2">
+                      {pricingPlans.filter(p => p.is_active).map((plan) => {
+                        const discountedPrice = promotion && promotion.discount_rate > 0
+                          ? Math.round(plan.price * (1 - promotion.discount_rate / 100))
+                          : plan.price;
+
+                        return (
+                          <label
+                            key={plan.id}
+                            className={`flex items-center gap-3 cursor-pointer p-4 rounded-xl border transition-all ${
+                              selectedPlanId === plan.id
+                                ? 'bg-[#00F5A0]/10 border-[#00F5A0]'
+                                : 'bg-[#111] border-[#333] hover:border-[#00F5A0]/50'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="plan"
+                              checked={selectedPlanId === plan.id}
+                              onChange={() => setSelectedPlanId(plan.id || '')}
+                              className="sr-only"
+                            />
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                              selectedPlanId === plan.id
+                                ? 'border-[#00F5A0] bg-[#00F5A0]'
+                                : 'border-gray-600'
+                            }`}>
+                              {selectedPlanId === plan.id && (
+                                <div className="w-2 h-2 bg-black rounded-full" />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-white font-medium">{plan.title}</span>
+                                {plan.is_featured && (
+                                  <span className="px-2 py-0.5 bg-[#00F5A0]/20 text-[#00F5A0] text-xs rounded-full">
+                                    {plan.badge_text || 'BEST'}
+                                  </span>
+                                )}
+                              </div>
+                              {plan.subtitle && (
+                                <p className="text-sm text-gray-500">{plan.subtitle}</p>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              {promotion && promotion.discount_rate > 0 ? (
+                                <>
+                                  <p className="text-gray-500 text-xs line-through">₩{formatPrice(plan.price)}</p>
+                                  <p className="text-[#00F5A0] font-bold">₩{formatPrice(discountedPrice)}</p>
+                                </>
+                              ) : (
+                                <p className="text-white font-bold">₩{formatPrice(plan.price)}</p>
+                              )}
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 구분선 */}
+                  <div className="border-t border-[#333] pt-4">
+                    <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+                      🎭 AI 모델 선택 <span className="text-gray-500 text-xs">(선택)</span>
+                    </h3>
+                  </div>
+
                   {/* 기존 아티스트 선택 */}
                   <label className="flex items-start gap-3 cursor-pointer group p-4 bg-[#111] border border-[#333] rounded-xl hover:border-[#00F5A0]/50 transition-colors">
                     <div className="relative mt-0.5">
