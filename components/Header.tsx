@@ -50,7 +50,7 @@ export default function Header() {
               alt="XLARGE FLOWER"
               width={80}
               height={16}
-              className="h-4 w-auto md:h-[18px]"
+              className="h-4 w-auto md:h-[18px] [html[data-theme='light']_&]:invert"
               priority
             />
           </Link>

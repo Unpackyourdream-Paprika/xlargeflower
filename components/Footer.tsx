@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
 export default function Footer() {
@@ -17,7 +18,13 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
-            <span className="text-white font-bold text-xl tracking-tight">XLARGE FLOWER</span>
+            <Image
+              src="/images/LOGO_XLARGE FLOWER.svg"
+              alt="XLARGE FLOWER"
+              width={120}
+              height={24}
+              className="h-5 w-auto [html[data-theme='light']_&]:invert"
+            />
             <p className="text-white/60 mt-4 max-w-md text-sm">
               유입을 위한 XLARGE FLOWER
               <br />
@@ -84,10 +91,11 @@ export default function Footer() {
           <div>
             <h4 className="text-white/80 text-sm font-bold mb-4 tracking-wide">COMPANY</h4>
             <ul className="space-y-2 text-white/60 text-sm">
-              <li className="font-medium text-white/80">파프리카 주식회사</li>
+              <li className="font-medium text-white/80">스네이크 스테이크 주식회사</li>
               <li>대표이사: 정재훈</li>
-              <li>사업자등록번호: 774-88-01296</li>
-              <li className="pt-2">서울특별시 마포구 성암로 179, 14층</li>
+              <li>사업자등록번호: 666-81-02807</li>
+              <li className="pt-2">서울특별시 마포구 월드컵북로56길 12, 11층</li>
+              <li>(상암동, Trutec Building)</li>
               <li>foohlower@pprk.xyz</li>
             </ul>
           </div>
@@ -95,7 +103,7 @@ export default function Footer() {
 
         <div className="border-t border-white/10 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-white/50 text-xs">
-            © 2025 파프리카 주식회사 (Paprika Co., Ltd.). All rights reserved.
+            © 2025 스네이크 스테이크 주식회사 (Snake Steak Co., Ltd.). All rights reserved.
           </p>
           <div className="flex gap-6">
             <Link href="/privacy" className="text-white/50 hover:text-white transition-colors text-xs">

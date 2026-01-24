@@ -36,7 +36,7 @@ export default function ProductsPage() {
             모델 섭외비 0원, 스튜디오 비용 0원
           </h1>
           <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            월 300만 원대로 평생 소장 가능한 고효율 광고 소재를 확보하세요.
+            단 한 번의 결제로, 추가 비용 없이 평생 소장하세요.
           </p>
         </div>
 
@@ -131,16 +131,16 @@ export default function ProductsPage() {
             <div className="p-6 bg-[#0A0A0A] border border-[#222] rounded-xl">
               <h3 className="font-semibold text-white mb-2">어떤 결제 방식을 지원하나요?</h3>
               <p className="text-gray-400 text-sm">
-                법인카드, 계좌이체, 에스크로(크몽/숨고) 결제를 지원합니다. 착수금 50% 납입 후 프로젝트가 시작되며, 세금계산서 발행이 가능합니다.
+                전 세계 어디서든 결제 가능한 글로벌 PG(Stripe)와 국내 계좌이체를 지원합니다. 복잡한 절차 없이 법인/개인 카드로 즉시 결제가 가능하며, 고액 건의 경우 담당 매니저를 통해 세금계산서 발행 및 입금 처리를 도와드립니다.
               </p>
             </div>
           </div>
         </section>
 
-        {/* CTA - 화이트 모드 스타일 */}
-        <div className="text-center p-12 bg-gradient-to-b from-gray-100 to-white border border-gray-200 rounded-3xl">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">어떤 플랜이 적합할지 고민되시나요?</h2>
-          <p className="text-gray-600 mb-8">
+        {/* CTA - 다크/라이트 모드 대응 */}
+        <div className="text-center p-12 bg-gradient-to-b from-gray-100 to-white dark:from-[#111] dark:to-[#0A0A0A] border border-gray-200 dark:border-[#333] rounded-3xl">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">어떤 플랜이 적합할지 고민되시나요?</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-8">
             전문 컨설턴트가 귀사의 니즈를 분석하여 최적의 솔루션을 제안드립니다.
           </p>
           <button
