@@ -187,13 +187,13 @@ export default function ChatWidget({ isOpen, onClose, initialContext = 'default'
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop - 모바일에서만 표시 */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/60 z-40"
+            className="fixed inset-0 bg-black/60 z-40 md:hidden"
             onClick={onClose}
           />
 
@@ -228,7 +228,7 @@ export default function ChatWidget({ isOpen, onClose, initialContext = 'default'
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-[#050505] min-h-0">
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-[#050505] dark:bg-[#050505] bg-white min-h-0">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -238,7 +238,7 @@ export default function ChatWidget({ isOpen, onClose, initialContext = 'default'
                 className={`max-w-[80%] rounded-lg px-4 py-2.5 ${
                   message.role === 'user'
                     ? 'bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black'
-                    : 'bg-[#1A1A1A] border border-[#222222] text-white'
+                    : 'dark:bg-[#1A1A1A] dark:border-[#222222] dark:text-white bg-white border border-black text-black'
                 }`}
               >
                 <p className="text-sm whitespace-pre-wrap">{message.content}</p>

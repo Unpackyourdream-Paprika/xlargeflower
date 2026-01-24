@@ -67,16 +67,30 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // 바텀 시트 열기/닫기
+  const openContactModal = () => {
+    setIsContactModalOpen(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeContactModal = () => {
+    setIsContactModalOpen(false);
+    document.body.style.overflow = '';
+    setInitialOrderArtist('');
+  };
+
   // 아티스트 모델 선택 이벤트 리스너
   useEffect(() => {
     const handleOpenContactWithArtist = (e: CustomEvent<{ artistName: string; noModelNeeded: boolean }>) => {
       const { artistName } = e.detail;
       setInitialOrderArtist(artistName);
-      openContactModal();
+      setIsContactModalOpen(true);
+      document.body.style.overflow = 'hidden';
     };
 
     const handleOpenOrderWithPlan = () => {
-      openContactModal();
+      setIsContactModalOpen(true);
+      document.body.style.overflow = 'hidden';
     };
 
     window.addEventListener('openContactWithArtist', handleOpenContactWithArtist as EventListener);
@@ -127,17 +141,6 @@ export default function Home() {
     return `${month}/${day}`;
   };
 
-  // 바텀 시트 열기/닫기
-  const openContactModal = () => {
-    setIsContactModalOpen(true);
-    document.body.style.overflow = 'hidden';
-  };
-
-  const closeContactModal = () => {
-    setIsContactModalOpen(false);
-    setInitialOrderArtist('');
-    document.body.style.overflow = '';
-  };
   return (
     <div className="min-h-screen bg-[#050505] main-content">
       {/* Hero Section - Dynamic Layout */}

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -44,7 +45,14 @@ export default function Header() {
       <nav className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-white font-bold text-lg tracking-tight">XLARGE</span>
+            <Image
+              src="/images/LOGO_XLARGE FLOWER.svg"
+              alt="XLARGE FLOWER"
+              width={80}
+              height={16}
+              className="h-4 w-auto md:h-[18px]"
+              priority
+            />
           </Link>
 
           {/* Desktop Navigation */}
