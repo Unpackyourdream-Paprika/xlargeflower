@@ -74,7 +74,8 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
 
     observer.observe(container);
     return () => observer.disconnect();
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [src]);
 
   return (
     <div
