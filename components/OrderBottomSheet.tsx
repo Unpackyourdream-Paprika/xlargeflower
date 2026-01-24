@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArtistModel, getArtistModels, PricingPlan, PromotionSettings, submitContact, getCustomModelSettings, CustomModelSettings } from '@/lib/supabase';
+import { ArtistModel, getArtistModels, PricingPlan, PromotionSettings, getCustomModelSettings, CustomModelSettings } from '@/lib/supabase';
 
 interface OrderBottomSheetProps {
   isOpen: boolean;
@@ -47,6 +47,270 @@ async function sendDiscordWebhook(data: {
   }
 }
 
+// 매체비 옵션 (금액 포함)
+const MEDIA_BUDGET_OPTIONS = [
+  { label: '10만원', value: 100000 },
+  { label: '50만원', value: 500000 },
+  { label: '100만원', value: 1000000 },
+  { label: '300만원', value: 3000000 },
+  { label: '500만원', value: 5000000 },
+  { label: '1000만원', value: 10000000 },
+  { label: '미정 / 협의 필요', value: 0 },
+];
+
+// 지역 자동완성 데이터 (도달률 포함)
+interface RegionData {
+  name: string;
+  reach: string; // 예상 도달률
+  population?: string; // 인구/사용자 수
+}
+
+const REGION_DATA: RegionData[] = [
+  // 글로벌/전체
+  { name: '전세계 (Worldwide)', reach: '4.9B+', population: '49억 사용자' },
+  { name: '글로벌 (국내+해외)', reach: '4.9B+', population: '49억 사용자' },
+
+  // 대한민국 - 전체/권역
+  { name: '대한민국 전체', reach: '46M', population: '4,600만' },
+  { name: '수도권', reach: '26M', population: '2,600만' },
+  { name: '비수도권', reach: '20M', population: '2,000만' },
+
+  // 대한민국 - 시/도
+  { name: '서울', reach: '9.7M', population: '970만' },
+  { name: '경기', reach: '13.5M', population: '1,350만' },
+  { name: '인천', reach: '2.9M', population: '290만' },
+  { name: '부산', reach: '3.4M', population: '340만' },
+  { name: '대구', reach: '2.4M', population: '240만' },
+  { name: '대전', reach: '1.5M', population: '150만' },
+  { name: '광주', reach: '1.4M', population: '140만' },
+  { name: '울산', reach: '1.1M', population: '110만' },
+  { name: '세종', reach: '380K', population: '38만' },
+  { name: '강원', reach: '1.5M', population: '150만' },
+  { name: '충북', reach: '1.6M', population: '160만' },
+  { name: '충남', reach: '2.1M', population: '210만' },
+  { name: '전북', reach: '1.8M', population: '180만' },
+  { name: '전남', reach: '1.8M', population: '180만' },
+  { name: '경북', reach: '2.6M', population: '260만' },
+  { name: '경남', reach: '3.3M', population: '330만' },
+  { name: '제주', reach: '670K', population: '67만' },
+
+  // 일본 - 전체/권역
+  { name: '일본 전체', reach: '101M', population: '1억 100만' },
+  { name: '도쿄', reach: '14M', population: '1,400만' },
+  { name: '오사카', reach: '8.8M', population: '880만' },
+  { name: '나고야', reach: '2.3M', population: '230만' },
+  { name: '후쿠오카', reach: '1.6M', population: '160만' },
+  { name: '삿포로', reach: '2M', population: '200만' },
+  { name: '요코하마', reach: '3.7M', population: '370만' },
+  { name: '교토', reach: '1.5M', population: '150만' },
+  { name: '고베', reach: '1.5M', population: '150만' },
+
+  // 중국 - 전체/주요도시
+  { name: '중국 전체', reach: '1B+', population: '10억+' },
+  { name: '베이징', reach: '21M', population: '2,100만' },
+  { name: '상하이', reach: '24M', population: '2,400만' },
+  { name: '광저우', reach: '18M', population: '1,800만' },
+  { name: '선전', reach: '17M', population: '1,700만' },
+  { name: '청두', reach: '21M', population: '2,100만' },
+  { name: '항저우', reach: '12M', population: '1,200만' },
+
+  // 대만
+  { name: '대만 전체', reach: '21M', population: '2,100만' },
+  { name: '타이베이', reach: '2.6M', population: '260만' },
+  { name: '가오슝', reach: '2.7M', population: '270만' },
+
+  // 홍콩/마카오
+  { name: '홍콩', reach: '6.4M', population: '640만' },
+  { name: '마카오', reach: '680K', population: '68만' },
+
+  // 동남아시아
+  { name: '동남아시아 전체', reach: '400M+', population: '4억+' },
+  { name: '싱가포르', reach: '5.3M', population: '530만' },
+  { name: '태국 전체', reach: '57M', population: '5,700만' },
+  { name: '방콕', reach: '10M', population: '1,000만' },
+  { name: '베트남 전체', reach: '72M', population: '7,200만' },
+  { name: '호치민', reach: '9M', population: '900만' },
+  { name: '하노이', reach: '8M', population: '800만' },
+  { name: '인도네시아 전체', reach: '170M', population: '1억 7,000만' },
+  { name: '자카르타', reach: '10M', population: '1,000만' },
+  { name: '말레이시아 전체', reach: '28M', population: '2,800만' },
+  { name: '쿠알라룸푸르', reach: '7.8M', population: '780만' },
+  { name: '필리핀 전체', reach: '84M', population: '8,400만' },
+  { name: '마닐라', reach: '13M', population: '1,300만' },
+
+  // 인도
+  { name: '인도 전체', reach: '467M', population: '4억 6,700만' },
+  { name: '뭄바이', reach: '20M', population: '2,000만' },
+  { name: '델리', reach: '32M', population: '3,200만' },
+  { name: '벵갈루루', reach: '12M', population: '1,200만' },
+
+  // 미국 - 전체/권역
+  { name: '미국 전체', reach: '270M', population: '2억 7,000만' },
+  { name: '뉴욕', reach: '8.3M', population: '830만' },
+  { name: '로스앤젤레스', reach: '3.9M', population: '390만' },
+  { name: '시카고', reach: '2.7M', population: '270만' },
+  { name: '휴스턴', reach: '2.3M', population: '230만' },
+  { name: '마이애미', reach: '450K', population: '45만' },
+  { name: '샌프란시스코', reach: '870K', population: '87만' },
+  { name: '시애틀', reach: '750K', population: '75만' },
+  { name: '라스베이거스', reach: '650K', population: '65만' },
+  { name: '캘리포니아', reach: '39M', population: '3,900만' },
+  { name: '텍사스', reach: '29M', population: '2,900만' },
+  { name: '플로리다', reach: '22M', population: '2,200만' },
+
+  // 캐나다
+  { name: '캐나다 전체', reach: '33M', population: '3,300만' },
+  { name: '토론토', reach: '2.9M', population: '290만' },
+  { name: '밴쿠버', reach: '2.5M', population: '250만' },
+  { name: '몬트리올', reach: '1.8M', population: '180만' },
+
+  // 유럽 - 전체
+  { name: '유럽 전체', reach: '450M', population: '4억 5,000만' },
+
+  // 영국
+  { name: '영국 전체', reach: '57M', population: '5,700만' },
+  { name: '런던', reach: '8.9M', population: '890만' },
+  { name: '맨체스터', reach: '2.8M', population: '280만' },
+  { name: '버밍엄', reach: '1.1M', population: '110만' },
+
+  // 프랑스
+  { name: '프랑스 전체', reach: '53M', population: '5,300만' },
+  { name: '파리', reach: '2.1M', population: '210만' },
+
+  // 독일
+  { name: '독일 전체', reach: '66M', population: '6,600만' },
+  { name: '베를린', reach: '3.6M', population: '360만' },
+  { name: '뮌헨', reach: '1.5M', population: '150만' },
+  { name: '프랑크푸르트', reach: '750K', population: '75만' },
+
+  // 이탈리아
+  { name: '이탈리아 전체', reach: '43M', population: '4,300만' },
+  { name: '로마', reach: '2.8M', population: '280만' },
+  { name: '밀라노', reach: '1.4M', population: '140만' },
+
+  // 스페인
+  { name: '스페인 전체', reach: '40M', population: '4,000만' },
+  { name: '마드리드', reach: '3.3M', population: '330만' },
+  { name: '바르셀로나', reach: '1.6M', population: '160만' },
+
+  // 네덜란드
+  { name: '네덜란드 전체', reach: '14M', population: '1,400만' },
+  { name: '암스테르담', reach: '870K', population: '87만' },
+
+  // 기타 유럽
+  { name: '스위스', reach: '7.6M', population: '760만' },
+  { name: '오스트리아', reach: '7.5M', population: '750만' },
+  { name: '벨기에', reach: '9.8M', population: '980만' },
+  { name: '스웨덴', reach: '9M', population: '900만' },
+  { name: '노르웨이', reach: '4.8M', population: '480만' },
+  { name: '덴마크', reach: '5M', population: '500만' },
+  { name: '핀란드', reach: '4.6M', population: '460만' },
+  { name: '폴란드', reach: '27M', population: '2,700만' },
+  { name: '체코', reach: '8.9M', population: '890만' },
+  { name: '포르투갈', reach: '8.2M', population: '820만' },
+  { name: '그리스', reach: '8M', population: '800만' },
+  { name: '아일랜드', reach: '4.2M', population: '420만' },
+
+  // 오세아니아
+  { name: '호주 전체', reach: '23M', population: '2,300만' },
+  { name: '시드니', reach: '5.3M', population: '530만' },
+  { name: '멜버른', reach: '5M', population: '500만' },
+  { name: '브리즈번', reach: '2.5M', population: '250만' },
+  { name: '뉴질랜드 전체', reach: '4.3M', population: '430만' },
+  { name: '오클랜드', reach: '1.7M', population: '170만' },
+
+  // 중남미
+  { name: '중남미 전체', reach: '450M', population: '4억 5,000만' },
+  { name: '브라질 전체', reach: '150M', population: '1억 5,000만' },
+  { name: '상파울루', reach: '12M', population: '1,200만' },
+  { name: '리우데자네이루', reach: '6.7M', population: '670만' },
+  { name: '멕시코 전체', reach: '98M', population: '9,800만' },
+  { name: '멕시코시티', reach: '9M', population: '900만' },
+  { name: '아르헨티나 전체', reach: '36M', population: '3,600만' },
+  { name: '부에노스아이레스', reach: '3M', population: '300만' },
+  { name: '콜롬비아', reach: '38M', population: '3,800만' },
+  { name: '칠레', reach: '16M', population: '1,600만' },
+  { name: '페루', reach: '24M', population: '2,400만' },
+
+  // 중동
+  { name: '중동 전체', reach: '200M', population: '2억' },
+  { name: 'UAE', reach: '9.5M', population: '950만' },
+  { name: '두바이', reach: '3.5M', population: '350만' },
+  { name: '사우디아라비아', reach: '29M', population: '2,900만' },
+  { name: '이스라엘', reach: '7.3M', population: '730만' },
+  { name: '터키 전체', reach: '62M', population: '6,200만' },
+  { name: '이스탄불', reach: '15M', population: '1,500만' },
+  { name: '카타르', reach: '2.6M', population: '260만' },
+  { name: '쿠웨이트', reach: '4M', population: '400만' },
+
+  // 아프리카
+  { name: '아프리카 전체', reach: '570M', population: '5억 7,000만' },
+  { name: '남아프리카공화국', reach: '28M', population: '2,800만' },
+  { name: '이집트', reach: '51M', population: '5,100만' },
+  { name: '나이지리아', reach: '33M', population: '3,300만' },
+  { name: '케냐', reach: '12M', population: '1,200만' },
+
+  // 러시아/CIS
+  { name: '러시아 전체', reach: '99M', population: '9,900만' },
+  { name: '모스크바', reach: '12M', population: '1,200만' },
+  { name: '상트페테르부르크', reach: '5.4M', population: '540만' },
+];
+
+// reach 문자열을 숫자로 변환 (예: '4.9B+' -> 4900000000, '46M' -> 46000000)
+const parseReachToNumber = (reach: string): number => {
+  const cleanedReach = reach.replace(/[+,]/g, '').trim();
+  const match = cleanedReach.match(/^([\d.]+)([KMB])?$/i);
+  if (!match) return 0;
+
+  const num = parseFloat(match[1]);
+  const suffix = (match[2] || '').toUpperCase();
+
+  switch (suffix) {
+    case 'K': return num * 1000;
+    case 'M': return num * 1000000;
+    case 'B': return num * 1000000000;
+    default: return num;
+  }
+};
+
+// 숫자를 포맷팅 (예: 4900000000 -> '49억', 46000000 -> '4,600만')
+const formatReachNumber = (num: number): string => {
+  if (num >= 100000000) {
+    // 1억 이상
+    const billions = num / 100000000;
+    return `${billions.toFixed(billions % 1 === 0 ? 0 : 1)}억`;
+  } else if (num >= 10000) {
+    // 1만 이상
+    const tenThousands = num / 10000;
+    return `${Math.round(tenThousands).toLocaleString()}만`;
+  } else if (num >= 1000) {
+    return `${(num / 1000).toFixed(1)}천`;
+  }
+  return num.toLocaleString();
+};
+
+// 매체비에 따른 예상 도달 수 계산 (CPM 기반)
+// 평균 CPM: 약 5,000원~15,000원 (국가/플랫폼별 상이)
+// 보수적으로 CPM 10,000원 기준으로 계산
+const calculateEstimatedReach = (mediaBudget: number, totalPotentialReach: number): { min: number; max: number } => {
+  if (mediaBudget === 0) return { min: 0, max: 0 };
+
+  // CPM (Cost Per Mille) 기준: 1000회 노출당 비용
+  // 한국: 약 3,000~8,000원, 글로벌: 약 5,000~15,000원
+  const cpmMin = 3000; // 최저 CPM (최대 도달)
+  const cpmMax = 15000; // 최고 CPM (최소 도달)
+
+  // 예상 노출 수 계산
+  const maxReach = Math.floor((mediaBudget / cpmMin) * 1000);
+  const minReach = Math.floor((mediaBudget / cpmMax) * 1000);
+
+  // 잠재 도달 가능 인원을 초과하지 않도록 제한
+  return {
+    min: Math.min(minReach, totalPotentialReach),
+    max: Math.min(maxReach, totalPotentialReach)
+  };
+};
+
 export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initialArtist, promotion }: OrderBottomSheetProps) {
   const [step, setStep] = useState<Step>(1);
   const [artists, setArtists] = useState<ArtistModel[]>([]);
@@ -66,10 +330,16 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
   // Step 2: 매체 선택 데이터
   const [mediaData, setMediaData] = useState({
     platforms: [] as string[],
-    mediaBudget: '',
+    mediaBudget: 0,
     targetAudience: '',
-    targetRegion: ''
+    targetRegions: [] as string[],
+    landingUrl: ''
   });
+
+  // 지역 자동완성
+  const [regionInput, setRegionInput] = useState('');
+  const [showRegionSuggestions, setShowRegionSuggestions] = useState(false);
+  const [filteredRegions, setFilteredRegions] = useState<RegionData[]>([]);
 
   // Step 3: 정보 입력 데이터
   const [formData, setFormData] = useState({
@@ -80,6 +350,10 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
     message: '',
   });
 
+  // 파일 업로드
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Step 4: 결제 관련
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
   const [timeLeft, setTimeLeft] = useState(30 * 60); // 30분 = 1800초
@@ -89,6 +363,23 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isStripeLoading, setIsStripeLoading] = useState(false);
+
+  // 지역 검색 필터링 - 실제로 검색어를 입력했을 때만 자동완성 표시
+  useEffect(() => {
+    const trimmedInput = regionInput.trim();
+    if (trimmedInput && trimmedInput !== ' ') {
+      // 실제 검색어가 있을 때만 필터링
+      const filtered = REGION_DATA.filter(r =>
+        r.name.toLowerCase().includes(trimmedInput.toLowerCase()) &&
+        !mediaData.targetRegions.includes(r.name)
+      );
+      setFilteredRegions(filtered);
+      setShowRegionSuggestions(filtered.length > 0);
+    } else {
+      setFilteredRegions([]);
+      setShowRegionSuggestions(false);
+    }
+  }, [regionInput, mediaData.targetRegions]);
 
   // 타이머 효과
   useEffect(() => {
@@ -175,28 +466,52 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
     return plan || null;
   };
 
-  // 총 금액 계산 (팩 가격 + 모델 가격)
+  // 총 금액 계산 (팩 가격 + 모델 가격 + 매체비)
+  // 할인은 상품(팩) 가격에만 적용, 모델/매체비는 할인 제외
   const calculateTotalPrice = () => {
     const planInfo = getSelectedPlanInfo();
     const modelInfo = getSelectedModelInfo();
 
-    let total = planInfo?.price || 0;
+    // 상품 가격 (할인 적용 대상)
+    let planPrice = planInfo?.price || 0;
+    if (promotion && promotion.discount_rate > 0) {
+      planPrice = Math.round(planPrice * (1 - promotion.discount_rate / 100));
+    }
 
-    // 모델 추가 비용 (기존 아티스트 선택 시)
+    let total = planPrice;
+
+    // 모델 추가 비용 (할인 미적용)
     if (modelOption === 'select' && modelInfo?.price) {
       total += modelInfo.price;
     }
-    // 커스텀 모델은 별도 가격
+    // 커스텀 모델은 별도 가격 (할인 미적용)
     if (modelOption === 'custom') {
       total += customModelSettings.price;
     }
 
-    // 프로모션 할인 적용
-    if (promotion && promotion.discount_rate > 0) {
-      total = Math.round(total * (1 - promotion.discount_rate / 100));
-    }
+    // 매체비 추가 (할인 미적용)
+    total += mediaData.mediaBudget;
 
     return total;
+  };
+
+  // 선택 항목 요약 생성
+  const getSelectionSummary = () => {
+    const items: string[] = [];
+    const planInfo = getSelectedPlanInfo();
+    const modelInfo = getSelectedModelInfo();
+
+    if (planInfo) {
+      items.push(planInfo.title);
+    }
+    if (modelOption !== 'none' && modelInfo?.name) {
+      items.push(modelInfo.name);
+    }
+    if (mediaData.mediaBudget > 0) {
+      items.push(`매체비 ${formatPrice(mediaData.mediaBudget)}원`);
+    }
+
+    return items.join(' + ');
   };
 
   // 상품명 생성
@@ -236,13 +551,17 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
       action: '매체 선택 완료',
       details: {
         '선택 플랫폼': mediaData.platforms.join(', ') || '없음',
-        '매체비 예산': mediaData.mediaBudget || '미정',
+        '매체비': mediaData.mediaBudget > 0 ? `₩${formatPrice(mediaData.mediaBudget)}` : '미정',
         '타겟층': mediaData.targetAudience || '미정',
-        '타겟 지역': mediaData.targetRegion || '미정'
+        '타겟 지역': mediaData.targetRegions.join(', ') || '미정',
+        '랜딩 URL': mediaData.landingUrl || '미입력'
       }
     });
     setStep(3);
   };
+
+  // 생성된 주문 ID 저장
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
 
   // Step 3: 정보 입력 완료 -> 결제 단계로
   const handleStep3Next = async (e: React.FormEvent) => {
@@ -251,32 +570,53 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
 
     setIsSubmitting(true);
     try {
+      const planInfo = getSelectedPlanInfo();
       const modelInfo = getSelectedModelInfo();
 
-      // 주문 내용 정리
-      const message = `[모델 선택]
-- 옵션: ${modelOption === 'select' ? '기존 아티스트' : modelOption === 'custom' ? '커스텀 모델' : '모델 없음'}
-- 모델명: ${modelInfo?.name || '없음'}
-- 모델 가격: ₩${formatPrice(modelInfo?.price || 0)}
+      // 주문 생성 (xlarge_flower_orders 테이블에 저장)
+      const orderData = {
+        customer_name: formData.name,
+        customer_email: formData.email,
+        customer_phone: formData.phone || null,
+        customer_company: formData.company || null,
+        order_summary: {
+          product: getProductName(),
+          plan: planInfo?.title,
+          modelOption,
+          model: modelInfo?.name,
+          platforms: mediaData.platforms.join(', '),
+          mediaBudget: mediaData.mediaBudget > 0 ? `₩${formatPrice(mediaData.mediaBudget)}` : '미정',
+          target_audience: mediaData.targetAudience,
+          targetRegion: mediaData.targetRegions.join(', '),
+          landingUrl: mediaData.landingUrl || null,
+          estimated_price: calculateTotalPrice(),
+          message: formData.message || null,
+          hasAttachments: uploadedFiles.length > 0,
+          attachmentCount: uploadedFiles.length
+        },
+        selected_pack: planInfo?.title || 'READY',
+        final_price: calculateTotalPrice()
+      };
 
-[매체 정보]
-- 플랫폼: ${mediaData.platforms.join(', ') || '미정'}
-- 매체비 예산: ${mediaData.mediaBudget || '미정'}
-- 타겟층: ${mediaData.targetAudience || '미정'}
-- 타겟 지역: ${mediaData.targetRegion || '미정'}
-
-[고객 메시지]
-${formData.message || '(없음)'}`;
-
-      await submitContact({
-        name: formData.name,
-        company: formData.company || null,
-        email: formData.email,
-        phone: formData.phone || null,
-        budget: `₩${formatPrice(calculateTotalPrice())}`,
-        product_interest: modelInfo?.name || null,
-        message,
+      const createResponse = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData)
       });
+
+      if (!createResponse.ok) {
+        const errorData = await createResponse.json().catch(() => ({}));
+        console.error('Order creation failed:', {
+          status: createResponse.status,
+          statusText: createResponse.statusText,
+          error: errorData
+        });
+        // 에러가 있어도 결제 단계로 진행 (주문 ID 없이)
+        setCreatedOrderId(null);
+      } else {
+        const { orderId } = await createResponse.json();
+        setCreatedOrderId(orderId);
+      }
 
       // Step 3 완료 트래킹
       sendDiscordWebhook({
@@ -287,6 +627,7 @@ ${formData.message || '(없음)'}`;
           '회사명': formData.company || '개인',
           '이메일': formData.email,
           '연락처': formData.phone || '미입력',
+          '첨부파일': uploadedFiles.length > 0 ? `${uploadedFiles.length}개` : '없음',
           '총 금액': `₩${formatPrice(calculateTotalPrice())}`
         }
       });
@@ -294,7 +635,8 @@ ${formData.message || '(없음)'}`;
       setStep(4);
     } catch (error) {
       console.error('Submit error:', error);
-      alert('주문 전송 중 오류가 발생했습니다. 다시 시도해주세요.');
+      // 에러가 있어도 결제 단계로 진행
+      setStep(4);
     } finally {
       setIsSubmitting(false);
     }
@@ -318,53 +660,20 @@ ${formData.message || '(없음)'}`;
       }
     });
 
-    // 주문 확인 이메일 발송 시도
-    try {
-      // 주문 정보를 DB에 저장하고 ID 받기
-      const planInfo = getSelectedPlanInfo();
-      const modelInfo = getSelectedModelInfo();
-      const orderData = {
-        customer_name: formData.name,
-        customer_email: formData.email,
-        customer_phone: formData.phone || null,
-        customer_company: formData.company || null,
-        order_summary: {
-          product: getProductName(),
-          plan: planInfo?.title,
-          modelOption,
-          model: modelInfo?.name,
-          platforms: mediaData.platforms.join(', '),
-          mediaBudget: mediaData.mediaBudget,
-          target_audience: mediaData.targetAudience,
-          targetRegion: mediaData.targetRegion,
-          estimated_price: calculateTotalPrice()
-        },
-        selected_pack: planInfo?.title || 'READY',
-        final_price: calculateTotalPrice()
-      };
-
-      // 주문 생성 API 호출
-      const createResponse = await fetch('/api/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData)
-      });
-
-      if (createResponse.ok) {
-        const { orderId } = await createResponse.json();
-        // 주문 확인 이메일 발송
+    // 주문 확인 이메일 발송 (이미 Step 3에서 주문 생성됨)
+    if (createdOrderId) {
+      try {
         await fetch('/api/send-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            orderId,
+            orderId: createdOrderId,
             type: 'order_confirmation'
           })
         });
+      } catch (error) {
+        console.error('Failed to send order confirmation email:', error);
       }
-    } catch (error) {
-      console.error('Failed to send order confirmation email:', error);
-      // 이메일 발송 실패해도 주문 플로우는 계속 진행
     }
   };
 
@@ -408,7 +717,8 @@ ${formData.message || '(없음)'}`;
             platforms: mediaData.platforms.join(', '),
             mediaBudget: mediaData.mediaBudget,
             targetAudience: mediaData.targetAudience,
-            targetRegion: mediaData.targetRegion,
+            targetRegion: mediaData.targetRegions.join(', '),
+            landingUrl: mediaData.landingUrl,
             company: formData.company,
             phone: formData.phone,
             message: formData.message
@@ -459,6 +769,37 @@ ${formData.message || '(없음)'}`;
     setIsArtistDropdownOpen(false);
   };
 
+  // 지역 선택 (태그로 추가)
+  const handleRegionSelect = (region: string) => {
+    if (!mediaData.targetRegions.includes(region)) {
+      setMediaData(prev => ({ ...prev, targetRegions: [...prev.targetRegions, region] }));
+    }
+    setRegionInput('');
+    setShowRegionSuggestions(false);
+  };
+
+  // 지역 태그 삭제
+  const handleRegionRemove = (region: string) => {
+    setMediaData(prev => ({
+      ...prev,
+      targetRegions: prev.targetRegions.filter(r => r !== region)
+    }));
+  };
+
+  // 파일 선택
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const newFiles = Array.from(files);
+      setUploadedFiles(prev => [...prev, ...newFiles]);
+    }
+  };
+
+  // 파일 삭제
+  const handleFileRemove = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   // 뒤로 가기
   const handleBack = () => {
     if (step > 1) {
@@ -479,11 +820,14 @@ ${formData.message || '(없음)'}`;
     setSelectedPlanId('');
     setModelOption('select');
     setSelectedArtistId('');
-    setMediaData({ platforms: [], mediaBudget: '', targetAudience: '', targetRegion: '' });
+    setMediaData({ platforms: [], mediaBudget: 0, targetAudience: '', targetRegions: [], landingUrl: '' });
+    setRegionInput('');
     setFormData({ name: '', company: '', email: '', phone: '', message: '' });
+    setUploadedFiles([]);
     setPaymentMethod(null);
     setIsTimerActive(false);
     setTimeLeft(30 * 60);
+    setCreatedOrderId(null);
     if (timerRef.current) clearInterval(timerRef.current);
     onClose();
   };
@@ -533,7 +877,7 @@ ${formData.message || '(없음)'}`;
                 />
               </div>
               <div className="flex justify-between mt-2 text-xs text-gray-500">
-                <span className={step >= 1 ? 'text-[#00F5A0]' : ''}>모델 선택</span>
+                <span className={step >= 1 ? 'text-[#00F5A0]' : ''}>모델 및 상품</span>
                 <span className={step >= 2 ? 'text-[#00F5A0]' : ''}>매체 선택</span>
                 <span className={step >= 3 ? 'text-[#00F5A0]' : ''}>정보 입력</span>
                 <span className={step >= 4 ? 'text-[#00F5A0]' : ''}>결제</span>
@@ -554,13 +898,27 @@ ${formData.message || '(없음)'}`;
                   </svg>
                 </button>
               )}
-              <h2 className="text-xl font-bold text-white">
-                {step === 1 && '모델 선택'}
-                {step === 2 && '매체 선택'}
-                {step === 3 && '정보 입력'}
-                {step === 4 && !isSubmitted && '결제 방법'}
-                {step === 4 && isSubmitted && '주문 완료'}
-              </h2>
+              <div>
+                <h2 className="text-xl font-bold text-white">
+                  {step === 1 && '모델 및 상품 선택'}
+                  {step === 2 && '매체 선택'}
+                  {step === 3 && '정보 입력'}
+                  {step === 4 && !isSubmitted && '결제 방법'}
+                  {step === 4 && isSubmitted && '주문 완료'}
+                </h2>
+                {!isSubmitted && (
+                  <div className="mt-1">
+                    <p className="text-sm text-[#00F5A0] font-medium">
+                      ₩{formatPrice(calculateTotalPrice())}
+                    </p>
+                    {getSelectionSummary() && (
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        ({getSelectionSummary()})
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
             <button
               onClick={handleClose}
@@ -587,7 +945,7 @@ ${formData.message || '(없음)'}`;
                   {/* 상품(팩) 선택 - 필수 */}
                   <div>
                     <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-                      📦 상품 선택 <span className="text-[#00F5A0] text-xs">(필수)</span>
+                      상품 선택 <span className="text-[#00F5A0] text-xs">(필수)</span>
                     </h3>
                     <div className="space-y-2">
                       {pricingPlans.filter(p => p.is_active).map((plan) => {
@@ -652,7 +1010,7 @@ ${formData.message || '(없음)'}`;
                   {/* 구분선 */}
                   <div className="border-t border-[#333] pt-4">
                     <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-                      🎭 AI 모델 선택 <span className="text-gray-500 text-xs">(선택)</span>
+                      AI 모델 선택 <span className="text-gray-500 text-xs">(선택)</span>
                     </h3>
                   </div>
 
@@ -821,7 +1179,7 @@ ${formData.message || '(없음)'}`;
                       광고 플랫폼 (복수 선택 가능)
                     </label>
                     <div className="grid grid-cols-3 gap-3">
-                      {['TikTok', 'YouTube', 'Instagram', 'Facebook', 'Naver', '기타'].map((platform) => (
+                      {['TikTok', 'YouTube', 'Instagram', 'Facebook', '기타'].map((platform) => (
                         <button
                           key={platform}
                           type="button"
@@ -843,19 +1201,22 @@ ${formData.message || '(없음)'}`;
                     <label className="block text-sm font-medium text-gray-400 mb-2">
                       월 매체비 예산
                     </label>
-                    <select
-                      value={mediaData.mediaBudget}
-                      onChange={(e) => setMediaData({ ...mediaData, mediaBudget: e.target.value })}
-                      className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white focus:border-[#00F5A0] focus:outline-none transition-colors"
-                    >
-                      <option value="">선택하세요</option>
-                      <option value="100만원 미만">100만원 미만</option>
-                      <option value="100-300만원">100-300만원</option>
-                      <option value="300-500만원">300-500만원</option>
-                      <option value="500-1000만원">500-1000만원</option>
-                      <option value="1000만원 이상">1000만원 이상</option>
-                      <option value="미정">미정 / 협의 필요</option>
-                    </select>
+                    <div className="grid grid-cols-4 gap-2">
+                      {MEDIA_BUDGET_OPTIONS.map((option) => (
+                        <button
+                          key={option.label}
+                          type="button"
+                          onClick={() => setMediaData({ ...mediaData, mediaBudget: option.value })}
+                          className={`px-3 py-2 rounded-lg border text-sm transition-all ${
+                            mediaData.mediaBudget === option.value
+                              ? 'bg-[#00F5A0]/20 border-[#00F5A0] text-[#00F5A0]'
+                              : 'bg-[#111] border-[#333] text-white hover:border-[#00F5A0]/50'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {/* 타겟층 */}
@@ -872,23 +1233,135 @@ ${formData.message || '(없음)'}`;
                     />
                   </div>
 
-                  {/* 타겟 지역 */}
-                  <div>
+                  {/* 타겟 지역 - 자동완성 + 태그 */}
+                  <div className="relative">
                     <label className="block text-sm font-medium text-gray-400 mb-2">
                       타겟 지역
                     </label>
-                    <select
-                      value={mediaData.targetRegion}
-                      onChange={(e) => setMediaData({ ...mediaData, targetRegion: e.target.value })}
-                      className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white focus:border-[#00F5A0] focus:outline-none transition-colors"
-                    >
-                      <option value="">선택하세요</option>
-                      <option value="국내 전체">국내 전체</option>
-                      <option value="수도권">수도권</option>
-                      <option value="지방">지방</option>
-                      <option value="해외">해외</option>
-                      <option value="글로벌">글로벌 (국내+해외)</option>
-                    </select>
+                    {/* 선택된 지역 태그들 */}
+                    {mediaData.targetRegions.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {mediaData.targetRegions.map((regionName) => {
+                          const regionData = REGION_DATA.find(r => r.name === regionName);
+                          return (
+                            <span
+                              key={regionName}
+                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#00F5A0]/20 border border-[#00F5A0] text-[#00F5A0] text-sm rounded-full"
+                            >
+                              <span>{regionName}</span>
+                              {regionData && (
+                                <span className="text-xs opacity-70">{regionData.reach}</span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleRegionRemove(regionName)}
+                                className="hover:text-white transition-colors ml-1"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <input
+                      type="text"
+                      value={regionInput}
+                      onChange={(e) => setRegionInput(e.target.value)}
+                      onFocus={() => {
+                        // 포커스 시에는 자동으로 목록을 열지 않음 - 검색어 입력 시에만 표시
+                      }}
+                      onBlur={() => {
+                        // 약간의 딜레이 후 닫기 (클릭 이벤트 처리 위해)
+                        setTimeout(() => setShowRegionSuggestions(false), 200);
+                      }}
+                      className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
+                      placeholder="지역명 검색 (예: 서울, 도쿄, 뉴욕)"
+                    />
+                    {showRegionSuggestions && (
+                      <div className="absolute z-50 w-full mt-1 bg-[#111] border border-[#333] rounded-xl overflow-hidden shadow-lg max-h-64 overflow-y-auto">
+                        {filteredRegions.map((region) => (
+                          <button
+                            key={region.name}
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => handleRegionSelect(region.name)}
+                            className="w-full px-4 py-3 text-left hover:bg-[#222] transition-colors flex items-center justify-between"
+                          >
+                            <span className="text-white">{region.name}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[#00F5A0] text-sm font-medium">{region.reach}</span>
+                              {region.population && (
+                                <span className="text-gray-500 text-xs">({region.population})</span>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 예상 도달 수 표시 - 지역 선택 후 표시 */}
+                  {mediaData.targetRegions.length > 0 && (
+                    (() => {
+                      // 선택된 지역들의 총 잠재 도달 수 계산
+                      const totalPotentialReach = mediaData.targetRegions.reduce((sum, regionName) => {
+                        const regionData = REGION_DATA.find(r => r.name === regionName);
+                        if (regionData) {
+                          return sum + parseReachToNumber(regionData.reach);
+                        }
+                        return sum;
+                      }, 0);
+
+                      const estimatedReach = calculateEstimatedReach(mediaData.mediaBudget, totalPotentialReach);
+
+                      return (
+                        <div className="p-4 bg-gradient-to-r from-[#00F5A0]/5 to-[#00D9F5]/5 border border-[#00F5A0]/30 rounded-xl">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-gray-400 text-sm">선택 지역 총 사용자</span>
+                            <span className="text-white font-bold text-lg">{formatReachNumber(totalPotentialReach)}명</span>
+                          </div>
+                          {mediaData.mediaBudget > 0 ? (
+                            <div className="pt-3 border-t border-[#333]">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <span className="text-gray-400 text-sm block">예상 도달 수</span>
+                                  <span className="text-gray-500 text-xs">₩{formatPrice(mediaData.mediaBudget)} 기준</span>
+                                </div>
+                                <div className="text-right">
+                                  <span className="text-[#00F5A0] font-bold text-xl">
+                                    {formatReachNumber(estimatedReach.min)} ~ {formatReachNumber(estimatedReach.max)}명
+                                  </span>
+                                  <span className="text-gray-500 text-xs block">
+                                    CPM 3,000~15,000원 기준
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="pt-3 border-t border-[#333]">
+                              <span className="text-gray-500 text-sm">위에서 매체비를 선택하면 예상 도달 수가 계산됩니다</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()
+                  )}
+
+                  {/* 랜딩 URL */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                      랜딩 URL <span className="text-gray-600">(선택)</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={mediaData.landingUrl}
+                      onChange={(e) => setMediaData({ ...mediaData, landingUrl: e.target.value })}
+                      className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
+                      placeholder="https://example.com"
+                    />
                   </div>
 
                   {/* 다음 버튼 */}
@@ -966,6 +1439,50 @@ ${formData.message || '(없음)'}`;
                       </div>
                     </div>
 
+                    {/* 파일 업로드 */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-2">
+                        제품 이미지/설명 파일 <span className="text-gray-600">(선택)</span>
+                      </label>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        accept="image/*,.pdf,.doc,.docx,.ppt,.pptx"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full px-4 py-3 bg-[#111] border border-dashed border-[#333] rounded-xl text-gray-400 hover:border-[#00F5A0]/50 hover:text-white transition-colors flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        파일 첨부하기
+                      </button>
+                      {uploadedFiles.length > 0 && (
+                        <div className="mt-2 space-y-2">
+                          {uploadedFiles.map((file, index) => (
+                            <div key={index} className="flex items-center justify-between px-3 py-2 bg-[#111] border border-[#333] rounded-lg">
+                              <span className="text-sm text-white truncate flex-1">{file.name}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleFileRemove(index)}
+                                className="ml-2 text-gray-500 hover:text-red-400 transition-colors"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-600 mt-1">이미지, PDF, Word, PPT 파일 지원</p>
+                    </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-400 mb-2">
                         추가 요청사항
@@ -983,20 +1500,24 @@ ${formData.message || '(없음)'}`;
                     <div className="p-4 bg-[#111] border border-[#333] rounded-xl space-y-2">
                       <h4 className="text-sm font-medium text-gray-400 mb-3">주문 요약</h4>
                       <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">상품</span>
+                        <span className="text-white">{getSelectedPlanInfo()?.title || '없음'}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
                         <span className="text-gray-500">모델</span>
                         <span className="text-white">{getSelectedModelInfo()?.name || '없음'}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">매체비</span>
+                        <span className="text-white">{mediaData.mediaBudget > 0 ? `₩${formatPrice(mediaData.mediaBudget)}` : '미정'}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-500">플랫폼</span>
                         <span className="text-white">{mediaData.platforms.join(', ') || '미정'}</span>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">매체비 예산</span>
-                        <span className="text-white">{mediaData.mediaBudget || '미정'}</span>
-                      </div>
                       <div className="border-t border-[#333] my-3" />
                       <div className="flex justify-between">
-                        <span className="text-gray-400 font-medium">예상 금액</span>
+                        <span className="text-gray-400 font-medium">총 금액</span>
                         <span className="text-[#00F5A0] font-bold text-lg">₩{formatPrice(calculateTotalPrice())}</span>
                       </div>
                     </div>
@@ -1026,6 +1547,9 @@ ${formData.message || '(없음)'}`;
                   <div className="text-center py-4">
                     <p className="text-gray-400 text-sm mb-2">결제 금액</p>
                     <p className="text-3xl font-bold text-white">₩{formatPrice(calculateTotalPrice())}</p>
+                    {getSelectionSummary() && (
+                      <p className="text-sm text-gray-500 mt-1">({getSelectionSummary()})</p>
+                    )}
                   </div>
 
                   {/* 결제 방법 선택 */}

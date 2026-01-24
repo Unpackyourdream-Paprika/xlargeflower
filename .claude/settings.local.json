@@ -19,7 +19,9 @@
       "Bash(git fetch:*)",
       "Bash(git checkout:*)",
       "Bash(vercel:*)",
-      "Bash(npx vercel:*)"
+      "Bash(npx vercel:*)",
+      "Bash(lsof:*)",
+      "Bash(pkill:*)"
     ]
   }
 }

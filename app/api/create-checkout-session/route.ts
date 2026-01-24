@@ -38,8 +38,8 @@ export async function POST(request: NextRequest) {
     const unitAmount = Math.round(amount);
 
     // Stripe Checkout 세션 생성
+    // payment_method_types를 생략하면 Stripe Dashboard에서 활성화된 모든 결제 수단이 자동 표시됨
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
       line_items: [
         {
           price_data: {
