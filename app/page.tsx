@@ -26,7 +26,8 @@ export default function Home() {
     email: '',
     phone: '',
     message: '',
-    selectedProduct: ''
+    selectedProduct: '',
+    productImages: [] as File[]
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -177,11 +178,10 @@ export default function Home() {
       <section className="section-spacing bg-[#050505]" data-section="how-it-works">
         <div className="max-w-7xl mx-auto px-6">
           <ScrollReveal>
-            <div className="text-center mb-20">
+            <div className="text-center mb-12">
               <p className="label-tag mb-4">HOW IT WORKS</p>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white">
-                제품 이미지를 보내주시면,<br />
-                AI가 릴스·광고 영상으로 변환해드립니다.
+                그러면 어떻게 제작이 되나요?
               </h2>
             </div>
           </ScrollReveal>
@@ -292,6 +292,23 @@ export default function Home() {
                         <p className="text-white/40 text-sm mt-2">바로 광고 송출 가능</p>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 제작 프로세스 설명 */}
+              <div className="mt-12 text-center max-w-3xl mx-auto">
+                <div className="bg-[#0A0A0A]/60 border border-[#222] rounded-2xl p-6 sm:p-8 backdrop-blur-sm">
+                  <div className="space-y-3 text-sm sm:text-base text-white/70 leading-relaxed">
+                    <p>
+                      <span className="text-[#00F5A0] font-semibold">① 제품 이미지 전달</span> → 문의란에 판매할 물건의 이미지를 함께 보내주세요
+                    </p>
+                    <p>
+                      <span className="text-[#00F5A0] font-semibold">② 기획서 제공</span> → 구매 욕구를 자극하는 시나리오를 이메일로 보내드립니다 (최대 5회 무료 수정)
+                    </p>
+                    <p>
+                      <span className="text-[#00F5A0] font-semibold">③ 영상 제작</span> → 검토하신 시나리오 바탕으로 오차 없는 영상 제작이 진행됩니다
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1005,158 +1022,6 @@ export default function Home() {
         </div>
       </section>
 
-
-      {/* Contact Form Section */}
-      <section id="contact-form" className="section-spacing bg-[#050505]">
-        <div className="max-w-4xl mx-auto px-6">
-          <ScrollReveal>
-            <div className="bg-[#0A0A0A] border border-[#222] rounded-2xl p-8">
-              <h2 className="text-2xl font-bold text-white mb-2 text-center">문의하기</h2>
-              <p className="text-gray-500 mb-8 text-center">담당자가 확인 후 빠르게 연락드립니다.</p>
-
-              {isSubmitted ? (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2">문의가 접수되었습니다!</h3>
-                  <p className="text-gray-400 mb-6">빠른 시일 내에 연락드리겠습니다.</p>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-2">
-                        이름 <span className="text-[#00F5A0]">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                        placeholder="홍길동"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-2">
-                        셀러 or 회사명
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.company}
-                        onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                        className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                        placeholder="(주)회사명"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-2">
-                        이메일 <span className="text-[#00F5A0]">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                        placeholder="email@example.com"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-2">
-                        연락처
-                      </label>
-                      <input
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                        placeholder="010-1234-5678"
-                      />
-                    </div>
-                  </div>
-
-                  {/* 관심 상품 선택 - 커스텀 드롭다운 */}
-                  <div className="relative">
-                    <label className="block text-sm font-medium text-gray-400 mb-2">
-                      관심 상품
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                      className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white focus:border-[#00F5A0] focus:outline-none transition-colors text-left flex items-center justify-between"
-                    >
-                      <span className={formData.selectedProduct ? 'text-white' : 'text-gray-500'}>
-                        {formData.selectedProduct || '선택하세요 (선택사항)'}
-                      </span>
-                      <svg
-                        className={`w-5 h-5 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-
-                    {/* 드롭다운 메뉴 */}
-                    {isDropdownOpen && (
-                      <div className="absolute z-50 w-full mt-2 bg-[#111] border border-[#333] rounded-xl overflow-hidden shadow-lg">
-                        {productOptions.map((option) => (
-                          <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => {
-                              setFormData({ ...formData, selectedProduct: option.value });
-                              setIsDropdownOpen(false);
-                            }}
-                            className={`w-full px-4 py-3 text-left transition-colors ${
-                              formData.selectedProduct === option.value
-                                ? 'bg-[#00F5A0]/20 text-[#00F5A0]'
-                                : 'text-white hover:bg-[#222]'
-                            }`}
-                          >
-                            {option.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">
-                      문의 내용 <span className="text-[#00F5A0]">*</span>
-                    </label>
-                    <textarea
-                      value={formData.message}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      rows={5}
-                      className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors resize-none"
-                      placeholder="어떤 영상이 필요하신지 자유롭게 말씀해주세요."
-                      required
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full btn-primary disabled:opacity-50"
-                  >
-                    {isSubmitting ? '전송 중...' : '문의 보내기'}
-                  </button>
-                </form>
-              )}
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
-
       {/* Sticky Mobile CTA - HOW IT WORKS 섹션부터 표시 */}
       <div className={`sticky-mobile-cta transition-transform duration-300 ${showBottomSheet ? 'translate-y-0' : 'translate-y-full'}`}>
         <button
@@ -1323,6 +1188,66 @@ export default function Home() {
                             >
                               {option.label}
                             </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-2">
+                        제품 이미지 업로드 (선택사항)
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files || []);
+                            setFormData({ ...formData, productImages: files });
+                          }}
+                          className="hidden"
+                          id="product-images"
+                        />
+                        <label
+                          htmlFor="product-images"
+                          className="flex flex-col items-center justify-center w-full h-32 px-4 py-6 bg-[#111] border-2 border-dashed border-[#333] rounded-xl cursor-pointer hover:border-[#00F5A0]/50 transition-colors"
+                        >
+                          <svg className="w-8 h-8 text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span className="text-sm text-gray-500">
+                            {formData.productImages.length > 0
+                              ? `${formData.productImages.length}개 파일 선택됨`
+                              : '클릭하여 제품 이미지 업로드'}
+                          </span>
+                          <span className="text-xs text-gray-600 mt-1">최대 5장, PNG/JPG/WEBP</span>
+                        </label>
+                      </div>
+                      {formData.productImages.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {formData.productImages.map((file, index) => (
+                            <div key={index} className="relative group">
+                              <div className="w-16 h-16 rounded-lg bg-[#222] border border-[#333] overflow-hidden">
+                                <img
+                                  src={URL.createObjectURL(file)}
+                                  alt={`제품 ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newImages = formData.productImages.filter((_, i) => i !== index);
+                                  setFormData({ ...formData, productImages: newImages });
+                                }}
+                                className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
                           ))}
                         </div>
                       )}

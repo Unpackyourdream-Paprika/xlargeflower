@@ -439,24 +439,18 @@ export default function ArtistLineup() {
                       <ArtistCard artist={artist} index={index} />
                     </motion.div>
                   ))}
-              {/* 커스텀 모델 제작 CTA 카드 - 항상 마지막에 표시 */}
-              {activeCategory === 'ALL' && (
-                <motion.div
-                  key="custom-model-card"
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <CustomModelCard
-                    index={filteredArtists.length}
-                    onOpenModal={() => setIsCustomModelModalOpen(true)}
-                  />
-                </motion.div>
-              )}
             </AnimatePresence>
           </motion.div>
+        )}
+
+        {/* 커스텀 모델 제작 CTA - 별도 섹션 */}
+        {!isLoading && activeCategory === 'ALL' && (
+          <div className="mt-8">
+            <CustomModelCard
+              index={filteredArtists.length}
+              onOpenModal={() => setIsCustomModelModalOpen(true)}
+            />
+          </div>
         )}
 
         {/* 데모 데이터 안내 (개발용) */}

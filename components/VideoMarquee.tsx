@@ -344,7 +344,7 @@ export default function VideoMarquee({ videos }: VideoMarqueeProps) {
           모두 이곳에서 만들었습니다
         </h2>
         <p className="text-white/60 mt-4 max-w-xl mx-auto">
-          촬영 없이, 모델 섭외 없이. 48시간 안에 이 퀄리티가 나옵니다.
+          촬영 없이, 모델 섭외 없이. 48시간 안에 유입이 시작됩니다.
         </p>
       </div>
 

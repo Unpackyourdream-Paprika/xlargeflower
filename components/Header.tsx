@@ -61,7 +61,7 @@ export default function Header() {
               PRICING
             </Link>
             <Link href="/contact" className={pathname === '/contact' ? 'btn-primary text-sm py-2 px-5 ring-2 ring-[#00F5A0]/50' : 'btn-primary text-sm py-2 px-5'}>
-              VIP ACCESS
+              CONTACT
             </Link>
           </div>
 
@@ -171,10 +171,10 @@ export default function Header() {
                   >
                     <Link
                       href="/contact"
-                      className="btn-primary text-sm py-2 px-5 text-center block"
+                      className={`${getLinkClass('/contact')} block`}
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      VIP ACCESS
+                      CONTACT
                     </Link>
                   </motion.div>
                 </motion.div>

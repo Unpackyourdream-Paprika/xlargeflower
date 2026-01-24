@@ -11,12 +11,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'XLARGE | 매출을 부르는 AI 광고 모델 & 숏폼 소재 제작 솔루션',
+  title: 'XLARGE | 브랜드와 셀러를 위한 AI 퍼포먼스 크리에이티브',
   description: '인플루언서 거품을 뺀 합리적 비용. 초상권 걱정 없는 브랜드 전속 AI 모델로 귀사의 ROAS를 극대화하세요. 촬영 없이 48시간 내 납품. 지금 VIP 상담 신청.',
   keywords: ['AI 광고 모델', '버추얼 인플루언서 제작', 'AI 영상 제작', '숏폼 광고 소재', '퍼포먼스 마케팅 소재', 'ROAS 개선', '초상권 없는 모델', '광고 모델 섭외 비용', 'UGC 마케팅'],
   authors: [{ name: 'XLARGE' }],
   openGraph: {
-    title: 'XLARGE | 매출을 부르는 AI 광고 모델 & 숏폼 소재 제작 솔루션',
+    title: 'XLARGE | 브랜드와 셀러를 위한 AI 퍼포먼스 크리에이티브',
     description: '인플루언서 거품을 뺀 합리적 비용. 초상권 걱정 없는 브랜드 전속 AI 모델로 귀사의 ROAS를 극대화하세요.',
     images: ['/images/xlargeflower_og.png'],
     type: 'website',
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'XLARGE | 매출을 부르는 AI 광고 모델 & 숏폼 소재 제작 솔루션',
+    title: 'XLARGE | 브랜드와 셀러를 위한 AI 퍼포먼스 크리에이티브',
     description: '인플루언서 거품을 뺀 합리적 비용. 초상권 걱정 없는 브랜드 전속 AI 모델로 귀사의 ROAS를 극대화하세요.',
     images: ['/images/xlargeflower_og.png'],
   },
