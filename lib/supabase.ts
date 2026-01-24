@@ -369,12 +369,17 @@ export interface ArtistModel {
   created_at?: string;
   name: string;
   name_ko?: string;
+  name_ja?: string;              // 일본어 이름
   category: ArtistCategory;
   thumbnail_url: string;
   hover_video_url?: string;
   shorts_url?: string;  // 유튜브/틱톡 숏폼 URL
   description: string;
+  description_en?: string;       // 영어 소개
+  description_ja?: string;       // 일본어 소개
   tags?: string[];
+  tags_en?: string[];            // 영어 태그
+  tags_ja?: string[];            // 일본어 태그
   price?: number;  // 출연 가격 (원)
   is_active?: boolean;
   sort_order?: number;
@@ -658,17 +663,31 @@ export interface LandingPortfolio {
   created_at?: string;
   updated_at?: string;
   client_name: string;           // 예: "BEAUTY D사"
+  client_name_en?: string;       // 영어 클라이언트명
+  client_name_ja?: string;       // 일본어 클라이언트명
   category: string;              // 예: "뷰티"
+  category_en?: string;          // 영어 카테고리
+  category_ja?: string;          // 일본어 카테고리
   category_color?: string;       // 예: "#FF69B4"
   campaign_date: string;         // 예: "2024.12 캠페인"
+  campaign_date_en?: string;     // 영어 캠페인 날짜
+  campaign_date_ja?: string;     // 일본어 캠페인 날짜
   title: string;                 // 예: "인플루언서 대비 ROAS 3배 달성"
+  title_en?: string;             // 영어 제목
+  title_ja?: string;             // 일본어 제목
   description?: string;          // 예: "기존 인플루언서 협찬 대비..."
+  description_en?: string;       // 영어 설명
+  description_ja?: string;       // 일본어 설명
   video_url?: string;            // 영상 URL
   thumbnail_url?: string;        // 썸네일 URL
   metric_1_value?: string;       // 예: "+312%"
   metric_1_label?: string;       // 예: "ROAS 상승"
+  metric_1_label_en?: string;    // 영어 지표 1 라벨
+  metric_1_label_ja?: string;    // 일본어 지표 1 라벨
   metric_2_value?: string;       // 예: "₩4,200"
   metric_2_label?: string;       // 예: "CPA 달성"
+  metric_2_label_en?: string;    // 영어 지표 2 라벨
+  metric_2_label_ja?: string;    // 일본어 지표 2 라벨
   sort_order: number;            // 정렬 순서 (0, 1, 2)
   is_active: boolean;
 }
@@ -753,11 +772,15 @@ export interface PromotionSettings {
   created_at?: string;
   updated_at?: string;
   title: string;                 // 프로모션명 (예: "2월 반값 할인")
+  title_en?: string;             // 영어 프로모션명
+  title_ja?: string;             // 일본어 프로모션명
   discount_rate: number;         // 할인율 (예: 50)
   start_date: string;            // 시작 일시 (ISO 8601)
   end_date: string;              // 종료 일시 (ISO 8601)
   is_active: boolean;            // 활성화 여부
   badge_text?: string;           // 뱃지 텍스트 (예: "2.15까지 50%")
+  badge_text_en?: string;        // 영어 뱃지 텍스트
+  badge_text_ja?: string;        // 일본어 뱃지 텍스트
 }
 
 // 현재 활성화된 프로모션 조회 (프론트엔드용)
@@ -835,15 +858,25 @@ export interface PricingPlan {
   created_at?: string;
   updated_at?: string;
   title: string;                    // 플랜명 (예: Starter)
+  title_en?: string;                // 영어 플랜명
+  title_ja?: string;                // 일본어 플랜명
   subtitle?: string;                // 부제목 (예: 테스트 도입을 위한 베이직 플랜)
+  subtitle_en?: string;             // 영어 부제목
+  subtitle_ja?: string;             // 일본어 부제목
   price: number;                    // 기본 가격 (예: 3300000)
   price_suffix?: string;            // 가격 접미사 (예: "~", "/월")
   features: string[];               // 기능 목록
+  features_en?: string[];           // 영어 기능 목록
+  features_ja?: string[];           // 일본어 기능 목록
   highlighted_features?: number[];  // 강조할 기능 인덱스 (예: [0, 2])
   is_featured: boolean;             // 'Best Choice' 뱃지 노출 여부
   badge_text?: string;              // 커스텀 뱃지 텍스트 (예: "BEST CHOICE", "NEW")
+  badge_text_en?: string;           // 영어 뱃지 텍스트
+  badge_text_ja?: string;           // 일본어 뱃지 텍스트
   badge_color?: string;             // 뱃지 색상 (예: "#00F5A0")
   button_text: string;              // 버튼 텍스트 (예: 시작하기)
+  button_text_en?: string;          // 영어 버튼 텍스트
+  button_text_ja?: string;          // 일본어 버튼 텍스트
   button_action?: string;           // 버튼 액션 타입 (link, chat, custom)
   button_link?: string;             // 버튼 링크 URL
   chat_trigger?: string;            // 챗봇 트리거 ID
@@ -933,8 +966,14 @@ export async function updatePricingPlanOrders(orders: { id: string; sort_order: 
 export interface CustomModelSettings {
   price: number;
   title: string;
+  title_en?: string;
+  title_ja?: string;
   description: string;
+  description_en?: string;
+  description_ja?: string;
   features: string[];
+  features_en?: string[];
+  features_ja?: string[];
 }
 
 // 커스텀 모델 설정 조회

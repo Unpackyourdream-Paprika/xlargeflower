@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { getArtistModels, ArtistModel, ArtistCategory } from '@/lib/supabase';
 import CustomModelModal from './CustomModelModal';
 import ArtistDetailModal from './ArtistDetailModal';
@@ -97,10 +98,17 @@ interface ArtistCardProps {
   index: number;
   isLightTheme: boolean;
   onClick: () => void;
+  locale?: string;
 }
 
-function ArtistCard({ artist, isLightTheme, onClick }: Omit<ArtistCardProps, 'index'>) {
+function ArtistCard({ artist, isLightTheme, onClick, locale = 'ko' }: Omit<ArtistCardProps, 'index'>) {
   const [isHovered, setIsHovered] = useState(false);
+
+  // locale에 따라 적절한 이름 선택
+  const getLocalizedName = () => {
+    if (locale === 'ja' && artist.name_ja) return artist.name_ja;
+    return artist.name_ko || '';
+  };
 
   return (
     <div
@@ -168,9 +176,9 @@ function ArtistCard({ artist, isLightTheme, onClick }: Omit<ArtistCardProps, 'in
           {/* 이름 */}
           <h3 className={`mt-1.5 text-lg font-bold tracking-tight ${isLightTheme ? 'text-gray-900' : 'text-white'}`}>
             {artist.name}
-            {artist.name_ko && (
+            {getLocalizedName() && (
               <span className={`ml-1.5 text-xs font-normal ${isLightTheme ? 'text-gray-900' : 'text-white/60'}`}>
-                {artist.name_ko}
+                {getLocalizedName()}
               </span>
             )}
           </h3>
@@ -180,7 +188,7 @@ function ArtistCard({ artist, isLightTheme, onClick }: Omit<ArtistCardProps, 'in
 }
 
 // 빈 상태 플레이스홀더 카드
-function PlaceholderCard() {
+function PlaceholderCard({ t }: { t: (key: string) => string }) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-[#0A0A0A] border border-white/10">
       <div className="aspect-[4/5] relative">
@@ -200,13 +208,13 @@ function PlaceholderCard() {
       </div>
       <div className="absolute bottom-0 left-0 right-0 p-5">
         <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/30">
-          COMING SOON
+          {t('placeholderLabel')}
         </span>
         <h3 className="mt-1 text-xl font-bold text-white/30 tracking-tight">
-          NEW ARTIST
+          {t('placeholderTitle')}
         </h3>
         <p className="mt-2 text-sm text-white/20">
-          새로운 아티스트가 데뷔 준비 중입니다
+          {t('placeholderDesc')}
         </p>
       </div>
     </div>
@@ -214,7 +222,7 @@ function PlaceholderCard() {
 }
 
 // 커스텀 모델 제작 CTA 카드 - PC: 가로형 배너, 모바일: 세로형 카드
-function CustomModelCard({ onOpenModal, isLightTheme }: { onOpenModal: () => void; isLightTheme: boolean }) {
+function CustomModelCard({ onOpenModal, isLightTheme, t }: { onOpenModal: () => void; isLightTheme: boolean; t: (key: string) => string }) {
   return (
     <div
       className={`group relative cursor-pointer overflow-hidden rounded-2xl border transition-all duration-500 hover:scale-[1.01] ${
@@ -256,11 +264,11 @@ function CustomModelCard({ onOpenModal, isLightTheme }: { onOpenModal: () => voi
               CUSTOM MODEL
             </span>
             <h3 className={`text-xl md:text-2xl font-bold tracking-tight mt-1 ${isLightTheme ? 'text-gray-900' : 'text-white'}`}>
-              나만의 AI 모델 만들기
+              {t('customModelTitle')}
             </h3>
             <p className={`text-sm mt-1 ${isLightTheme ? 'text-gray-600' : 'text-white/60'}`}>
-              <span className="md:hidden">원하는 얼굴이 없나요?<br />브랜드 전용 AI 모델을 만들어 드립니다</span>
-              <span className="hidden md:inline">원하는 얼굴이 없나요? 브랜드 전용 AI 모델을 만들어 드립니다</span>
+              <span className="md:hidden">{t('customModelDescMobile')}</span>
+              <span className="hidden md:inline">{t('customModelDesc')}</span>
             </p>
           </div>
         </div>
@@ -270,16 +278,16 @@ function CustomModelCard({ onOpenModal, isLightTheme }: { onOpenModal: () => voi
           {/* 특징 태그 */}
           <div className="flex flex-wrap justify-center gap-2">
             <span className={`px-3 py-1.5 text-xs font-medium rounded-full ${isLightTheme ? 'bg-purple-100 text-purple-600' : 'bg-white/10 text-white/70'}`}>
-              독점 라이선스
+              {t('customModelTag1')}
             </span>
             <span className={`px-3 py-1.5 text-xs font-medium rounded-full ${isLightTheme ? 'bg-purple-100 text-purple-600' : 'bg-white/10 text-white/70'}`}>
-              수정 3회
+              {t('customModelTag2')}
             </span>
           </div>
 
           {/* CTA 버튼 */}
           <div className="px-6 py-3 rounded-full bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black text-sm font-bold group-hover:shadow-[0_0_20px_rgba(0,245,160,0.4)] transition-all duration-300 whitespace-nowrap">
-            제작 문의하기 →
+            {t('customModelCta')}
           </div>
         </div>
       </div>
@@ -295,6 +303,8 @@ export default function ArtistLineup() {
   const [isCustomModelModalOpen, setIsCustomModelModalOpen] = useState(false);
   const [selectedArtist, setSelectedArtist] = useState<ArtistModel | null>(null);
   const isLightTheme = useThemeDetector();
+  const t = useTranslations('artistLineup');
+  const locale = useLocale();
 
   useEffect(() => {
     async function fetchArtists() {
@@ -360,16 +370,16 @@ export default function ArtistLineup() {
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         {/* 섹션 헤더 */}
         <div className="text-center mb-16">
-          <span className="label-gradient">XLARGE AI ARTIST LINEUP</span>
+          <span className="label-gradient">{t('label')}</span>
           <h2 className="mt-4 text-4xl md:text-5xl font-bold text-white tracking-tight">
-            소속 XLARGE 아티스트
+            {t('title')}
           </h2>
           <p className="mt-4 text-white/60 max-w-2xl mx-auto" style={{ wordBreak: 'keep-all' }}>
-            <span className="block sm:inline">셀러와 브랜드에 최적화된</span>{' '}
-            <span className="block sm:inline text-nowrap">XLARGE 모델을 선택해 보세요.</span>
+            <span className="block sm:inline">{t('subtitle1')}</span>{' '}
+            <span className="block sm:inline text-nowrap">{t('subtitle2')}</span>
             <br className="hidden md:block" />
-            <span className="block sm:inline mt-2 sm:mt-0">XLARGE 아티스트는 고유한 페르소나와</span>{' '}
-            <span className="block sm:inline text-nowrap">전문 분야를 가지고 있습니다.</span>
+            <span className="block sm:inline mt-2 sm:mt-0">{t('subtitle3')}</span>{' '}
+            <span className="block sm:inline text-nowrap">{t('subtitle4')}</span>
           </p>
         </div>
 
@@ -402,13 +412,14 @@ export default function ArtistLineup() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {showPlaceholders
               ? PLACEHOLDER_CARDS.map((_, index) => (
-                  <PlaceholderCard key={`placeholder-${index}`} />
+                  <PlaceholderCard key={`placeholder-${index}`} t={t} />
                 ))
               : filteredArtists.map((artist) => (
                   <ArtistCard
                     key={artist.id}
                     artist={artist}
                     isLightTheme={isLightTheme}
+                    locale={locale}
                     onClick={() => setSelectedArtist(artist)}
                   />
                 ))}
@@ -421,6 +432,7 @@ export default function ArtistLineup() {
             <CustomModelCard
               onOpenModal={() => setIsCustomModelModalOpen(true)}
               isLightTheme={isLightTheme}
+              t={t}
             />
           </div>
         )}
@@ -428,7 +440,7 @@ export default function ArtistLineup() {
         {/* 데모 데이터 안내 (개발용) */}
         {useDemoData && !isLoading && (
           <p className="mt-8 text-center text-sm text-white/30">
-            * 현재 데모 데이터가 표시되고 있습니다. 어드민에서 아티스트를 등록하세요.
+            * {t('demoNotice')}
           </p>
         )}
       </div>
@@ -445,6 +457,7 @@ export default function ArtistLineup() {
         isOpen={!!selectedArtist}
         onClose={() => setSelectedArtist(null)}
         isLightTheme={isLightTheme}
+        locale={locale}
         onStartWithModel={(artistName, noModelNeeded) => {
           // 커스텀 이벤트를 발생시켜 메인 페이지의 바텀시트를 열기
           const event = new CustomEvent('openContactWithArtist', {

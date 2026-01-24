@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, useSpring, useMotionValue, useVelocity, useAnimationFrame } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { ShowcaseVideo } from '@/lib/supabase';
 import { useCountUp } from './animations/useCountUp';
 
@@ -271,6 +272,7 @@ export default function VideoMarquee({ videos }: VideoMarqueeProps) {
   const [statsVisible, setStatsVisible] = useState(false);
   const [shouldLoadVideos, setShouldLoadVideos] = useState(false);
   const isMobile = useIsMobile();
+  const t = useTranslations('showcase');
 
   // 섹션이 뷰포트에 진입하면 비디오 로드 시작 (모바일에서는 이미지만 표시하므로 즉시 true)
   useEffect(() => {
@@ -337,13 +339,13 @@ export default function VideoMarquee({ videos }: VideoMarqueeProps) {
     >
       {/* 섹션 헤더 */}
       <div className="text-center mb-12 px-6 relative z-30">
-        <p className="label-tag mb-4">AI-GENERATED CREATIVES</p>
+        <p className="label-tag mb-4">{t('label')}</p>
         <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
-          모두 이곳에서 만들었습니다
+          {t('title')}
         </h2>
         <p className="text-white/60 mt-4 max-w-xl mx-auto" style={{ wordBreak: 'keep-all' }}>
-          <span className="block sm:inline">촬영 없이, 모델 섭외 없이.</span>{' '}
-          <span className="block sm:inline text-nowrap">48시간 안에 유입이 시작됩니다.</span>
+          <span className="block sm:inline">{t('subtitle1')}</span>{' '}
+          <span className="block sm:inline text-nowrap">{t('subtitle2')}</span>
         </p>
       </div>
 
@@ -367,9 +369,9 @@ export default function VideoMarquee({ videos }: VideoMarqueeProps) {
         ref={statsRef}
         className={`${hasVideos ? 'mt-20 md:mt-28' : 'mt-8'} flex flex-wrap justify-center gap-12 sm:gap-16 md:gap-24 lg:gap-32 text-center px-6 relative z-30`}
       >
-        <AnimatedStat value={500} suffix="+" label="납품 완료" isVisible={statsVisible} delay={0} isMobile={isMobile} />
-        <AnimatedStat value={48} suffix="h" label="평균 제작" isVisible={statsVisible} delay={150} isMobile={isMobile} />
-        <AnimatedStat value={98} suffix="%" label="만족도" isVisible={statsVisible} delay={300} isMobile={isMobile} />
+        <AnimatedStat value={500} suffix="+" label={t('stat1Label')} isVisible={statsVisible} delay={0} isMobile={isMobile} />
+        <AnimatedStat value={48} suffix="h" label={t('stat2Label')} isVisible={statsVisible} delay={150} isMobile={isMobile} />
+        <AnimatedStat value={98} suffix="%" label={t('stat3Label')} isVisible={statsVisible} delay={300} isMobile={isMobile} />
       </div>
     </section>
   );

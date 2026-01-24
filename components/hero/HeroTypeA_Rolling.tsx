@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import HeroTextContent from './HeroTextContent';
 import VerticalMarquee from './VerticalMarquee';
 import HeroMediaCard from './HeroMediaCard';
@@ -12,6 +13,7 @@ interface HeroTypeA_RollingProps {
 
 export default function HeroTypeA_Rolling({ assets }: HeroTypeA_RollingProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const t = useTranslations('hero');
 
   // 에셋을 두 컬럼으로 분배
   const column1 = assets.filter((_, i) => i % 2 === 0);
@@ -66,8 +68,8 @@ export default function HeroTypeA_Rolling({ assets }: HeroTypeA_RollingProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <p>미디어를 등록해주세요</p>
-                <p className="text-sm text-white/20 mt-1">어드민 &gt; 히어로 관리</p>
+                <p>{t('emptyMediaTitle')}</p>
+                <p className="text-sm text-white/20 mt-1">{t('emptyMediaDesc')}</p>
               </div>
             </div>
           )}
@@ -99,7 +101,7 @@ export default function HeroTypeA_Rolling({ assets }: HeroTypeA_RollingProps) {
               /* 모바일 빈 상태 */
               <div className="flex items-center justify-center text-white/40 w-full py-12">
                 <div className="text-center">
-                  <p>미디어를 등록해주세요</p>
+                  <p>{t('emptyMediaTitle')}</p>
                 </div>
               </div>
             )}

@@ -2,7 +2,45 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { ArtistModel, getArtistModels, PricingPlan, PromotionSettings, getCustomModelSettings, CustomModelSettings } from '@/lib/supabase';
+
+// 환율 상수 (대략적인 환율, 실제 서비스에서는 API로 가져오는 것이 좋음)
+const EXCHANGE_RATES = {
+  KRW_TO_USD: 0.00075, // 1 KRW ≈ 0.00075 USD (약 1333원 = 1달러)
+  KRW_TO_JPY: 0.11,    // 1 KRW ≈ 0.11 JPY (약 9원 = 1엔)
+};
+
+// 로케일별 통화 포맷 함수
+const formatPriceByLocale = (priceKRW: number, locale: string): string => {
+  if (locale === 'en') {
+    const usd = Math.round(priceKRW * EXCHANGE_RATES.KRW_TO_USD);
+    return `$${new Intl.NumberFormat('en-US').format(usd)}`;
+  } else if (locale === 'ja') {
+    const jpy = Math.round(priceKRW * EXCHANGE_RATES.KRW_TO_JPY);
+    return `¥${new Intl.NumberFormat('ja-JP').format(jpy)}`;
+  }
+  // 기본 한국어
+  return `₩${new Intl.NumberFormat('ko-KR').format(priceKRW)}`;
+};
+
+// 로케일별 매체비 옵션 생성
+const getMediaBudgetOptions = (locale: string, t: (key: string) => string) => {
+  const baseOptions = [
+    { krwValue: 100000, labelKey: 'budget100k' },
+    { krwValue: 500000, labelKey: 'budget500k' },
+    { krwValue: 1000000, labelKey: 'budget1m' },
+    { krwValue: 3000000, labelKey: 'budget3m' },
+    { krwValue: 5000000, labelKey: 'budget5m' },
+    { krwValue: 10000000, labelKey: 'budget10m' },
+    { krwValue: 0, labelKey: 'budgetUndecided' },
+  ];
+
+  return baseOptions.map(opt => ({
+    label: opt.krwValue === 0 ? t(opt.labelKey) : t(opt.labelKey),
+    value: opt.krwValue,
+  }));
+};
 
 interface OrderBottomSheetProps {
   isOpen: boolean;
@@ -49,16 +87,7 @@ async function sendDiscordWebhook(data: {
   }
 }
 
-// 매체비 옵션 (금액 포함)
-const MEDIA_BUDGET_OPTIONS = [
-  { label: '10만원', value: 100000 },
-  { label: '50만원', value: 500000 },
-  { label: '100만원', value: 1000000 },
-  { label: '300만원', value: 3000000 },
-  { label: '500만원', value: 5000000 },
-  { label: '1000만원', value: 10000000 },
-  { label: '미정 / 협의 필요', value: 0 },
-];
+// 매체비 옵션은 이제 getMediaBudgetOptions 함수로 동적 생성됨
 
 // 지역 자동완성 데이터 (도달률 포함)
 interface RegionData {
@@ -314,8 +343,18 @@ const calculateEstimatedReach = (mediaBudget: number, totalPotentialReach: numbe
 };
 
 export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initialArtist, initialPlan, promotion, locale = 'ko' }: OrderBottomSheetProps) {
+  const t = useTranslations('orderBottomSheet');
+
   // 한국어일 때만 무통장입금 표시
   const showBankTransfer = locale === 'ko';
+
+  // 로케일별 매체비 옵션
+  const MEDIA_BUDGET_OPTIONS = getMediaBudgetOptions(locale, t);
+
+  // 로케일별 가격 포맷 함수
+  const formatPrice = (priceKRW: number): string => {
+    return formatPriceByLocale(priceKRW, locale);
+  };
   const [step, setStep] = useState<Step>(1);
   const [artists, setArtists] = useState<ArtistModel[]>([]);
   const [modelOption, setModelOption] = useState<ModelOption>('select');
@@ -458,10 +497,6 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
     }
   }, [initialPlan, pricingPlans]);
 
-  // 금액 포맷
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('ko-KR').format(price);
-  };
 
   // 선택된 모델 정보
   const getSelectedModelInfo = () => {
@@ -471,7 +506,7 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
     } else if (modelOption === 'custom') {
       return { name: customModelSettings.title, price: customModelSettings.price };
     }
-    return { name: '모델 없음', price: 0 };
+    return { name: t('noModel'), price: 0 };
   };
 
   // 선택된 상품(팩) 정보
@@ -532,7 +567,7 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
       items.push(modelInfo.name);
     }
     if (mediaData.mediaBudget > 0) {
-      items.push(`매체비 ${formatPrice(mediaData.mediaBudget)}원`);
+      items.push(`${t('mediaBudget')} ${formatPrice(mediaData.mediaBudget)}`);
     }
 
     return items.join(' + ');
@@ -543,7 +578,7 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
     const plan = getSelectedPlanInfo();
     const model = getSelectedModelInfo();
 
-    let name = plan?.title || '상품';
+    let name = plan?.title || t('product');
     if (model?.name && modelOption !== 'none') {
       name += ` + ${model.name}`;
     }
@@ -722,7 +757,7 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
 
       // 필수 값 검증
       if (!totalPrice || totalPrice <= 0) {
-        throw new Error('결제 금액이 유효하지 않습니다.');
+        throw new Error(t('invalidAmount'));
       }
 
       // Stripe Checkout 세션 생성
@@ -762,7 +797,7 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
       }
     } catch (error) {
       console.error('Stripe error:', error);
-      alert('카드결제 연결 중 오류가 발생했습니다. 무통장입금을 이용해주세요.');
+      alert(t('cardPaymentError'));
       setPaymentMethod(null);
     } finally {
       setIsStripeLoading(false);
@@ -901,10 +936,10 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                 />
               </div>
               <div className="flex justify-between mt-2 text-xs text-gray-500">
-                <span className={step >= 1 ? 'text-[#00F5A0]' : ''}>모델 및 상품</span>
-                <span className={step >= 2 ? 'text-[#00F5A0]' : ''}>매체 선택</span>
-                <span className={step >= 3 ? 'text-[#00F5A0]' : ''}>정보 입력</span>
-                <span className={step >= 4 ? 'text-[#00F5A0]' : ''}>결제</span>
+                <span className={step >= 1 ? 'text-[#00F5A0]' : ''}>{t('stepModel')}</span>
+                <span className={step >= 2 ? 'text-[#00F5A0]' : ''}>{t('stepMedia')}</span>
+                <span className={step >= 3 ? 'text-[#00F5A0]' : ''}>{t('stepInfo')}</span>
+                <span className={step >= 4 ? 'text-[#00F5A0]' : ''}>{t('stepPayment')}</span>
               </div>
             </div>
           )}
@@ -924,16 +959,16 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
               )}
               <div>
                 <h2 className="text-xl font-bold text-white">
-                  {step === 1 && '모델 및 상품 선택'}
-                  {step === 2 && '매체 선택'}
-                  {step === 3 && '정보 입력'}
-                  {step === 4 && !isSubmitted && '결제 방법'}
-                  {step === 4 && isSubmitted && '주문 완료'}
+                  {step === 1 && t('step1Title')}
+                  {step === 2 && t('step2Title')}
+                  {step === 3 && t('step3Title')}
+                  {step === 4 && !isSubmitted && t('step4Title')}
+                  {step === 4 && isSubmitted && t('step4Complete')}
                 </h2>
                 {!isSubmitted && (
                   <div className="mt-1">
                     <p className="text-sm text-[#00F5A0] font-medium">
-                      ₩{formatPrice(calculateTotalPrice())} <span className="text-xs text-gray-500">(VAT 포함)</span>
+                      {formatPrice(calculateTotalPrice())} <span className="text-xs text-gray-500">{t('vatIncluded')}</span>
                     </p>
                     {getSelectionSummary() && (
                       <p className="text-xs text-gray-500 mt-0.5">
@@ -969,7 +1004,7 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                   {/* 상품(팩) 선택 - 필수 */}
                   <div>
                     <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-                      상품 선택 <span className="text-[#00F5A0] text-xs">(필수)</span>
+                      {t('productSelection')} <span className="text-[#00F5A0] text-xs">({t('required')})</span>
                     </h3>
                     <div className="space-y-2">
                       {pricingPlans.filter(p => p.is_active).map((plan) => {
@@ -1018,11 +1053,11 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                             <div className="text-right">
                               {promotion && promotion.discount_rate > 0 ? (
                                 <>
-                                  <p className="text-gray-500 text-xs line-through">₩{formatPrice(plan.price)}</p>
-                                  <p className="text-[#00F5A0] font-bold">₩{formatPrice(discountedPrice)}</p>
+                                  <p className="text-gray-500 text-xs line-through">{formatPrice(plan.price)}</p>
+                                  <p className="text-[#00F5A0] font-bold">{formatPrice(discountedPrice)}</p>
                                 </>
                               ) : (
-                                <p className="text-white font-bold">₩{formatPrice(plan.price)}</p>
+                                <p className="text-white font-bold">{formatPrice(plan.price)}</p>
                               )}
                             </div>
                           </label>
@@ -1034,7 +1069,7 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                   {/* 구분선 */}
                   <div className="border-t border-[#333] pt-4">
                     <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-                      AI 모델 선택 <span className="text-gray-500 text-xs">(선택)</span>
+                      {t('aiModelSelection')} <span className="text-gray-500 text-xs">({t('optional')})</span>
                     </h3>
                   </div>
 
@@ -1059,8 +1094,8 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                       </div>
                     </div>
                     <div className="flex-1">
-                      <span className="text-white font-medium">기존 아티스트 모델 선택</span>
-                      <p className="text-sm text-gray-500">등록된 AI 모델 중 선택</p>
+                      <span className="text-white font-medium">{t('selectArtist')}</span>
+                      <p className="text-sm text-gray-500">{t('selectArtistDesc')}</p>
                     </div>
                   </label>
 
@@ -1073,7 +1108,7 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                         className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white focus:border-[#00F5A0] focus:outline-none transition-colors text-left flex items-center justify-between"
                       >
                         <span className={selectedArtistId ? 'text-white' : 'text-gray-500'}>
-                          {artists.find(a => a.id === selectedArtistId)?.name || '모델을 선택하세요'}
+                          {artists.find(a => a.id === selectedArtistId)?.name || t('selectModelPlaceholder')}
                         </span>
                         <svg
                           className={`w-5 h-5 text-gray-500 transition-transform ${isArtistDropdownOpen ? 'rotate-180' : ''}`}
@@ -1113,7 +1148,7 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                                 </div>
                               </div>
                               {artist.price && artist.price > 0 && (
-                                <span className="text-sm text-gray-400">+₩{formatPrice(artist.price)}</span>
+                                <span className="text-sm text-gray-400">+{formatPrice(artist.price)}</span>
                               )}
                             </button>
                           ))}
@@ -1144,10 +1179,10 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-white font-medium">{customModelSettings.title}</span>
-                        <span className="text-sm text-purple-400 font-medium">+₩{formatPrice(customModelSettings.price)}</span>
+                        <span className="text-white font-medium">{t('customModelTitle')}</span>
+                        <span className="text-sm text-purple-400 font-medium">+{formatPrice(customModelSettings.price)}</span>
                       </div>
-                      <p className="text-sm text-gray-500">{customModelSettings.description}</p>
+                      <p className="text-sm text-gray-500">{t('customModelDesc')}</p>
                     </div>
                   </label>
 
@@ -1172,8 +1207,8 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                       </div>
                     </div>
                     <div className="flex-1">
-                      <span className="text-white font-medium">모델 필요없음</span>
-                      <p className="text-sm text-gray-500">영상만 제작 (모델 출연 없이)</p>
+                      <span className="text-white font-medium">{t('noModel')}</span>
+                      <p className="text-sm text-gray-500">{t('noModelDesc')}</p>
                     </div>
                   </label>
 
@@ -1183,7 +1218,7 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                     disabled={!isStep1Valid}
                     className="w-full py-4 rounded-full font-bold text-center transition-all bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed mt-6"
                   >
-                    다음
+                    {t('next')}
                   </button>
                 </motion.div>
               )}
@@ -1200,10 +1235,10 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                   {/* 플랫폼 선택 */}
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-3">
-                      광고 플랫폼 (복수 선택 가능)
+                      {t('platformLabel')}
                     </label>
                     <div className="grid grid-cols-3 gap-3">
-                      {['TikTok', 'YouTube', 'Instagram', 'Facebook', '기타'].map((platform) => (
+                      {['TikTok', 'YouTube', 'Instagram', 'Facebook', t('platformOther')].map((platform) => (
                         <button
                           key={platform}
                           type="button"
@@ -1223,7 +1258,7 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                   {/* 매체비 예산 */}
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-2">
-                      월 매체비 예산
+                      {t('mediaBudgetLabel')}
                     </label>
                     <div className="grid grid-cols-4 gap-2">
                       {MEDIA_BUDGET_OPTIONS.map((option) => (
@@ -1246,21 +1281,21 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                   {/* 타겟층 */}
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-2">
-                      타겟층
+                      {t('targetAudienceLabel')}
                     </label>
                     <input
                       type="text"
                       value={mediaData.targetAudience}
                       onChange={(e) => setMediaData({ ...mediaData, targetAudience: e.target.value })}
                       className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                      placeholder="예: 20-30대 여성, MZ세대"
+                      placeholder={t('targetAudiencePlaceholder')}
                     />
                   </div>
 
                   {/* 타겟 지역 - 자동완성 + 태그 */}
                   <div className="relative">
                     <label className="block text-sm font-medium text-gray-400 mb-2">
-                      타겟 지역
+                      {t('targetRegionLabel')}
                     </label>
                     {/* 선택된 지역 태그들 */}
                     {mediaData.targetRegions.length > 0 && (
@@ -1302,7 +1337,7 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                         setTimeout(() => setShowRegionSuggestions(false), 200);
                       }}
                       className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                      placeholder="지역명 검색 (예: 서울, 도쿄, 뉴욕)"
+                      placeholder={t('targetRegionPlaceholder')}
                     />
                     {showRegionSuggestions && (
                       <div className="absolute z-50 w-full mt-1 bg-[#111] border border-[#333] rounded-xl overflow-hidden shadow-lg max-h-64 overflow-y-auto">
@@ -1344,29 +1379,29 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                       return (
                         <div className="p-4 bg-gradient-to-r from-[#00F5A0]/5 to-[#00D9F5]/5 border border-[#00F5A0]/30 rounded-xl">
                           <div className="flex items-center justify-between mb-3">
-                            <span className="text-gray-400 text-sm">선택 지역 총 사용자</span>
-                            <span className="text-white font-bold text-lg">{formatReachNumber(totalPotentialReach)}명</span>
+                            <span className="text-gray-400 text-sm">{t('totalUsers')}</span>
+                            <span className="text-white font-bold text-lg">{formatReachNumber(totalPotentialReach)}</span>
                           </div>
                           {mediaData.mediaBudget > 0 ? (
                             <div className="pt-3 border-t border-[#333]">
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <span className="text-gray-400 text-sm block">예상 도달 수</span>
-                                  <span className="text-gray-500 text-xs">₩{formatPrice(mediaData.mediaBudget)} 기준</span>
+                                  <span className="text-gray-400 text-sm block">{t('estimatedReach')}</span>
+                                  <span className="text-gray-500 text-xs">{formatPrice(mediaData.mediaBudget)} {t('estimatedReachBasis')}</span>
                                 </div>
                                 <div className="text-right">
                                   <span className="text-[#00F5A0] font-bold text-xl">
-                                    {formatReachNumber(estimatedReach.min)} ~ {formatReachNumber(estimatedReach.max)}명
+                                    {formatReachNumber(estimatedReach.min)} ~ {formatReachNumber(estimatedReach.max)}
                                   </span>
                                   <span className="text-gray-500 text-xs block">
-                                    CPM 3,000~15,000원 기준
+                                    {t('cpmBasis')}
                                   </span>
                                 </div>
                               </div>
                             </div>
                           ) : (
                             <div className="pt-3 border-t border-[#333]">
-                              <span className="text-gray-500 text-sm">위에서 매체비를 선택하면 예상 도달 수가 계산됩니다</span>
+                              <span className="text-gray-500 text-sm">{t('selectBudgetHint')}</span>
                             </div>
                           )}
                         </div>
@@ -1377,7 +1412,7 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                   {/* 랜딩 URL */}
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-2">
-                      랜딩 URL <span className="text-gray-600">(선택)</span>
+                      {t('landingUrlLabel')} <span className="text-gray-600">({t('optional')})</span>
                     </label>
                     <input
                       type="url"
@@ -1393,7 +1428,7 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                     onClick={handleStep2Next}
                     className="w-full py-4 rounded-full font-bold text-center transition-all bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black hover:opacity-90"
                   >
-                    다음
+                    {t('next')}
                   </button>
                 </motion.div>
               )}
@@ -1410,27 +1445,27 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-400 mb-2">
-                          이름 <span className="text-[#00F5A0]">*</span>
+                          {t('nameLabel')} <span className="text-[#00F5A0]">*</span>
                         </label>
                         <input
                           type="text"
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                           className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                          placeholder="홍길동"
+                          placeholder={t('namePlaceholder')}
                           required
                         />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-400 mb-2">
-                          회사명
+                          {t('companyLabel')}
                         </label>
                         <input
                           type="text"
                           value={formData.company}
                           onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                           className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                          placeholder="(주)회사명"
+                          placeholder={t('companyPlaceholder')}
                         />
                       </div>
                     </div>
@@ -1438,27 +1473,27 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-400 mb-2">
-                          이메일 <span className="text-[#00F5A0]">*</span>
+                          {t('emailLabel')} <span className="text-[#00F5A0]">*</span>
                         </label>
                         <input
                           type="email"
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                           className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                          placeholder="email@example.com"
+                          placeholder={t('emailPlaceholder')}
                           required
                         />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-400 mb-2">
-                          연락처
+                          {t('phoneLabel')}
                         </label>
                         <input
                           type="tel"
                           value={formData.phone}
                           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                           className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                          placeholder="010-1234-5678"
+                          placeholder={t('phonePlaceholder')}
                         />
                       </div>
                     </div>
@@ -1466,7 +1501,7 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                     {/* 파일 업로드 */}
                     <div>
                       <label className="block text-sm font-medium text-gray-400 mb-2">
-                        제품 이미지/설명 파일 <span className="text-gray-600">(선택)</span>
+                        {t('fileUploadLabel')} <span className="text-gray-600">({t('optional')})</span>
                       </label>
                       <input
                         ref={fileInputRef}
@@ -1484,7 +1519,7 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                         </svg>
-                        파일 첨부하기
+                        {t('fileUploadButton')}
                       </button>
                       {uploadedFiles.length > 0 && (
                         <div className="mt-2 space-y-2">
@@ -1504,54 +1539,54 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                           ))}
                         </div>
                       )}
-                      <p className="text-xs text-gray-600 mt-1">이미지, PDF, Word, PPT 파일 지원</p>
+                      <p className="text-xs text-gray-600 mt-1">{t('fileUploadHint')}</p>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-400 mb-2">
-                        추가 요청사항
+                        {t('additionalRequest')}
                       </label>
                       <textarea
                         value={formData.message}
                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                         rows={3}
                         className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors resize-none"
-                        placeholder="추가 요청사항이 있으시면 자유롭게 적어주세요."
+                        placeholder={t('additionalRequestPlaceholder')}
                       />
                     </div>
 
                     {/* 주문 요약 */}
                     <div className="p-4 bg-[#111] border border-[#333] rounded-xl space-y-2">
-                      <h4 className="text-sm font-medium text-gray-400 mb-3">주문 요약</h4>
+                      <h4 className="text-sm font-medium text-gray-400 mb-3">{t('orderSummary')}</h4>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">상품</span>
-                        <span className="text-white">{getSelectedPlanInfo()?.title || '없음'}</span>
+                        <span className="text-gray-500">{t('product')}</span>
+                        <span className="text-white">{getSelectedPlanInfo()?.title || t('none')}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">모델</span>
-                        <span className="text-white">{getSelectedModelInfo()?.name || '없음'}</span>
+                        <span className="text-gray-500">{t('model')}</span>
+                        <span className="text-white">{getSelectedModelInfo()?.name || t('none')}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">매체비</span>
-                        <span className="text-white">{mediaData.mediaBudget > 0 ? `₩${formatPrice(mediaData.mediaBudget)}` : '미정'}</span>
+                        <span className="text-gray-500">{t('mediaBudget')}</span>
+                        <span className="text-white">{mediaData.mediaBudget > 0 ? formatPrice(mediaData.mediaBudget) : t('undecided')}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">플랫폼</span>
-                        <span className="text-white">{mediaData.platforms.join(', ') || '미정'}</span>
+                        <span className="text-gray-500">{t('platform')}</span>
+                        <span className="text-white">{mediaData.platforms.join(', ') || t('undecided')}</span>
                       </div>
                       <div className="border-t border-[#333] my-3" />
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">공급가액</span>
-                        <span className="text-white">₩{formatPrice(calculateSubtotal())}</span>
+                        <span className="text-gray-500">{t('supplyPrice')}</span>
+                        <span className="text-white">{formatPrice(calculateSubtotal())}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">부가세 (10%)</span>
-                        <span className="text-white">₩{formatPrice(calculateVAT())}</span>
+                        <span className="text-gray-500">{t('vat')}</span>
+                        <span className="text-white">{formatPrice(calculateVAT())}</span>
                       </div>
                       <div className="border-t border-[#333] my-3" />
                       <div className="flex justify-between">
-                        <span className="text-gray-400 font-medium">총 결제금액</span>
-                        <span className="text-[#00F5A0] font-bold text-lg">₩{formatPrice(calculateTotalPrice())}</span>
+                        <span className="text-gray-400 font-medium">{t('totalPayment')}</span>
+                        <span className="text-[#00F5A0] font-bold text-lg">{formatPrice(calculateTotalPrice())}</span>
                       </div>
                     </div>
 
@@ -1561,7 +1596,7 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                       disabled={isSubmitting || !formData.name || !formData.email}
                       className="w-full py-4 rounded-full font-bold text-center transition-all bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isSubmitting ? '처리 중...' : '다음'}
+                      {isSubmitting ? t('processing') : t('next')}
                     </button>
                   </form>
                 </motion.div>
@@ -1578,10 +1613,10 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                 >
                   {/* 결제 금액 표시 */}
                   <div className="text-center py-4">
-                    <p className="text-gray-400 text-sm mb-2">결제 금액 (VAT 포함)</p>
-                    <p className="text-3xl font-bold text-white">₩{formatPrice(calculateTotalPrice())}</p>
+                    <p className="text-gray-400 text-sm mb-2">{t('paymentAmount')}</p>
+                    <p className="text-3xl font-bold text-white">{formatPrice(calculateTotalPrice())}</p>
                     <p className="text-xs text-gray-500 mt-1">
-                      공급가액 ₩{formatPrice(calculateSubtotal())} + VAT ₩{formatPrice(calculateVAT())}
+                      {t('supplyPrice')} {formatPrice(calculateSubtotal())} + {t('vat').replace(' (10%)', '')} {formatPrice(calculateVAT())}
                     </p>
                     {getSelectionSummary() && (
                       <p className="text-sm text-gray-500 mt-1">({getSelectionSummary()})</p>
@@ -1603,8 +1638,8 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                             </svg>
                           </div>
                           <div className="flex-1">
-                            <p className="text-white font-bold text-lg">무통장입금</p>
-                            <p className="text-gray-500 text-sm">계좌이체로 결제합니다</p>
+                            <p className="text-white font-bold text-lg">{t('bankTransfer')}</p>
+                            <p className="text-gray-500 text-sm">{t('bankTransferDesc')}</p>
                           </div>
                           <svg className="w-5 h-5 text-gray-500 group-hover:text-[#00F5A0] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -1627,9 +1662,9 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                         </div>
                         <div className="flex-1">
                           <p className="text-white font-bold text-lg">
-                            {isStripeLoading ? '연결 중...' : '카드결제'}
+                            {isStripeLoading ? t('connecting') : t('cardPayment')}
                           </p>
-                          <p className="text-gray-500 text-sm">신용카드로 결제합니다</p>
+                          <p className="text-gray-500 text-sm">{t('cardPaymentDesc')}</p>
                         </div>
                         {isStripeLoading ? (
                           <div className="w-5 h-5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
@@ -1657,8 +1692,8 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">주문이 접수되었습니다!</h3>
-                  <p className="text-gray-400 mb-4">아래 계좌로 입금해주세요.</p>
+                  <h3 className="text-xl font-bold text-white mb-2">{t('orderReceived')}</h3>
+                  <p className="text-gray-400 mb-4">{t('bankTransferGuide')}</p>
 
                   {/* 타이머 */}
                   <div className="mb-6">
@@ -1671,54 +1706,54 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                       <span className="font-mono font-bold text-lg">{formatTime(timeLeft)}</span>
                     </div>
                     <p className={`text-sm mt-2 ${timeLeft <= 300 ? 'text-red-400' : 'text-gray-500'}`}>
-                      {timeLeft <= 0 ? '세션이 만료되었습니다' : '30분 내로 입금해주세요. 세션이 만료됩니다.'}
+                      {timeLeft <= 0 ? t('sessionExpired') : t('timeWarning')}
                     </p>
                   </div>
 
                   {/* 입금 정보 */}
                   <div className="bg-[#111] border border-[#333] rounded-xl p-6 text-left mb-6">
-                    <h4 className="text-sm font-medium text-gray-400 mb-4">무통장 입금 안내</h4>
+                    <h4 className="text-sm font-medium text-gray-400 mb-4">{t('bankInfoTitle')}</h4>
                     <div className="space-y-3">
                       <div className="flex justify-between">
-                        <span className="text-gray-500">예금주</span>
-                        <span className="text-white font-medium">스네이크 스테이크 주식회사</span>
+                        <span className="text-gray-500">{t('accountHolder')}</span>
+                        <span className="text-white font-medium">{t('accountHolderValue')}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-500">계좌번호</span>
+                        <span className="text-gray-500">{t('accountNumber')}</span>
                         <div className="flex items-center gap-2">
                           <span className="text-[#00F5A0] font-bold">006037-04-008637</span>
                           <button
                             onClick={() => {
                               navigator.clipboard.writeText('006037-04-008637');
-                              alert('계좌번호가 복사되었습니다.');
+                              alert(t('copied'));
                             }}
                             className="px-2 py-1 text-xs bg-[#222] text-gray-400 rounded hover:bg-[#333] transition-colors"
                           >
-                            복사
+                            {t('copy')}
                           </button>
                         </div>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">입금액 (VAT 포함)</span>
-                        <span className="text-white font-bold">₩{formatPrice(calculateTotalPrice())}</span>
+                        <span className="text-gray-500">{t('depositAmount')}</span>
+                        <span className="text-white font-bold">{formatPrice(calculateTotalPrice())}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">입금자명</span>
+                        <span className="text-gray-500">{t('depositorName')}</span>
                         <span className="text-white">{formData.name}</span>
                       </div>
                     </div>
                   </div>
 
                   <p className="text-gray-500 text-sm mb-6">
-                    입금 확인 요청이 완료되었습니다.<br />
-                    영업 시간 기준 1시간 이내에 담당자가 연락드립니다.
+                    {t('depositConfirmation')}<br />
+                    {t('contactWithin1Hour')}
                   </p>
 
                   <button
                     onClick={handleClose}
                     className="px-6 py-3 bg-[#111] border border-[#333] text-white rounded-xl hover:border-[#00F5A0]/50 transition-colors"
                   >
-                    닫기
+                    {t('close')}
                   </button>
                 </motion.div>
               )}

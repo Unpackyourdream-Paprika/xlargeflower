@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import ScrollReveal from '@/components/animations/ScrollReveal';
 import VideoMarquee from '@/components/VideoMarquee';
 import ArtistLineup from '@/components/ArtistLineup';
 import MainHeroContainer from '@/components/hero/MainHeroContainer';
-import { triggerOpenChat } from '@/components/GlobalChatButton';
 import { getShowcaseVideos, ShowcaseVideo, getBeforeAfterAsset, BeforeAfterAsset, getLandingPortfolios, LandingPortfolio, getActivePromotion, PromotionSettings, getPricingPlans, PricingPlan } from '@/lib/supabase';
 import PricingCard from '@/components/PricingCard';
 import OrderBottomSheet from '@/components/OrderBottomSheet';
@@ -16,6 +16,8 @@ import { trackConversion } from '@/lib/analytics';
 export default function Home() {
   const params = useParams();
   const locale = (params?.locale as string) || 'ko';
+  const t = useTranslations('home');
+  const tCommon = useTranslations('common');
 
   const [showcaseVideos, setShowcaseVideos] = useState<ShowcaseVideo[]>([]);
   const [landingPortfolios, setLandingPortfolios] = useState<LandingPortfolio[]>([]);
@@ -108,8 +110,19 @@ export default function Home() {
     return basePrice;
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('ko-KR').format(price);
+  const formatPrice = (price: number, isManwon: boolean = false) => {
+    if (locale === 'ko') {
+      // 한국어: 만원 단위 표시
+      return new Intl.NumberFormat('ko-KR').format(price);
+    } else if (locale === 'ja') {
+      // 일본어: 엔화 표시 (원화와 유사한 가격대 사용)
+      const yenPrice = isManwon ? price * 10000 : price;
+      return `¥${new Intl.NumberFormat('ja-JP').format(Math.round(yenPrice / 10))}`;
+    } else {
+      // 영어: 달러 표시 (1 USD ≈ 1,400 KRW 기준)
+      const usdPrice = isManwon ? price * 10000 : price;
+      return `$${new Intl.NumberFormat('en-US').format(Math.round(usdPrice / 1400))}`;
+    }
   };
 
   // 프로모션 종료 날짜 포맷
@@ -120,10 +133,119 @@ export default function Home() {
     return `${month}/${day}`;
   };
 
+  // 최저가 계산 (프로모션 할인 적용된 가장 저렴한 플랜)
+  const getLowestPrice = () => {
+    if (pricingPlans.length === 0) {
+      // 플랜 데이터가 없으면 기본값 (STARTER 500,000원 기준)
+      return getPrice(500000);
+    }
+    // gold 스타일(VIP) 제외하고 최저가 찾기
+    const regularPlans = pricingPlans.filter(p => p.card_style !== 'gold');
+    if (regularPlans.length === 0) return getPrice(500000);
+
+    const lowestPlan = regularPlans.reduce((min, plan) =>
+      plan.price < min.price ? plan : min
+    );
+    console.log('Lowest plan:', lowestPlan.title, lowestPlan.price, '→', getPrice(lowestPlan.price));
+    return getPrice(lowestPlan.price);
+  };
+
   return (
     <div className="min-h-screen bg-[#050505] main-content">
       {/* Hero Section - Dynamic Layout */}
       <MainHeroContainer />
+
+      {/* Comparison Section - 기존 촬영 vs XLARGE AI */}
+      <section id="comparison" className="py-16 md:py-24 bg-[var(--bg-primary)]" data-section="comparison">
+        <div className="max-w-5xl mx-auto px-6">
+          <ScrollReveal>
+            <div className="text-center mb-12">
+              <p className="label-tag mb-4">{t('comparison.label')}</p>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[var(--text-primary)]">
+                {t('comparison.title')}
+              </h2>
+              <p className="text-[var(--text-secondary)] mt-4">
+                {t('comparison.subtitle')}
+              </p>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal delay={0.2}>
+            {/* 비교표 */}
+            <div className="overflow-hidden rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)]">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-[var(--bg-elevated)]">
+                    <th className="py-4 px-4 md:px-6 text-left text-[var(--text-secondary)] text-sm font-medium w-1/3">{t('comparison.columnItem')}</th>
+                    <th className="py-4 px-4 md:px-6 text-center text-red-500 text-sm font-medium w-1/3">
+                      <div className="flex items-center justify-center gap-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        {t('comparison.columnTraditional')}
+                      </div>
+                    </th>
+                    <th className="py-4 px-4 md:px-6 text-center text-[var(--color-accent-start)] text-sm font-medium w-1/3">
+                      <div className="flex items-center justify-center gap-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        {t('comparison.columnXlarge')}
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-t border-[var(--border-default)]">
+                    <td className="py-4 px-4 md:px-6 text-[var(--text-primary)] font-medium">{t('comparison.rowCost')}</td>
+                    <td className="py-4 px-4 md:px-6 text-center text-[var(--text-secondary)]">{t('comparison.rowCostTraditional')}</td>
+                    <td className="py-4 px-4 md:px-6 text-center text-[var(--color-accent-start)] font-bold">
+                      {locale === 'ko'
+                        ? `${formatPrice(getLowestPrice() / 10000)}${t('comparison.rowCostXlargeUnit')}`
+                        : `${formatPrice(getLowestPrice(), false)}${t('comparison.rowCostXlargeUnit')}`
+                      }
+                    </td>
+                  </tr>
+                  <tr className="border-t border-[var(--border-default)] bg-[var(--bg-elevated)]">
+                    <td className="py-4 px-4 md:px-6 text-[var(--text-primary)] font-medium">{t('comparison.rowTime')}</td>
+                    <td className="py-4 px-4 md:px-6 text-center text-[var(--text-secondary)]">{t('comparison.rowTimeTraditional')}</td>
+                    <td className="py-4 px-4 md:px-6 text-center text-[var(--color-accent-start)] font-bold">{t('comparison.rowTimeXlarge')}</td>
+                  </tr>
+                  <tr className="border-t border-[var(--border-default)]">
+                    <td className="py-4 px-4 md:px-6 text-[var(--text-primary)] font-medium">{t('comparison.rowFailure')}</td>
+                    <td className="py-4 px-4 md:px-6 text-center text-[var(--text-secondary)]">{t('comparison.rowFailureTraditional')}</td>
+                    <td className="py-4 px-4 md:px-6 text-center text-[var(--color-accent-start)] font-bold">{t('comparison.rowFailureXlarge')}</td>
+                  </tr>
+                  <tr className="border-t border-[var(--border-default)] bg-[var(--bg-elevated)]">
+                    <td className="py-4 px-4 md:px-6 text-[var(--text-primary)] font-medium">{t('comparison.rowRisk')}</td>
+                    <td className="py-4 px-4 md:px-6 text-center text-[var(--text-secondary)]">{t('comparison.rowRiskTraditional')}</td>
+                    <td className="py-4 px-4 md:px-6 text-center text-[var(--color-accent-start)] font-bold">{t('comparison.rowRiskXlarge')}</td>
+                  </tr>
+                  <tr className="border-t border-[var(--border-default)]">
+                    <td className="py-4 px-4 md:px-6 text-[var(--text-primary)] font-medium">{t('comparison.rowCopyright')}</td>
+                    <td className="py-4 px-4 md:px-6 text-center text-[var(--text-secondary)]">{t('comparison.rowCopyrightTraditional')}</td>
+                    <td className="py-4 px-4 md:px-6 text-center text-[var(--color-accent-start)] font-bold">{t('comparison.rowCopyrightXlarge')}</td>
+                  </tr>
+                  <tr className="border-t border-[var(--border-default)] bg-[var(--bg-elevated)]">
+                    <td className="py-4 px-4 md:px-6 text-[var(--text-primary)] font-medium">{t('comparison.rowTests')}</td>
+                    <td className="py-4 px-4 md:px-6 text-center text-[var(--text-secondary)]">{t('comparison.rowTestsTraditional')}</td>
+                    <td className="py-4 px-4 md:px-6 text-center text-[var(--color-accent-start)] font-bold">{t('comparison.rowTestsXlarge')}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* 핵심 메시지 */}
+            <div className="mt-8 text-center">
+              <div className="inline-block px-6 py-4 bg-[var(--color-accent-start)]/10 border border-[var(--color-accent-start)]/30 rounded-xl">
+                <p className="text-[var(--text-primary)] font-bold text-lg md:text-xl">
+                  <span className="gradient-text">{t('comparison.bottomMessage')}</span>
+                </p>
+              </div>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
 
       {/* AI Video Showcase - Video Wall */}
       <VideoMarquee videos={showcaseVideos} />
@@ -136,10 +258,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6">
           <ScrollReveal>
             <div className="text-center mb-12">
-              <p className="label-tag mb-4">HOW IT WORKS</p>
+              <p className="label-tag mb-4">{t('howItWorks.label')}</p>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white">
-                <span className="block">그러면 이제</span>
-                <span className="block">어떻게 제작이 되나요?</span>
+                <span className="block">{t('howItWorks.title1')}</span>
+                <span className="block">{t('howItWorks.title2')}</span>
               </h2>
             </div>
           </ScrollReveal>
@@ -176,18 +298,18 @@ export default function Home() {
                 {/* Input */}
                 <div className="relative">
                   <div className="absolute -top-3 left-6 z-10">
-                    <span className="label-tag px-4 py-1.5 bg-[#0A0A0A]">RAW INPUT</span>
+                    <span className="label-tag px-4 py-1.5 bg-[#0A0A0A]">{t('howItWorks.rawInput')}</span>
                   </div>
                   <div className="bg-[#0A0A0A] border border-[#222222] rounded-xl p-8 h-full hover:grayscale transition-all duration-500">
                     <div className="aspect-video bg-[#111111] rounded-lg overflow-hidden mb-6">
                       <img
                         src={beforeAfterAsset?.before_image_url || '/images/nikedunk.webp'}
-                        alt="원본 제품 사진"
+                        alt={t('howItWorks.originalPhoto')}
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <p className="text-white font-bold text-center text-lg">원본 사진</p>
-                    <p className="text-white/40 text-sm text-center mt-2">폰 촬영 OK</p>
+                    <p className="text-white font-bold text-center text-lg">{t('howItWorks.originalPhoto')}</p>
+                    <p className="text-white/40 text-sm text-center mt-2">{t('howItWorks.phoneOk')}</p>
                   </div>
                 </div>
 
@@ -207,7 +329,7 @@ export default function Home() {
                 <div className="relative">
                   <div className="absolute -top-3 left-6 z-10">
                     <span className="px-4 py-1.5 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-white text-xs font-bold tracking-wide rounded-sm shadow-[0_0_20px_rgba(0,245,160,0.3)]">
-                      RENDERED OUTPUT
+                      {t('howItWorks.renderedOutput')}
                     </span>
                   </div>
                   <div className="relative h-full rounded-xl overflow-hidden">
@@ -246,8 +368,8 @@ export default function Home() {
                         </div>
                       </div>
                       <div className="text-center mt-6">
-                        <p className="text-white font-bold text-lg">48시간 완성</p>
-                        <p className="text-white/40 text-sm mt-2">바로 광고 송출 가능</p>
+                        <p className="text-white font-bold text-lg">{t('howItWorks.completed48h')}</p>
+                        <p className="text-white/40 text-sm mt-2">{t('howItWorks.readyForAds')}</p>
                       </div>
                     </div>
                   </div>
@@ -262,11 +384,11 @@ export default function Home() {
                     <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black font-bold text-lg mb-4">
                       1
                     </div>
-                    <h4 className="text-white font-bold text-lg mb-2">이미지 전송</h4>
+                    <h4 className="text-white font-bold text-lg mb-2">{t('howItWorks.step1Title')}</h4>
                     <p className="text-white/60 text-sm leading-relaxed">
-                      가지고 계신<br />
-                      <strong className="text-white">제품 원본 사진</strong>만<br />
-                      보내주세요.
+                      {t('howItWorks.step1Desc1')}<br />
+                      <strong className="text-white">{t('howItWorks.step1Desc2')}</strong><br />
+                      {t('howItWorks.step1Desc3')}
                     </p>
                   </div>
 
@@ -275,11 +397,11 @@ export default function Home() {
                     <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black font-bold text-lg mb-4">
                       2
                     </div>
-                    <h4 className="text-white font-bold text-lg mb-2">기획 제안</h4>
+                    <h4 className="text-white font-bold text-lg mb-2">{t('howItWorks.step2Title')}</h4>
                     <p className="text-white/60 text-sm leading-relaxed">
-                      AI가 분석한<br />
-                      <strong className="text-[#00F5A0]">'소구점 맞춤 대본'</strong>을<br />
-                      먼저 보여드립니다.
+                      {t('howItWorks.step2Desc1')}<br />
+                      <strong className="text-[#00F5A0]">{t('howItWorks.step2Desc2')}</strong><br />
+                      {t('howItWorks.step2Desc3')}
                     </p>
                   </div>
 
@@ -288,11 +410,11 @@ export default function Home() {
                     <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black font-bold text-lg mb-4">
                       3
                     </div>
-                    <h4 className="text-white font-bold text-lg mb-2">제작 완료</h4>
+                    <h4 className="text-white font-bold text-lg mb-2">{t('howItWorks.step3Title')}</h4>
                     <p className="text-white/60 text-sm leading-relaxed">
-                      컨펌 후<br />
-                      <strong className="text-[#00F5A0]">48시간 이내</strong>,<br />
-                      고퀄리티 영상이 도착합니다.
+                      {t('howItWorks.step3Desc1')}<br />
+                      <strong className="text-[#00F5A0]">{t('howItWorks.step3Desc2')}</strong><br />
+                      {t('howItWorks.step3Desc3')}
                     </p>
                   </div>
                 </div>
@@ -311,10 +433,10 @@ export default function Home() {
                       backgroundImage: 'linear-gradient(90deg, #00F5A0, #00D9F5)',
                     }}
                   >
-                    0원
+                    {t('howItWorks.stat1Value')}
                   </span>
                 </p>
-                <p className="text-white/60 text-base sm:text-lg md:text-xl mt-3">촬영 비용</p>
+                <p className="text-white/60 text-base sm:text-lg md:text-xl mt-3">{t('howItWorks.stat1Label')}</p>
               </div>
               <div>
                 <p className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight">
@@ -324,10 +446,10 @@ export default function Home() {
                       backgroundImage: 'linear-gradient(90deg, #00F5A0, #00D9F5)',
                     }}
                   >
-                    48h
+                    {t('howItWorks.stat2Value')}
                   </span>
                 </p>
-                <p className="text-white/60 text-base sm:text-lg md:text-xl mt-3">평균 납품</p>
+                <p className="text-white/60 text-base sm:text-lg md:text-xl mt-3">{t('howItWorks.stat2Label')}</p>
               </div>
               <div>
                 <p className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight">
@@ -337,10 +459,10 @@ export default function Home() {
                       backgroundImage: 'linear-gradient(90deg, #00F5A0, #00D9F5)',
                     }}
                   >
-                    8-15초
+                    {t('howItWorks.stat3Value')}
                   </span>
                 </p>
-                <p className="text-white/60 text-base sm:text-lg md:text-xl mt-3">숏폼 최적화</p>
+                <p className="text-white/60 text-base sm:text-lg md:text-xl mt-3">{t('howItWorks.stat3Label')}</p>
               </div>
             </div>
           </ScrollReveal>
@@ -352,33 +474,51 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6">
           <ScrollReveal>
             <div className="text-center mb-16">
-              <p className="label-tag mb-4">REAL PORTFOLIO</p>
+              <p className="label-tag mb-4">{t('portfolio.label')}</p>
               <h2 className="text-3xl sm:text-4xl font-bold text-white">
-                <span className="block">이미 여러 브랜드는</span>
-                <span className="gradient-text">XLARGE와 함께 매출을 올리고 있습니다</span>
+                <span className="block">{t('portfolio.title1')}</span>
+                <span className="gradient-text">{t('portfolio.title2')}</span>
               </h2>
               <p className="text-white/60 mt-4">
-                <span className="block sm:inline">셀러와 브랜드사의 얼굴로 만든</span>{' '}
-                <span className="block sm:inline text-nowrap">실제 성공 사례를 확인하세요.</span>
+                {t('portfolio.subtitle')}
               </p>
             </div>
           </ScrollReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {(landingPortfolios.length > 0 ? landingPortfolios : [
-              // 폴백 데이터: DB에 데이터가 없을 때 기본 카드 표시
+            {/* DB 데이터 사용하되, en/ja는 텍스트만 번역 적용 (video_url 등은 DB 값 유지) */}
+            {(landingPortfolios.length > 0 ? landingPortfolios.map((item, idx) => {
+              // 한국어가 아닌 경우 번역된 텍스트 사용 (video_url, thumbnail_url은 DB 값 유지)
+              if (locale !== 'ko') {
+                const fallbackKey = `fallback${idx + 1}` as 'fallback1' | 'fallback2' | 'fallback3';
+                return {
+                  ...item,
+                  client_name: t(`portfolio.${fallbackKey}.client`),
+                  category: t(`portfolio.${fallbackKey}.category`),
+                  campaign_date: t(`portfolio.${fallbackKey}.date`),
+                  title: t(`portfolio.${fallbackKey}.title`),
+                  description: t(`portfolio.${fallbackKey}.description`),
+                  metric_1_value: t(`portfolio.${fallbackKey}.metric1Value`),
+                  metric_1_label: t(`portfolio.${fallbackKey}.metric1Label`),
+                  metric_2_value: t(`portfolio.${fallbackKey}.metric2Value`),
+                  metric_2_label: t(`portfolio.${fallbackKey}.metric2Label`),
+                };
+              }
+              return item;
+            }) : [
+              // DB가 비었을 때만 사용하는 fallback (video 없음)
               {
                 id: 'fallback-1',
-                client_name: 'BEAUTY D사',
-                category: '뷰티',
+                client_name: t('portfolio.fallback1.client'),
+                category: t('portfolio.fallback1.category'),
                 category_color: '#FF69B4',
-                campaign_date: '2024.12 캠페인',
-                title: '인플루언서 대비 ROAS 3배 달성',
-                description: '기존 인플루언서 협찬 대비 동일 매체비로 전환율 3배 상승',
-                metric_1_value: '+312%',
-                metric_1_label: 'ROAS 상승',
-                metric_2_value: '₩4,200',
-                metric_2_label: 'CPA 달성',
+                campaign_date: t('portfolio.fallback1.date'),
+                title: t('portfolio.fallback1.title'),
+                description: t('portfolio.fallback1.description'),
+                metric_1_value: t('portfolio.fallback1.metric1Value'),
+                metric_1_label: t('portfolio.fallback1.metric1Label'),
+                metric_2_value: t('portfolio.fallback1.metric2Value'),
+                metric_2_label: t('portfolio.fallback1.metric2Label'),
                 video_url: '',
                 thumbnail_url: '',
                 sort_order: 0,
@@ -386,16 +526,16 @@ export default function Home() {
               },
               {
                 id: 'fallback-2',
-                client_name: 'F&B M사',
-                category: 'F&B',
+                client_name: t('portfolio.fallback2.client'),
+                category: t('portfolio.fallback2.category'),
                 category_color: '#FFA500',
-                campaign_date: '2025.01 캠페인',
-                title: 'CPA 67% 절감, 매출 2.5배',
-                description: '15,000원 → 5,000원 CPA 하락, 월 매출 2.5배 성장',
-                metric_1_value: '-67%',
-                metric_1_label: 'CPA 절감',
-                metric_2_value: '2.5x',
-                metric_2_label: '매출 성장',
+                campaign_date: t('portfolio.fallback2.date'),
+                title: t('portfolio.fallback2.title'),
+                description: t('portfolio.fallback2.description'),
+                metric_1_value: t('portfolio.fallback2.metric1Value'),
+                metric_1_label: t('portfolio.fallback2.metric1Label'),
+                metric_2_value: t('portfolio.fallback2.metric2Value'),
+                metric_2_label: t('portfolio.fallback2.metric2Label'),
                 video_url: '',
                 thumbnail_url: '',
                 sort_order: 1,
@@ -403,16 +543,16 @@ export default function Home() {
               },
               {
                 id: 'fallback-3',
-                client_name: 'D2C C사',
-                category: 'D2C',
+                client_name: t('portfolio.fallback3.client'),
+                category: t('portfolio.fallback3.category'),
                 category_color: '#9B59B6',
-                campaign_date: '2024.11 ~ 현재',
-                title: '1년간 영상 재사용, ROI 극대화',
-                description: '한 번 제작한 영상으로 12개월 광고 운영, 섭외비 절감',
-                metric_1_value: '12개월',
-                metric_1_label: '영상 재사용',
-                metric_2_value: '₩0',
-                metric_2_label: '추가 섭외비',
+                campaign_date: t('portfolio.fallback3.date'),
+                title: t('portfolio.fallback3.title'),
+                description: t('portfolio.fallback3.description'),
+                metric_1_value: t('portfolio.fallback3.metric1Value'),
+                metric_1_label: t('portfolio.fallback3.metric1Label'),
+                metric_2_value: t('portfolio.fallback3.metric2Value'),
+                metric_2_label: t('portfolio.fallback3.metric2Label'),
                 video_url: '',
                 thumbnail_url: '',
                 sort_order: 2,
@@ -496,206 +636,12 @@ export default function Home() {
           {/* CTA */}
           <ScrollReveal delay={0.4}>
             <div className="mt-12 text-center">
-              <Link href="/portfolio" className="btn-secondary inline-flex items-center gap-2">
-                전체 포트폴리오 보기
+              <Link href={`/${locale}/portfolio`} className="btn-secondary inline-flex items-center gap-2">
+                {t('portfolio.viewAll')}
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
               </Link>
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
-
-      {/* Problem & Solution Section - WHY AI? */}
-      <section id="why-ai" className="section-spacing bg-[#050505]">
-        <div className="max-w-6xl mx-auto px-6">
-          <ScrollReveal>
-            <div className="text-center mb-16">
-              <p className="label-tag mb-4">WHY AI?</p>
-              <h2 className="text-3xl sm:text-4xl font-bold text-white">
-                <span className="block sm:inline">왜 인플루언서,</span>{' '}
-                <span className="block sm:inline text-nowrap">아직도 거품을 믿으십니까?</span>
-              </h2>
-              <p className="text-white/60 mt-4">
-                <span className="block sm:inline">팔로워 10만?</span>{' '}
-                <span className="block sm:inline text-nowrap">알고리즘이 막으면 아무도 못 봅니다.</span>
-              </p>
-            </div>
-          </ScrollReveal>
-
-          {/* VS Comparison Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-            {/* Old Way */}
-            <ScrollReveal delay={0.1} direction="left">
-              <div className="bg-[#0A0A0A] border border-red-500/20 rounded-2xl p-6 lg:p-8 h-full">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-red-400 text-xs font-bold tracking-wider">OLD WAY</p>
-                    <p className="text-white font-bold">기존 인플루언서</p>
-                  </div>
-                </div>
-                <ul className="space-y-4">
-                  <li className="flex items-start gap-3">
-                    <span className="text-red-400 mt-1">X</span>
-                    <div>
-                      <p className="text-white font-medium">도달률 5%의 함정</p>
-                      <p className="text-white/50 text-sm">10만 팔로워? 알고리즘이 막으면 아무도 못 봅니다.</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="text-red-400 mt-1">X</span>
-                    <div>
-                      <p className="text-white font-medium">휘발성 게시물</p>
-                      <p className="text-white/50 text-sm">24시간 뒤면 사라지는 스토리에 300만 원을 태우시겠습니까?</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="text-red-400 mt-1">X</span>
-                    <div>
-                      <p className="text-white font-medium">통제 불가 리스크</p>
-                      <p className="text-white/50 text-sm">&quot;그 멘트는 못 해요&quot;, &quot;술 먹고 사고 침&quot; - 예측 불가능한 변수</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="text-red-400 mt-1">X</span>
-                    <div>
-                      <p className="text-white font-medium">매년 재협상</p>
-                      <p className="text-white/50 text-sm">단가 상승, 일정 조율, 언제 폭탄 터질지 모르는 리스크</p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-            </ScrollReveal>
-
-            {/* New Standard */}
-            <ScrollReveal delay={0.2} direction="right">
-              <div className="bg-gradient-to-b from-[#00F5A0]/10 to-[#0A0A0A] border border-[#00F5A0]/30 rounded-2xl p-6 lg:p-8 h-full">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-[#00F5A0]/20 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-[#00F5A0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-[#00F5A0] text-xs font-bold tracking-wider">NEW STANDARD</p>
-                    <p className="text-white font-bold">XLARGE AI</p>
-                  </div>
-                </div>
-                <ul className="space-y-4">
-                  <li className="flex items-start gap-3">
-                    <span className="w-5 h-5 mt-0.5 rounded-full border-2 border-[#00F5A0] flex-shrink-0" />
-                    <div>
-                      <p className="text-white font-medium">타겟 적중률 100%</p>
-                      <p className="text-white/50 text-sm">우리 영상을 사서 귀사 계정으로 광고를 돌리세요. <strong className="text-[#00F5A0]">진짜 살 사람에게만</strong> 꽂힙니다.</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-5 h-5 mt-0.5 rounded-full border-2 border-[#00F5A0] flex-shrink-0" />
-                    <div>
-                      <p className="text-white font-medium">영구 소장 자산</p>
-                      <p className="text-white/50 text-sm">한 번 구매하면 평생 귀사의 것. <strong className="text-[#00F5A0]">1년이고 2년이고</strong> 매출 날 때까지 돌리세요.</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-5 h-5 mt-0.5 rounded-full border-2 border-[#00F5A0] flex-shrink-0" />
-                    <div>
-                      <p className="text-white font-medium">완벽한 통제</p>
-                      <p className="text-white/50 text-sm">브랜드가 원하는 표정, 멘트, 춤. <strong className="text-[#00F5A0]">100% 의도대로</strong> 연출합니다.</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-5 h-5 mt-0.5 rounded-full border-2 border-[#00F5A0] flex-shrink-0" />
-                    <div>
-                      <p className="text-white font-medium">리스크 제로</p>
-                      <p className="text-white/50 text-sm">스캔들 없음, 단가 인상 없음, <strong className="text-[#00F5A0]">Clean AI</strong>로 안전하게.</p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-            </ScrollReveal>
-          </div>
-
-          {/* Bottom CTA */}
-          <ScrollReveal delay={0.3}>
-            <div className="mt-12 text-center">
-              <p className="text-white/60 mb-6" style={{ wordBreak: 'keep-all' }}>
-                <span className="block sm:inline">인플루언서 1회 섭외 비용으로,</span>{' '}
-                <span className="block sm:inline text-nowrap">평생 쓰는 브랜드 전속 모델을 만드세요.</span>
-              </p>
-              <button
-                onClick={() => {
-                  trackConversion.consultClick('why_ai_section');
-                  triggerOpenChat('free_consult');
-                }}
-                className="btn-primary"
-              >
-                무료 상담 받기
-              </button>
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
-
-      {/* Why It Works Section */}
-      <section data-section="our-position" className="section-spacing bg-[#050505]">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <ScrollReveal>
-            <p className="label-tag mb-4">OUR POSITION</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
-              <span className="block sm:inline">엑스라지는</span>{' '}
-              <span className="block sm:inline">고객의 &apos;경험&apos;을 <span className="text-nowrap">팝니다.</span></span>
-            </h2>
-            <div className="max-w-2xl mx-auto readable-text">
-              <p className="text-white/70 text-lg mb-6">
-                마케팅의 성공 공식, 아주 심플합니다.
-              </p>
-
-              {/* 공식 강조 박스 */}
-              <div className="inline-block px-6 py-4 bg-[#0A0A0A] border border-[#00F5A0]/30 rounded-xl mb-8">
-                <p className="text-xl sm:text-2xl font-bold">
-                  <span className="text-[#00F5A0]">좋은 소재(Creative)</span>
-                  <span className="text-white/60 mx-3">×</span>
-                  <span className="text-[#00D9F5]">정교한 타겟팅(Ads)</span>
-                </p>
-              </div>
-
-              <div className="space-y-4 text-white/60 mb-8">
-                <p>타겟팅은 귀사의 마케터가 제일 잘합니다.</p>
-                <p>저희는 그 마케터가 춤추게 할 <strong className="text-[#00F5A0]">'미친 소재'</strong>만 납품합니다.</p>
-              </div>
-
-              <p className="text-white/40 text-sm mb-12" style={{ wordBreak: 'keep-all' }}>
-                ※ 채널이 없거나 광고 집행이 어려우시다면, 문의 시 체크해 주세요.<br />
-                저희 채널에서 직접 배포해 드립니다. (매체비 별도)
-              </p>
-
-              {/* 임팩트 있는 200% 배지 */}
-              <div className="relative inline-block group cursor-pointer">
-                {/* Glow effect */}
-                <div className="absolute -inset-1 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] rounded-2xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
-                {/* Main badge */}
-                <div className="relative px-8 sm:px-12 py-6 sm:py-8 bg-gradient-to-r from-[#0A0A0A] to-[#111111] border-2 border-[#00F5A0]/50 rounded-2xl shadow-[0_0_40px_rgba(0,245,160,0.15)] group-hover:shadow-[0_0_60px_rgba(0,245,160,0.25)] transition-all duration-300">
-                  <p className="text-white/60 text-sm sm:text-base mb-2">매체비 효율을</p>
-                  <p className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight">
-                    <span
-                      className="bg-clip-text text-transparent animate-gradient"
-                      style={{
-                        backgroundImage: 'linear-gradient(90deg, #00F5A0, #00D9F5, #00F5A0)',
-                        backgroundSize: '200% 100%',
-                      }}
-                    >
-                      200%
-                    </span>
-                  </p>
-                  <p className="text-white/60 text-sm sm:text-base mt-2">끌어올리는 AI 모델</p>
-                </div>
-              </div>
             </div>
           </ScrollReveal>
         </div>
@@ -706,9 +652,9 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6">
           <ScrollReveal>
             <div className="text-center mb-12">
-              <p className="label-tag mb-4">SELECT YOUR PLAN</p>
-              <h2 className="text-3xl sm:text-4xl font-bold text-white">여러분의 클래스에 맞는 플랜</h2>
-              <p className="text-white/60 mt-4">프리미엄 AI 크리에이티브 솔루션</p>
+              <p className="label-tag mb-4">{t('pricing.label')}</p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white">{t('pricing.title')}</h2>
+              <p className="text-white/60 mt-4">{t('pricing.subtitle')}</p>
             </div>
           </ScrollReveal>
 
@@ -717,7 +663,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {pricingPlans.filter(p => p.card_style !== 'gold').map((plan, index) => (
                 <ScrollReveal key={plan.id} delay={0.1 * (index + 1)} direction="up">
-                  <PricingCard plan={plan} promotion={promotion} />
+                  <PricingCard plan={plan} promotion={promotion} locale={locale} />
                 </ScrollReveal>
               ))}
             </div>
@@ -734,7 +680,7 @@ export default function Home() {
                       </span>
                     </div>
                   )}
-                  <p className="label-tag mb-4">STARTER</p>
+                  <p className="label-tag mb-4">{t('fallbackPlans.starter.name')}</p>
                   <div className="mb-1">
                     {promotion && (
                       <span className="text-white/40 text-sm line-through mr-2">₩{formatPrice(getOriginalPrice(3300000))}</span>
@@ -742,17 +688,17 @@ export default function Home() {
                     <h3 className="text-2xl font-bold text-white inline">
                       ₩{formatPrice(getPrice(3300000))}~
                     </h3>
-                    <span className="text-white/40 text-xs ml-1">(VAT 별도)</span>
+                    <span className="text-white/40 text-xs ml-1">(VAT)</span>
                   </div>
-                  <p className="text-white/60 text-sm mb-6">테스트 도입을 위한 베이직 플랜</p>
+                  <p className="text-white/60 text-sm mb-6">{t('fallbackPlans.starter.description')}</p>
                   <ul className="feature-list mb-8 flex-1">
-                    <li>AI 인플루언서 영상 1종 (15초)</li>
-                    <li>기본 배경/의상 제공</li>
-                    <li>비독점 라이선스 (1년)</li>
-                    <li>수정 1회 (단순 편집)</li>
+                    <li>{t('fallbackPlans.starter.feature1')}</li>
+                    <li>{t('fallbackPlans.starter.feature2')}</li>
+                    <li>{t('fallbackPlans.starter.feature3')}</li>
+                    <li>{t('fallbackPlans.starter.feature4')}</li>
                   </ul>
                   <Link href="/contact?product=STARTER" className="btn-secondary w-full text-center block">
-                    시작하기
+                    {t('pricing.startButton')}
                   </Link>
                 </div>
               </ScrollReveal>
@@ -761,7 +707,7 @@ export default function Home() {
               <ScrollReveal delay={0.2} direction="up">
                 <div className="card-featured relative h-full flex flex-col">
                   <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 text-xs font-bold tracking-wide bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black rounded-sm whitespace-nowrap">
-                    BEST CHOICE
+                    {t('pricing.bestChoice')}
                   </span>
                   {promotion && (
                     <div className="mb-3">
@@ -770,7 +716,7 @@ export default function Home() {
                       </span>
                     </div>
                   )}
-                  <p className="label-tag mb-4">GROWTH</p>
+                  <p className="label-tag mb-4">{t('fallbackPlans.growth.name')}</p>
                   <div className="mb-1">
                     {promotion && (
                       <span className="text-white/40 text-sm line-through mr-2">₩{formatPrice(getOriginalPrice(5500000))}</span>
@@ -778,18 +724,18 @@ export default function Home() {
                     <h3 className="text-2xl font-bold text-white inline">
                       ₩{formatPrice(getPrice(5500000))}
                     </h3>
-                    <span className="text-white/40 text-xs ml-1">(VAT 별도)</span>
+                    <span className="text-white/40 text-xs ml-1">(VAT)</span>
                   </div>
-                  <p className="text-white/60 text-sm mb-6">본격적인 성과를 위한 주력 플랜</p>
+                  <p className="text-white/60 text-sm mb-6">{t('fallbackPlans.growth.description')}</p>
                   <ul className="feature-list mb-8 flex-1">
-                    <li><strong className="text-white">영상 1종 + 바리에이션 3종</strong> (총 4개)</li>
-                    <li><strong className="text-white">브랜드 맞춤 커스텀</strong> (의상/PPL)</li>
-                    <li><strong className="text-[#00F5A0]">영구 소장 라이선스</strong></li>
-                    <li>전담 매니저 배정</li>
-                    <li>수정 2회</li>
+                    <li><strong className="text-white">{t('fallbackPlans.growth.feature1')}</strong> {t('fallbackPlans.growth.feature1Sub')}</li>
+                    <li><strong className="text-white">{t('fallbackPlans.growth.feature2')}</strong> {t('fallbackPlans.growth.feature2Sub')}</li>
+                    <li><strong className="text-[#00F5A0]">{t('fallbackPlans.growth.feature3')}</strong></li>
+                    <li>{t('fallbackPlans.growth.feature4')}</li>
+                    <li>{t('fallbackPlans.growth.feature5')}</li>
                   </ul>
                   <Link href="/contact?product=GROWTH" className="btn-primary w-full text-center block">
-                    시작하기
+                    {t('pricing.startButton')}
                   </Link>
                 </div>
               </ScrollReveal>
@@ -804,7 +750,7 @@ export default function Home() {
                       </span>
                     </div>
                   )}
-                  <p className="label-tag mb-4 text-[#00D9F5]">PERFORMANCE</p>
+                  <p className="label-tag mb-4 text-[#00D9F5]">{t('fallbackPlans.performance.name')}</p>
                   <div className="mb-1">
                     {promotion && (
                       <span className="text-white/40 text-sm line-through mr-2">₩{formatPrice(getOriginalPrice(9000000))}</span>
@@ -812,18 +758,18 @@ export default function Home() {
                     <h3 className="text-2xl font-bold text-white inline">
                       ₩{formatPrice(getPrice(9000000))}
                     </h3>
-                    <span className="text-white/40 text-xs ml-1">(VAT 별도)</span>
+                    <span className="text-white/40 text-xs ml-1">(VAT)</span>
                   </div>
-                  <p className="text-white/60 text-sm mb-6">고퀄리티 연출이 필요한 프리미엄 플랜</p>
+                  <p className="text-white/60 text-sm mb-6">{t('fallbackPlans.performance.description')}</p>
                   <ul className="feature-list mb-8 flex-1">
-                    <li><strong className="text-white">영상 2종 + 바리에이션 6종</strong> (총 8개)</li>
-                    <li>전문 디렉터의 고퀄리티 연출</li>
-                    <li><strong className="text-[#00F5A0]">성과 저조 시 소재 교체(AS) 1회</strong></li>
-                    <li>영구 소장 라이선스</li>
-                    <li>우선 제작 (Fast Track)</li>
+                    <li><strong className="text-white">{t('fallbackPlans.performance.feature1')}</strong> {t('fallbackPlans.performance.feature1Sub')}</li>
+                    <li>{t('fallbackPlans.performance.feature2')}</li>
+                    <li><strong className="text-[#00F5A0]">{t('fallbackPlans.performance.feature3')}</strong></li>
+                    <li>{t('fallbackPlans.performance.feature4')}</li>
+                    <li>{t('fallbackPlans.performance.feature5')}</li>
                   </ul>
                   <Link href="/contact?product=PERFORMANCE" className="btn-secondary w-full text-center block">
-                    시작하기
+                    {t('pricing.startButton')}
                   </Link>
                 </div>
               </ScrollReveal>
@@ -839,7 +785,7 @@ export default function Home() {
                     </div>
                   )}
                   <div className="flex items-center gap-2 mb-4">
-                    <span className="text-purple-400 text-xs font-bold tracking-wider">PERFORMANCE ADS</span>
+                    <span className="text-purple-400 text-xs font-bold tracking-wider">{t('fallbackPlans.performanceAds.name')}</span>
                     <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-[10px] font-bold rounded">NEW</span>
                   </div>
                   <div className="mb-1">
@@ -849,44 +795,44 @@ export default function Home() {
                     <h3 className="text-2xl font-bold text-white inline">
                       ₩{formatPrice(getPrice(15000000))}~
                     </h3>
-                    <span className="text-white/40 text-xs ml-1">(VAT 별도)</span>
+                    <span className="text-white/40 text-xs ml-1">(VAT)</span>
                   </div>
-                  <p className="text-purple-300/80 text-sm mb-6">영상 제작 + 광고 운영 올인원</p>
+                  <p className="text-purple-300/80 text-sm mb-6">{t('fallbackPlans.performanceAds.description')}</p>
                   <ul className="space-y-2 mb-8 flex-1">
                     <li className="flex items-start gap-2 text-sm text-gray-300">
                       <svg className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      <span><strong className="text-white">AI 모델 영상 제작 (5종)</strong></span>
+                      <span><strong className="text-white">{t('fallbackPlans.performanceAds.feature1')}</strong></span>
                     </li>
                     <li className="flex items-start gap-2 text-sm text-gray-300">
                       <svg className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      <span>A/B 테스트용 바리에이션 (10종)</span>
+                      <span>{t('fallbackPlans.performanceAds.feature2')}</span>
                     </li>
                     <li className="flex items-start gap-2 text-sm text-gray-300">
                       <svg className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      <span><strong className="text-purple-300">메타/틱톡/유튜브 광고 세팅</strong></span>
+                      <span><strong className="text-purple-300">{t('fallbackPlans.performanceAds.feature3')}</strong></span>
                     </li>
                     <li className="flex items-start gap-2 text-sm text-gray-300">
                       <svg className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      <span>타겟 오디언스 정밀 세팅</span>
+                      <span>{t('fallbackPlans.performanceAds.feature4')}</span>
                     </li>
                     <li className="flex items-start gap-2 text-sm text-gray-300">
                       <svg className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      <span>ROAS 분석 리포트 제공</span>
+                      <span>{t('fallbackPlans.performanceAds.feature5')}</span>
                     </li>
                   </ul>
-                  <p className="text-xs text-white/40 mb-4 text-center">영상만 만든다고 팔리지 않습니다.</p>
+                  <p className="text-xs text-white/40 mb-4 text-center">{t('fallbackPlans.performanceAds.notice')}</p>
                   <Link href="/contact?product=PERFORMANCE_ADS" className="block w-full text-center py-3 rounded-full font-medium bg-gradient-to-r from-purple-500 to-purple-400 text-white hover:opacity-90 transition-all">
-                    시작하기
+                    {t('pricing.startButton')}
                   </Link>
                 </div>
               </ScrollReveal>
@@ -897,7 +843,7 @@ export default function Home() {
           {pricingPlans.filter(p => p.card_style === 'gold').map((plan) => (
             <ScrollReveal key={plan.id} delay={0.5}>
               <div className="mt-8">
-                <PricingCard plan={plan} promotion={promotion} />
+                <PricingCard plan={plan} promotion={promotion} locale={locale} />
               </div>
             </ScrollReveal>
           ))}
@@ -908,16 +854,16 @@ export default function Home() {
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[#FFD700] text-xs font-bold tracking-wider">VIP PARTNER</span>
+                    <span className="text-[#FFD700] text-xs font-bold tracking-wider">{t('vipPartner.label')}</span>
                     <svg className="w-4 h-4 text-[#FFD700]" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-2">중견/대기업을 위한 분기 독점 계약</h3>
-                  <p className="text-[#FFD700]/80 text-sm">3개월 파트너십 (총 12개 영상) + 브랜드 전속 AI 모델 독점 개발 + 월간 성과 리포트</p>
+                  <h3 className="text-2xl font-bold text-white mb-2">{t('vipPartner.title')}</h3>
+                  <p className="text-[#FFD700]/80 text-sm">{t('vipPartner.description')}</p>
                 </div>
                 <Link href="/contact" className="shrink-0 inline-block text-center px-8 py-3 rounded-full font-medium bg-gradient-to-r from-[#B8860B] to-[#FFD700] text-black hover:opacity-90 transition-all">
-                  VIP 컨시어지 연결
+                  {t('pricing.vipConnect')}
                 </Link>
               </div>
             </div>
@@ -925,20 +871,31 @@ export default function Home() {
 
           {/* VAT Notice */}
           <p className="text-center text-white/40 text-sm mt-8">
-            ※ 모든 금액은 VAT 별도이며, 착수금 50% 납입 시 프로젝트가 시작됩니다. (50% 이상 할인 기간에는 전액 선결제)
+            {t('pricing.vatNotice')}
           </p>
         </div>
       </section>
 
-      {/* Final CTA Section - Phone Contact */}
-      <section data-section="final-cta" className="py-16 md:py-20 bg-[#0A0A0A] border-y border-[#222]">
+      {/* Final CTA Section - 긴급성 강조 */}
+      <section data-section="final-cta" className="py-16 md:py-24 bg-[var(--bg-elevated)] border-t border-[var(--border-default)]">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <ScrollReveal>
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4" style={{ wordBreak: 'keep-all' }}>
-              무엇이든 물어보세요.<br className="md:hidden" /> 5분 안에 답변해 드립니다.
+            {/* 긴급성 배지 */}
+            <div className="inline-block mb-6">
+              <span className="px-4 py-2 bg-red-500/20 border border-red-500/40 text-red-500 text-sm font-bold rounded-full animate-pulse">
+                {t('finalCtaSection.urgencyBadge')}
+              </span>
+            </div>
+
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[var(--text-primary)] mb-4" style={{ wordBreak: 'keep-all' }}>
+              {t('finalCtaSection.title1')}<br className="md:hidden" /> <span className="gradient-text">{t('finalCtaSection.title2')}</span> {t('finalCtaSection.title3')}
             </h2>
-            <p className="text-white/60 text-base md:text-lg mb-8 max-w-2xl mx-auto" style={{ wordBreak: 'keep-all' }}>
-              복잡한 절차 없이 전화, 실시간 채팅으로 바로 궁금증을 해결하세요.
+            <p className="text-[var(--text-secondary)] text-base md:text-lg mb-4 max-w-2xl mx-auto" style={{ wordBreak: 'keep-all' }}>
+              {t('finalCtaSection.subtitle1')}<br />
+              <strong className="text-[var(--text-primary)]">{t('finalCtaSection.subtitle2')}</strong>
+            </p>
+            <p className="gradient-text text-sm mb-8 font-medium">
+              {t('finalCtaSection.message')}
             </p>
 
             {/* Contact Buttons */}
@@ -946,12 +903,12 @@ export default function Home() {
               {/* Phone Number */}
               <a
                 href="tel:02-3142-7218"
-                className="inline-flex items-center justify-center gap-3 px-8 py-5 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black font-bold text-xl md:text-2xl rounded-2xl hover:opacity-90 transition-all shadow-[0_0_30px_rgba(0,245,160,0.3)] hover:shadow-[0_0_50px_rgba(0,245,160,0.5)]"
+                className="btn-primary inline-flex items-center justify-center gap-3 px-8 py-5 text-xl md:text-2xl rounded-2xl"
               >
                 <svg className="w-6 h-6 md:w-7 md:h-7" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                 </svg>
-                02-3142-7218
+                {t('finalCta.phone')}
               </a>
 
               {/* KakaoTalk Chat */}
@@ -964,27 +921,27 @@ export default function Home() {
                 <svg className="w-6 h-6 md:w-7 md:h-7" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 3C6.477 3 2 6.463 2 10.691c0 2.654 1.75 4.984 4.375 6.313-.137.48-.885 3.095-.915 3.31 0 0-.019.152.08.21.098.059.213.013.213.013.281-.039 3.252-2.127 3.765-2.49.78.117 1.593.178 2.482.178 5.523 0 10-3.463 10-7.534C22 6.463 17.523 3 12 3z"/>
                 </svg>
-                카카오톡 1:1 상담
+                {t('finalCta.kakao')}
               </a>
             </div>
 
-            <p className="text-white/40 text-sm mt-6">
-              24시간 상담 가능 · 연중무휴
+            <p className="text-[var(--text-muted)] text-sm mt-6">
+              {t('finalCta.notice')}
             </p>
           </ScrollReveal>
         </div>
       </section>
 
-      {/* Sticky Mobile CTA - HOW IT WORKS 섹션부터 표시 */}
+      {/* Sticky Mobile CTA - 48시간 강조 */}
       <div className={`sticky-mobile-cta transition-transform duration-300 ${showBottomSheet ? 'translate-y-0' : 'translate-y-full'}`}>
         <button
           onClick={() => {
             trackConversion.consultClick('sticky_mobile_cta');
             openContactModal();
           }}
-          className="btn-primary w-full text-center"
+          className="btn-primary w-full text-center font-bold"
         >
-          주문하기
+          {t('stickyCta')}
         </button>
       </div>
 

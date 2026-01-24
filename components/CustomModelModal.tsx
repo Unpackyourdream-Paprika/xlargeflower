@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { submitContact } from '@/lib/supabase';
+import { useTranslations } from 'next-intl';
 
 type ModalStep = 'SELECT' | 'GENERATE' | 'CONTACT';
 type Gender = 'female' | 'male';
@@ -95,6 +96,7 @@ interface ReferenceImage {
 }
 
 export default function CustomModelModal({ isOpen, onClose }: CustomModelModalProps) {
+  const t = useTranslations('customModel');
   const [step, setStep] = useState<ModalStep>('SELECT');
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -224,13 +226,13 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || '이미지 생성에 실패했습니다.');
+        throw new Error(data.error || t('generateError'));
       }
 
       setGeneratedImage(data.imageUrl);
       setModelProfile(generateRandomProfile(prompt, gender));
     } catch (err) {
-      const message = err instanceof Error ? err.message : '이미지 생성에 실패했습니다.';
+      const message = err instanceof Error ? err.message : t('generateError');
       setError(message);
     } finally {
       setIsGenerating(false);
@@ -268,7 +270,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
       setIsSubmitted(true);
     } catch (error) {
       console.error('Submit error:', error);
-      alert('문의 전송 중 오류가 발생했습니다. 다시 시도해주세요.');
+      alert(t('submitError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -328,10 +330,10 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
             <div className="p-8">
               <div className="text-center mb-8">
                 <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-purple-400">
-                  CUSTOM MODEL
+                  {t('label')}
                 </span>
-                <h2 className="mt-2 text-2xl font-bold text-white">맞춤형 모델 제작</h2>
-                <p className="mt-2 text-white/60">어떤 방식으로 시작하시겠어요?</p>
+                <h2 className="mt-2 text-2xl font-bold text-white">{t('modalTitle')}</h2>
+                <p className="mt-2 text-white/60">{t('modalSubtitle')}</p>
               </div>
 
               <div className="space-y-4">
@@ -348,10 +350,10 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-white group-hover:text-[#00F5A0] transition-colors">
-                        전문가에게 바로 상담받기
+                        {t('optionConsultTitle')}
                       </h3>
                       <p className="text-sm text-white/50">
-                        원하는 스타일을 상담사에게 직접 설명해 주세요
+                        {t('optionConsultDesc')}
                       </p>
                     </div>
                   </div>
@@ -370,13 +372,13 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-white group-hover:text-[#00F5A0] transition-colors">
-                        AI 모델 직접 생성해보기
+                        {t('optionGenerateTitle')}
                         <span className="ml-2 text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">
                           NEW
                         </span>
                       </h3>
                       <p className="text-sm text-white/50">
-                        원하는 스타일의 전속 모델을 직접 만들어 보세요
+                        {t('optionGenerateDesc')}
                       </p>
                     </div>
                   </div>
@@ -402,7 +404,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                뒤로 가기
+                {t('backButton')}
               </button>
 
               {!generatedImage ? (
@@ -410,16 +412,16 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                 <>
                   <div className="text-center mb-6">
                     <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-purple-400">
-                      AI MODEL GENERATOR
+                      {t('generatorLabel')}
                     </span>
-                    <h2 className="mt-2 text-2xl font-bold text-white">나만의 AI 모델 만들기</h2>
-                    <p className="mt-2 text-white/60">원하는 모델의 스타일과 분위기를 입력해 주세요</p>
+                    <h2 className="mt-2 text-2xl font-bold text-white">{t('generatorTitle')}</h2>
+                    <p className="mt-2 text-white/60">{t('generatorSubtitle')}</p>
                   </div>
 
                   {/* 성별 선택 */}
                   <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-400 mb-3">
-                      모델 성별 선택
+                      {t('genderLabel')}
                     </label>
                     <div className="grid grid-cols-2 gap-3">
                       <button
@@ -437,7 +439,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 13v8M9 18h6" />
                           </svg>
                           <span className={`font-bold ${gender === 'female' ? 'text-[#00F5A0]' : 'text-white'}`}>
-                            여성 모델
+                            {t('genderFemale')}
                           </span>
                         </div>
                       </button>
@@ -456,7 +458,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 5l-5.4 5.4M19 5h-5M19 5v5" />
                           </svg>
                           <span className={`font-bold ${gender === 'male' ? 'text-[#00F5A0]' : 'text-white'}`}>
-                            남성 모델
+                            {t('genderMale')}
                           </span>
                         </div>
                       </button>
@@ -466,19 +468,19 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                   {/* Prompt Input */}
                   <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-400 mb-2">
-                      원하는 스타일 <span className="text-white/40">(선택)</span>
+                      {t('styleLabel')} <span className="text-white/40">({t('referenceOptional').split(',')[0]})</span>
                     </label>
                     <input
                       type="text"
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && !isGenerating && handleGenerate()}
-                      placeholder="예: 시크한 도시적인 느낌, 따뜻한 분위기"
+                      placeholder={t('stylePlaceholder')}
                       className="w-full px-4 py-4 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors text-lg"
                       disabled={isGenerating}
                     />
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {['시크한', '청순한', '고급스러운', '힙한', '내추럴', '우아한'].map((tag) => (
+                      {[t('styleTagChic'), t('styleTagInnocent'), t('styleTagLuxury'), t('styleTagHip'), t('styleTagNatural'), t('styleTagElegant')].map((tag) => (
                         <button
                           key={tag}
                           type="button"
@@ -495,10 +497,10 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                   {/* Reference Images */}
                   <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-400 mb-2">
-                      레퍼런스 이미지 <span className="text-white/40">(선택, 최대 2장)</span>
+                      {t('referenceLabel')} <span className="text-white/40">({t('referenceOptional')})</span>
                     </label>
                     <p className="text-xs text-white/40 mb-3">
-                      원하는 스타일의 참고 이미지를 업로드하면 비슷한 느낌으로 생성됩니다.
+                      {t('referenceDesc')}
                     </p>
 
                     <div className="flex gap-3">
@@ -529,7 +531,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                           <svg className="w-6 h-6 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                           </svg>
-                          <span className="text-[10px] text-white/40 mt-1">추가</span>
+                          <span className="text-[10px] text-white/40 mt-1">{t('referenceAdd')}</span>
                           <input
                             type="file"
                             accept="image/*"
@@ -555,10 +557,10 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                         </svg>
-                        AI가 모델 프로필을 생성하고 있습니다...
+                        {t('generating')}
                       </span>
                     ) : (
-                      '모델 생성하기'
+                      t('generateButton')
                     )}
                   </button>
 
@@ -571,7 +573,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                         onClick={handleErrorToContact}
                         className="text-sm text-white/70 hover:text-[#00F5A0] transition-colors underline"
                       >
-                        상담을 통해 원하시는 모델을 찾아드릴까요?
+                        {t('errorConsultSuggest')}
                       </button>
                     </div>
                   )}
@@ -581,9 +583,9 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                 <>
                   <div className="text-center mb-6">
                     <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#00F5A0]">
-                      AI MODEL PROFILE
+                      {t('profileLabel')}
                     </span>
-                    <h2 className="mt-2 text-2xl font-bold text-white">모델 프로필 카드</h2>
+                    <h2 className="mt-2 text-2xl font-bold text-white">{t('profileTitle')}</h2>
                   </div>
 
                   {/* 프로필 카드 */}
@@ -597,8 +599,8 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                       />
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
                         <div className="flex justify-between text-xs text-white/60">
-                          <span>FULL BODY</span>
-                          <span>FRONT / SIDE</span>
+                          <span>{t('profileFullBody')}</span>
+                          <span>{t('profileFrontSide')}</span>
                         </div>
                       </div>
                     </div>
@@ -610,10 +612,10 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                         <div className="mb-4">
                           <div className="flex items-center justify-between mb-2">
                             <label className="text-[10px] text-white/40 uppercase tracking-wider">
-                              MODEL NAME (직접 입력 가능)
+                              {t('profileNameLabel')}
                             </label>
                             <span className="px-2 py-0.5 bg-[#00F5A0]/10 border border-[#00F5A0]/30 rounded-full text-[10px] text-[#00F5A0]">
-                              EXCLUSIVE
+                              {t('profileExclusive')}
                             </span>
                           </div>
                           <input
@@ -625,7 +627,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                           />
                           {!customModelName && (
                             <p className="mt-1 text-xs text-white/40">
-                              자동 생성: {modelProfile.name} ({modelProfile.nameKo})
+                              {t('profileAutoGenerated')} {modelProfile.name} ({modelProfile.nameKo})
                             </p>
                           )}
                         </div>
@@ -633,31 +635,31 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                         {/* 스펙 그리드 */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                           <div className="bg-[#0A0A0A] border border-[#222] rounded-xl p-3 text-center">
-                            <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">HEIGHT</p>
+                            <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">{t('profileHeight')}</p>
                             <p className="text-lg font-bold text-white">{modelProfile.height}</p>
                           </div>
                           <div className="bg-[#0A0A0A] border border-[#222] rounded-xl p-3 text-center">
-                            <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">BLOOD</p>
+                            <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">{t('profileBlood')}</p>
                             <p className="text-lg font-bold text-white">{modelProfile.bloodType}</p>
                           </div>
                           <div className="bg-[#0A0A0A] border border-[#222] rounded-xl p-3 text-center">
-                            <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">MBTI</p>
+                            <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">{t('profileMbti')}</p>
                             <p className="text-lg font-bold text-white">{modelProfile.mbti}</p>
                           </div>
                           <div className="bg-[#0A0A0A] border border-[#222] rounded-xl p-3 text-center">
-                            <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">AGE</p>
+                            <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">{t('profileAge')}</p>
                             <p className="text-lg font-bold text-white">{modelProfile.age}</p>
                           </div>
                         </div>
 
                         {/* 특기/스타일 */}
                         <div className="flex flex-wrap items-center gap-2 mb-6">
-                          <span className="text-xs text-white/40">SPECIALTY:</span>
+                          <span className="text-xs text-white/40">{t('profileSpecialty')}</span>
                           <span className="px-3 py-1 bg-purple-500/10 border border-purple-500/30 rounded-full text-sm text-purple-300">
                             {modelProfile.specialty}
                           </span>
                           <span className="px-3 py-1 bg-[#222] border border-[#333] rounded-full text-sm text-white/60">
-                            {gender === 'female' ? '여성' : '남성'}
+                            {gender === 'female' ? t('profileFemale') : t('profileMale')}
                           </span>
                           <span className="px-3 py-1 bg-[#222] border border-[#333] rounded-full text-sm text-white/60">
                             {prompt}
@@ -678,7 +680,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                             disabled={isGenerating}
                             className="flex-1 py-3 rounded-xl font-medium text-white bg-[#222] border border-[#333] hover:border-[#00F5A0]/50 transition-all disabled:opacity-50"
                           >
-                            {isGenerating ? '생성 중...' : '다시 생성하기'}
+                            {isGenerating ? t('regenerating') : t('regenerate')}
                           </button>
                           <button
                             type="button"
@@ -686,7 +688,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                             disabled={isGenerating}
                             className="flex-1 py-3 rounded-xl font-bold text-black bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] hover:shadow-[0_0_20px_rgba(0,245,160,0.4)] transition-all disabled:opacity-50"
                           >
-                            이 모델로 선택하기
+                            {t('selectModel')}
                           </button>
                         </div>
                       </div>
@@ -710,14 +712,14 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
-                  뒤로 가기
+                  {t('backButton')}
                 </button>
               )}
 
               {/* 선택한 모델 프로필 미리보기 */}
               {generatedImage && modelProfile && !isSubmitted && (
                 <div className="mb-6 p-4 bg-[#111] border border-[#333] rounded-xl">
-                  <p className="text-xs text-white/50 mb-3">선택한 모델</p>
+                  <p className="text-xs text-white/50 mb-3">{t('selectedModelLabel')}</p>
                   <div className="flex items-center gap-4">
                     <img
                       src={generatedImage}
@@ -730,11 +732,11 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                         {finalModelNameKo && <span className="text-sm text-white/60 ml-2">({finalModelNameKo})</span>}
                       </p>
                       <p className="text-xs text-white/50">
-                        {gender === 'female' ? '여성' : '남성'} / {modelProfile.height} / {modelProfile.bloodType} / {modelProfile.mbti}
+                        {gender === 'female' ? t('profileFemale') : t('profileMale')} / {modelProfile.height} / {modelProfile.bloodType} / {modelProfile.mbti}
                       </p>
                     </div>
                     <span className="px-3 py-1 bg-[#00F5A0]/10 border border-[#00F5A0]/30 rounded-full text-xs text-[#00F5A0]">
-                      선택됨
+                      {t('selectedBadge')}
                     </span>
                   </div>
                 </div>
@@ -742,12 +744,12 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
 
               <div className="text-center mb-6">
                 <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#00F5A0]">
-                  CONTACT
+                  {t('contactLabel')}
                 </span>
                 <h2 className="mt-2 text-2xl font-bold text-white">
-                  {generatedImage ? '모델 문의하기' : '제작 문의하기'}
+                  {generatedImage ? t('contactTitleWithModel') : t('contactTitleWithoutModel')}
                 </h2>
-                <p className="mt-2 text-white/60">담당자가 빠르게 연락드립니다</p>
+                <p className="mt-2 text-white/60">{t('contactSubtitle')}</p>
               </div>
 
               {isSubmitted ? (
@@ -758,15 +760,15 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                     </svg>
                   </div>
                   <h3 className="text-xl font-bold text-white mb-2">
-                    문의가 접수되었습니다!
+                    {t('successTitle')}
                   </h3>
-                  <p className="text-gray-400 mb-6">빠른 시일 내에 연락드리겠습니다.</p>
+                  <p className="text-gray-400 mb-6">{t('successMessage')}</p>
                   <button
                     type="button"
                     onClick={onClose}
                     className="px-8 py-3 rounded-xl font-bold text-black bg-gradient-to-r from-[#00F5A0] to-[#00D9F5]"
                   >
-                    확인
+                    {t('confirmButton')}
                   </button>
                 </div>
               ) : (
@@ -774,27 +776,27 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-400 mb-2">
-                        이름 <span className="text-[#00F5A0]">*</span>
+                        {t('formName')} <span className="text-[#00F5A0]">*</span>
                       </label>
                       <input
                         type="text"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                        placeholder="홍길동"
+                        placeholder={t('formNamePlaceholder')}
                         required
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-400 mb-2">
-                        회사명
+                        {t('formCompany')}
                       </label>
                       <input
                         type="text"
                         value={formData.company}
                         onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                         className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                        placeholder="(주)회사명"
+                        placeholder={t('formCompanyPlaceholder')}
                       />
                     </div>
                   </div>
@@ -802,41 +804,41 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-400 mb-2">
-                        이메일 <span className="text-[#00F5A0]">*</span>
+                        {t('formEmail')} <span className="text-[#00F5A0]">*</span>
                       </label>
                       <input
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                        placeholder="email@example.com"
+                        placeholder={t('formEmailPlaceholder')}
                         required
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-400 mb-2">
-                        연락처
+                        {t('formPhone')}
                       </label>
                       <input
                         type="tel"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                        placeholder="010-1234-5678"
+                        placeholder={t('formPhonePlaceholder')}
                       />
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-2">
-                      문의 내용 <span className="text-[#00F5A0]">*</span>
+                      {t('formMessage')} <span className="text-[#00F5A0]">*</span>
                     </label>
                     <textarea
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                       rows={4}
                       className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors resize-none"
-                      placeholder={generatedImage ? "모델 활용 계획, 예산, 일정 등을 자유롭게 말씀해주세요." : "원하시는 모델 스타일, 용도, 일정 등을 자유롭게 말씀해주세요."}
+                      placeholder={generatedImage ? t('formMessagePlaceholderWithModel') : t('formMessagePlaceholderWithoutModel')}
                       required
                     />
                   </div>
@@ -846,7 +848,7 @@ export default function CustomModelModal({ isOpen, onClose }: CustomModelModalPr
                     disabled={isSubmitting}
                     className="w-full py-4 rounded-xl font-bold text-black bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] hover:shadow-[0_0_30px_rgba(0,245,160,0.4)] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
-                    {isSubmitting ? '전송 중...' : '문의 보내기'}
+                    {isSubmitting ? t('submitting') : t('submitButton')}
                   </button>
                 </form>
               )}

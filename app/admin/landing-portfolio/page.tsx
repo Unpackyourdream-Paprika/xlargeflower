@@ -27,20 +27,37 @@ export default function LandingPortfolioManagement() {
 
   const [formData, setFormData] = useState({
     client_name: '',
+    client_name_en: '',
+    client_name_ja: '',
     category: '뷰티',
+    category_en: '',
+    category_ja: '',
     category_color: '#FF69B4',
     campaign_date: '',
+    campaign_date_en: '',
+    campaign_date_ja: '',
     title: '',
+    title_en: '',
+    title_ja: '',
     description: '',
+    description_en: '',
+    description_ja: '',
     video_url: '',
     thumbnail_url: '',
     metric_1_value: '',
     metric_1_label: '',
+    metric_1_label_en: '',
+    metric_1_label_ja: '',
     metric_2_value: '',
     metric_2_label: '',
+    metric_2_label_en: '',
+    metric_2_label_ja: '',
     sort_order: 0,
     is_active: true
   });
+
+  // 번역 상태
+  const [isTranslating, setIsTranslating] = useState(false);
 
   const ADMIN_PASSWORD = 'xlarge2024';
 
@@ -97,17 +114,31 @@ export default function LandingPortfolioManagement() {
   const resetForm = () => {
     setFormData({
       client_name: '',
+      client_name_en: '',
+      client_name_ja: '',
       category: '뷰티',
+      category_en: '',
+      category_ja: '',
       category_color: '#FF69B4',
       campaign_date: '',
+      campaign_date_en: '',
+      campaign_date_ja: '',
       title: '',
+      title_en: '',
+      title_ja: '',
       description: '',
+      description_en: '',
+      description_ja: '',
       video_url: '',
       thumbnail_url: '',
       metric_1_value: '',
       metric_1_label: '',
+      metric_1_label_en: '',
+      metric_1_label_ja: '',
       metric_2_value: '',
       metric_2_label: '',
+      metric_2_label_en: '',
+      metric_2_label_ja: '',
       sort_order: portfolios.length,
       is_active: true
     });
@@ -123,21 +154,128 @@ export default function LandingPortfolioManagement() {
     setEditingItem(item);
     setFormData({
       client_name: item.client_name || '',
+      client_name_en: item.client_name_en || '',
+      client_name_ja: item.client_name_ja || '',
       category: item.category || '뷰티',
+      category_en: item.category_en || '',
+      category_ja: item.category_ja || '',
       category_color: item.category_color || '#FF69B4',
       campaign_date: item.campaign_date || '',
+      campaign_date_en: item.campaign_date_en || '',
+      campaign_date_ja: item.campaign_date_ja || '',
       title: item.title || '',
+      title_en: item.title_en || '',
+      title_ja: item.title_ja || '',
       description: item.description || '',
+      description_en: item.description_en || '',
+      description_ja: item.description_ja || '',
       video_url: item.video_url || '',
       thumbnail_url: item.thumbnail_url || '',
       metric_1_value: item.metric_1_value || '',
       metric_1_label: item.metric_1_label || '',
+      metric_1_label_en: item.metric_1_label_en || '',
+      metric_1_label_ja: item.metric_1_label_ja || '',
       metric_2_value: item.metric_2_value || '',
       metric_2_label: item.metric_2_label || '',
+      metric_2_label_en: item.metric_2_label_en || '',
+      metric_2_label_ja: item.metric_2_label_ja || '',
       sort_order: item.sort_order,
       is_active: item.is_active
     });
     setIsModalOpen(true);
+  };
+
+  // 번역 함수
+  const translateTexts = async () => {
+    setIsTranslating(true);
+    try {
+      const textsToTranslate: string[] = [];
+      const textMapping: { type: string }[] = [];
+
+      // 번역할 텍스트 수집
+      if (formData.client_name) {
+        textsToTranslate.push(formData.client_name);
+        textMapping.push({ type: 'client_name' });
+      }
+      if (formData.category) {
+        textsToTranslate.push(formData.category);
+        textMapping.push({ type: 'category' });
+      }
+      if (formData.campaign_date) {
+        textsToTranslate.push(formData.campaign_date);
+        textMapping.push({ type: 'campaign_date' });
+      }
+      if (formData.title) {
+        textsToTranslate.push(formData.title);
+        textMapping.push({ type: 'title' });
+      }
+      if (formData.description) {
+        textsToTranslate.push(formData.description);
+        textMapping.push({ type: 'description' });
+      }
+      if (formData.metric_1_label) {
+        textsToTranslate.push(formData.metric_1_label);
+        textMapping.push({ type: 'metric_1_label' });
+      }
+      if (formData.metric_2_label) {
+        textsToTranslate.push(formData.metric_2_label);
+        textMapping.push({ type: 'metric_2_label' });
+      }
+
+      if (textsToTranslate.length === 0) {
+        setError('번역할 한국어 텍스트가 없습니다.');
+        return;
+      }
+
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          texts: textsToTranslate,
+          targetLanguages: ['en', 'ja']
+        })
+      });
+
+      if (!response.ok) throw new Error('번역 API 오류');
+
+      const { translations } = await response.json();
+
+      // 번역 결과 적용
+      const newFormData = { ...formData };
+      translations.forEach((t: { original: string; en?: string; ja?: string }, index: number) => {
+        const mapping = textMapping[index];
+        if (mapping.type === 'client_name') {
+          newFormData.client_name_en = t.en || '';
+          newFormData.client_name_ja = t.ja || '';
+        } else if (mapping.type === 'category') {
+          newFormData.category_en = t.en || '';
+          newFormData.category_ja = t.ja || '';
+        } else if (mapping.type === 'campaign_date') {
+          newFormData.campaign_date_en = t.en || '';
+          newFormData.campaign_date_ja = t.ja || '';
+        } else if (mapping.type === 'title') {
+          newFormData.title_en = t.en || '';
+          newFormData.title_ja = t.ja || '';
+        } else if (mapping.type === 'description') {
+          newFormData.description_en = t.en || '';
+          newFormData.description_ja = t.ja || '';
+        } else if (mapping.type === 'metric_1_label') {
+          newFormData.metric_1_label_en = t.en || '';
+          newFormData.metric_1_label_ja = t.ja || '';
+        } else if (mapping.type === 'metric_2_label') {
+          newFormData.metric_2_label_en = t.en || '';
+          newFormData.metric_2_label_ja = t.ja || '';
+        }
+      });
+
+      setFormData(newFormData);
+      setSuccessMessage('번역이 완료되었습니다!');
+    } catch (err) {
+      console.error('Translation failed:', err);
+      setError('번역 중 오류가 발생했습니다.');
+    } finally {
+      setIsTranslating(false);
+    }
   };
 
   const handleVideoUpload = async (file: File) => {
@@ -561,9 +699,31 @@ export default function LandingPortfolioManagement() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-[#0A0A0A] border border-[#222] rounded-2xl p-6 w-full max-w-2xl my-8">
-            <h3 className="text-lg font-bold text-white mb-6">
-              {editingItem ? '항목 수정' : '새 항목 추가'}
-            </h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-white">
+                {editingItem ? '항목 수정' : '새 항목 추가'}
+              </h3>
+              <button
+                type="button"
+                onClick={translateTexts}
+                disabled={isTranslating}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-bold rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
+              >
+                {isTranslating ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    번역 중...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                    </svg>
+                    자동 번역 (KO→EN/JA)
+                  </>
+                )}
+              </button>
+            </div>
 
             <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
               {/* Video Upload */}
@@ -606,24 +766,72 @@ export default function LandingPortfolioManagement() {
               {/* Basic Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">클라이언트명 *</label>
+                  <label className="block text-sm text-gray-400 mb-2">클라이언트명 * <span className="text-red-400">(KO)</span></label>
                   <input
                     type="text"
                     value={formData.client_name}
                     onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-                    className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                    className="w-full px-4 py-3 bg-[#111] border border-red-500/50 rounded-lg focus:border-red-500 focus:outline-none text-white text-sm"
                     placeholder="예: BEAUTY D사"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">캠페인 날짜</label>
+                  <label className="block text-sm text-gray-400 mb-2">캠페인 날짜 <span className="text-red-400">(KO)</span></label>
                   <input
                     type="text"
                     value={formData.campaign_date}
                     onChange={(e) => setFormData({ ...formData, campaign_date: e.target.value })}
-                    className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                    className="w-full px-4 py-3 bg-[#111] border border-red-500/50 rounded-lg focus:border-red-500 focus:outline-none text-white text-sm"
                     placeholder="예: 2024.12 캠페인"
                   />
+                </div>
+              </div>
+
+              {/* 클라이언트명 / 캠페인 날짜 번역 필드 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div>
+                    <label className="block text-xs text-blue-400 mb-1">클라이언트명 (EN)</label>
+                    <input
+                      type="text"
+                      value={formData.client_name_en}
+                      onChange={(e) => setFormData({ ...formData, client_name_en: e.target.value })}
+                      className="w-full px-3 py-2 bg-[#111] border border-blue-500/30 rounded-lg focus:border-blue-500 focus:outline-none text-white text-sm"
+                      placeholder="English"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-pink-400 mb-1">クライアント名 (JA)</label>
+                    <input
+                      type="text"
+                      value={formData.client_name_ja}
+                      onChange={(e) => setFormData({ ...formData, client_name_ja: e.target.value })}
+                      className="w-full px-3 py-2 bg-[#111] border border-pink-500/30 rounded-lg focus:border-pink-500 focus:outline-none text-white text-sm"
+                      placeholder="日本語"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div>
+                    <label className="block text-xs text-blue-400 mb-1">캠페인 날짜 (EN)</label>
+                    <input
+                      type="text"
+                      value={formData.campaign_date_en}
+                      onChange={(e) => setFormData({ ...formData, campaign_date_en: e.target.value })}
+                      className="w-full px-3 py-2 bg-[#111] border border-blue-500/30 rounded-lg focus:border-blue-500 focus:outline-none text-white text-sm"
+                      placeholder="English"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-pink-400 mb-1">キャンペーン日 (JA)</label>
+                    <input
+                      type="text"
+                      value={formData.campaign_date_ja}
+                      onChange={(e) => setFormData({ ...formData, campaign_date_ja: e.target.value })}
+                      className="w-full px-3 py-2 bg-[#111] border border-pink-500/30 rounded-lg focus:border-pink-500 focus:outline-none text-white text-sm"
+                      placeholder="日本語"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -667,25 +875,69 @@ export default function LandingPortfolioManagement() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">제목 *</label>
+                <label className="block text-sm text-gray-400 mb-2">제목 * <span className="text-red-400">(KO)</span></label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                  className="w-full px-4 py-3 bg-[#111] border border-red-500/50 rounded-lg focus:border-red-500 focus:outline-none text-white text-sm"
                   placeholder="예: 인플루언서 대비 ROAS 3배 달성"
                 />
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-blue-400 mb-1">제목 (EN)</label>
+                  <input
+                    type="text"
+                    value={formData.title_en}
+                    onChange={(e) => setFormData({ ...formData, title_en: e.target.value })}
+                    className="w-full px-3 py-2 bg-[#111] border border-blue-500/30 rounded-lg focus:border-blue-500 focus:outline-none text-white text-sm"
+                    placeholder="English title"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-pink-400 mb-1">タイトル (JA)</label>
+                  <input
+                    type="text"
+                    value={formData.title_ja}
+                    onChange={(e) => setFormData({ ...formData, title_ja: e.target.value })}
+                    className="w-full px-3 py-2 bg-[#111] border border-pink-500/30 rounded-lg focus:border-pink-500 focus:outline-none text-white text-sm"
+                    placeholder="日本語タイトル"
+                  />
+                </div>
+              </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">설명</label>
+                <label className="block text-sm text-gray-400 mb-2">설명 <span className="text-red-400">(KO)</span></label>
                 <input
                   type="text"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                  className="w-full px-4 py-3 bg-[#111] border border-red-500/50 rounded-lg focus:border-red-500 focus:outline-none text-white text-sm"
                   placeholder="예: 기존 인플루언서 협찬 대비 동일 매체비로 전환율 3배 상승"
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-blue-400 mb-1">설명 (EN)</label>
+                  <input
+                    type="text"
+                    value={formData.description_en}
+                    onChange={(e) => setFormData({ ...formData, description_en: e.target.value })}
+                    className="w-full px-3 py-2 bg-[#111] border border-blue-500/30 rounded-lg focus:border-blue-500 focus:outline-none text-white text-sm"
+                    placeholder="English description"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-pink-400 mb-1">説明 (JA)</label>
+                  <input
+                    type="text"
+                    value={formData.description_ja}
+                    onChange={(e) => setFormData({ ...formData, description_ja: e.target.value })}
+                    className="w-full px-3 py-2 bg-[#111] border border-pink-500/30 rounded-lg focus:border-pink-500 focus:outline-none text-white text-sm"
+                    placeholder="日本語説明"
+                  />
+                </div>
               </div>
 
               {/* Metrics */}
@@ -703,14 +955,40 @@ export default function LandingPortfolioManagement() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-400 mb-2">지표 1 라벨</label>
+                    <label className="block text-sm text-gray-400 mb-2">지표 1 라벨 <span className="text-red-400">(KO)</span></label>
                     <input
                       type="text"
                       value={formData.metric_1_label}
                       onChange={(e) => setFormData({ ...formData, metric_1_label: e.target.value })}
-                      className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                      className="w-full px-4 py-3 bg-[#111] border border-red-500/50 rounded-lg focus:border-red-500 focus:outline-none text-white text-sm"
                       placeholder="예: ROAS 상승"
                     />
+                  </div>
+                </div>
+                {/* 지표 1 라벨 번역 */}
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div></div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs text-blue-400 mb-1">Label (EN)</label>
+                      <input
+                        type="text"
+                        value={formData.metric_1_label_en}
+                        onChange={(e) => setFormData({ ...formData, metric_1_label_en: e.target.value })}
+                        className="w-full px-2 py-1.5 bg-[#111] border border-blue-500/30 rounded focus:border-blue-500 focus:outline-none text-white text-xs"
+                        placeholder="EN"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-pink-400 mb-1">ラベル (JA)</label>
+                      <input
+                        type="text"
+                        value={formData.metric_1_label_ja}
+                        onChange={(e) => setFormData({ ...formData, metric_1_label_ja: e.target.value })}
+                        className="w-full px-2 py-1.5 bg-[#111] border border-pink-500/30 rounded focus:border-pink-500 focus:outline-none text-white text-xs"
+                        placeholder="JA"
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4 mt-4">
@@ -725,14 +1003,40 @@ export default function LandingPortfolioManagement() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-400 mb-2">지표 2 라벨</label>
+                    <label className="block text-sm text-gray-400 mb-2">지표 2 라벨 <span className="text-red-400">(KO)</span></label>
                     <input
                       type="text"
                       value={formData.metric_2_label}
                       onChange={(e) => setFormData({ ...formData, metric_2_label: e.target.value })}
-                      className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                      className="w-full px-4 py-3 bg-[#111] border border-red-500/50 rounded-lg focus:border-red-500 focus:outline-none text-white text-sm"
                       placeholder="예: CPA 달성"
                     />
+                  </div>
+                </div>
+                {/* 지표 2 라벨 번역 */}
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div></div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs text-blue-400 mb-1">Label (EN)</label>
+                      <input
+                        type="text"
+                        value={formData.metric_2_label_en}
+                        onChange={(e) => setFormData({ ...formData, metric_2_label_en: e.target.value })}
+                        className="w-full px-2 py-1.5 bg-[#111] border border-blue-500/30 rounded focus:border-blue-500 focus:outline-none text-white text-xs"
+                        placeholder="EN"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-pink-400 mb-1">ラベル (JA)</label>
+                      <input
+                        type="text"
+                        value={formData.metric_2_label_ja}
+                        onChange={(e) => setFormData({ ...formData, metric_2_label_ja: e.target.value })}
+                        className="w-full px-2 py-1.5 bg-[#111] border border-pink-500/30 rounded focus:border-pink-500 focus:outline-none text-white text-xs"
+                        placeholder="JA"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

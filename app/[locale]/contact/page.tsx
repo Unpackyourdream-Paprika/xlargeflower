@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, Suspense, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { submitContact } from '@/lib/supabase';
 
 // 상품명 매핑
@@ -29,6 +30,10 @@ function ContactForm({ onProductChange }: { onProductChange: (product: string) =
 }
 
 export default function ContactPage() {
+  const params = useParams();
+  const locale = (params?.locale as string) || 'ko';
+  const t = useTranslations('contact');
+
   const [formData, setFormData] = useState({
     name: '',
     company: '',
@@ -50,13 +55,13 @@ export default function ContactPage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const productOptions = [
-    { value: '', label: '선택하세요 (선택사항)' },
-    { value: 'STARTER 플랜', label: 'STARTER 플랜' },
-    { value: 'GROWTH 플랜', label: 'GROWTH 플랜' },
-    { value: 'PERFORMANCE 플랜', label: 'PERFORMANCE 플랜' },
-    { value: 'PERFORMANCE ADS 패키지', label: 'PERFORMANCE ADS 패키지' },
-    { value: 'VIP PARTNER 플랜', label: 'VIP PARTNER 플랜' },
-    { value: '기타 문의', label: '기타 문의' }
+    { value: '', label: locale === 'en' ? 'Select (Optional)' : locale === 'ja' ? '選択してください（任意）' : '선택하세요 (선택사항)' },
+    { value: 'STARTER', label: t('productOptions.starter') },
+    { value: 'GROWTH', label: t('productOptions.growth') },
+    { value: 'PERFORMANCE', label: t('productOptions.performance') },
+    { value: 'PERFORMANCE ADS', label: t('productOptions.performanceAds') },
+    { value: 'VIP PARTNER', label: t('productOptions.vip') },
+    { value: 'OTHER', label: t('productOptions.other') }
   ];
 
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -91,7 +96,7 @@ export default function ContactPage() {
       setIsSubmitted(true);
     } catch (error) {
       console.error('Submit error:', error);
-      alert('문의 전송 중 오류가 발생했습니다. 다시 시도해주세요.');
+      alert(t('errorMessage'));
     } finally {
       setIsSubmitting(false);
     }
@@ -108,11 +113,11 @@ export default function ContactPage() {
       <header className="bg-[#0A0A0A] border-b border-[#222] sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link href="/" className="font-bold text-xl text-white">
-              XLARGE FLOWER
+            <Link href={`/${locale}`} className="font-bold text-xl text-white">
+              {t('siteName')}
             </Link>
-            <Link href="/" className="text-gray-500 hover:text-white text-sm transition-colors">
-              ← 홈으로
+            <Link href={`/${locale}`} className="text-gray-500 hover:text-white text-sm transition-colors">
+              {t('backToHome')}
             </Link>
           </div>
         </div>
@@ -121,8 +126,8 @@ export default function ContactPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {/* Page Title */}
         <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Contact Us</h1>
-          <p className="text-gray-400 text-lg">찾아오시거나 문의를 남겨주세요</p>
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">{t('title')}</h1>
+          <p className="text-gray-400 text-lg">{t('subtitle')}</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
@@ -150,7 +155,7 @@ export default function ContactPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  본사 위치
+                  {t('location')}
                 </h3>
                 <p className="text-gray-400 leading-relaxed">
                   Republic of Korea, Seoul, Mapo-gu,<br />
@@ -164,7 +169,7 @@ export default function ContactPage() {
                   <svg className="w-5 h-5 text-[#00F5A0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
-                  이메일
+                  {t('email')}
                 </h3>
                 <a
                   href="mailto:foohlower@pprk.xyz"
@@ -175,7 +180,7 @@ export default function ContactPage() {
               </div>
 
               <div className="text-center text-gray-500 text-sm">
-                (주)엑스라지 플라워
+                Snake Steak Co., Ltd.
               </div>
             </div>
           </div>
@@ -183,8 +188,8 @@ export default function ContactPage() {
           {/* Right Column - Contact Form */}
           <div>
             <div className="bg-[#0A0A0A] border border-[#222] rounded-2xl p-8">
-              <h2 className="text-2xl font-bold text-white mb-2">문의하기</h2>
-              <p className="text-gray-500 mb-8">담당자가 확인 후 빠르게 연락드립니다.</p>
+              <h2 className="text-2xl font-bold text-white mb-2">{t('formTitle')}</h2>
+              <p className="text-gray-500 mb-8">{t('formSubtitle')}</p>
 
               {isSubmitted ? (
                 <div className="text-center py-12">
@@ -193,10 +198,10 @@ export default function ContactPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">문의가 접수되었습니다!</h3>
-                  <p className="text-gray-400 mb-6">빠른 시일 내에 연락드리겠습니다.</p>
-                  <Link href="/" className="btn-primary inline-block">
-                    홈으로 돌아가기
+                  <h3 className="text-xl font-bold text-white mb-2">{t('successTitle')}</h3>
+                  <p className="text-gray-400 mb-6">{t('successMessage')}</p>
+                  <Link href={`/${locale}`} className="btn-primary inline-block">
+                    {t('goHome')}
                   </Link>
                 </div>
               ) : (
@@ -204,27 +209,27 @@ export default function ContactPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-400 mb-2">
-                        이름 <span className="text-[#00F5A0]">*</span>
+                        {t('nameLabel')} <span className="text-[#00F5A0]">*</span>
                       </label>
                       <input
                         type="text"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                        placeholder="홍길동"
+                        placeholder={t('namePlaceholder')}
                         required
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-400 mb-2">
-                        회사명
+                        {t('companyLabel')}
                       </label>
                       <input
                         type="text"
                         value={formData.company}
                         onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                         className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                        placeholder="(주)회사명"
+                        placeholder={t('companyPlaceholder')}
                       />
                     </div>
                   </div>
@@ -232,27 +237,27 @@ export default function ContactPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-400 mb-2">
-                        이메일 <span className="text-[#00F5A0]">*</span>
+                        {t('emailLabel')} <span className="text-[#00F5A0]">*</span>
                       </label>
                       <input
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                        placeholder="email@example.com"
+                        placeholder={t('emailPlaceholder')}
                         required
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-400 mb-2">
-                        연락처
+                        {t('phoneLabel')}
                       </label>
                       <input
                         type="tel"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                        placeholder="010-1234-5678"
+                        placeholder={t('phonePlaceholder')}
                       />
                     </div>
                   </div>
@@ -260,7 +265,7 @@ export default function ContactPage() {
                   {/* 관심 상품 선택 - 커스텀 드롭다운 */}
                   <div className="relative" ref={dropdownRef}>
                     <label className="block text-sm font-medium text-gray-400 mb-2">
-                      관심 상품
+                      {t('productLabel')}
                     </label>
                     <button
                       type="button"
@@ -268,7 +273,7 @@ export default function ContactPage() {
                       className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white focus:border-[#00F5A0] focus:outline-none transition-colors text-left flex items-center justify-between"
                     >
                       <span className={formData.selectedProduct ? 'text-white' : 'text-gray-500'}>
-                        {formData.selectedProduct || '선택하세요 (선택사항)'}
+                        {formData.selectedProduct ? productOptions.find(o => o.value === formData.selectedProduct)?.label || formData.selectedProduct : productOptions[0].label}
                       </span>
                       <svg
                         className={`w-5 h-5 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
@@ -306,14 +311,14 @@ export default function ContactPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-2">
-                      문의 내용 <span className="text-[#00F5A0]">*</span>
+                      {t('messageLabel')} <span className="text-[#00F5A0]">*</span>
                     </label>
                     <textarea
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                       rows={5}
                       className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors resize-none"
-                      placeholder="어떤 영상이 필요하신지 자유롭게 말씀해주세요."
+                      placeholder={t('messagePlaceholder')}
                       required
                     />
                   </div>
@@ -323,7 +328,7 @@ export default function ContactPage() {
                     disabled={isSubmitting}
                     className="w-full btn-primary disabled:opacity-50"
                   >
-                    {isSubmitting ? '전송 중...' : '문의 보내기'}
+                    {isSubmitting ? t('submitting') : t('submitButton')}
                   </button>
                 </form>
               )}
@@ -332,10 +337,10 @@ export default function ContactPage() {
             {/* Quick Chat CTA */}
             <div className="mt-8 text-center">
               <p className="text-gray-500 text-sm mb-4">
-                빠른 상담이 필요하신가요?
+                {t('quickChat')}
               </p>
               <p className="text-gray-400 text-sm">
-                우측 하단의 <span className="text-[#00F5A0]">채팅 버튼</span>을 눌러 AI 디렉터와 바로 대화하세요.
+                {t('quickChatDesc')}
               </p>
             </div>
           </div>
@@ -346,7 +351,7 @@ export default function ContactPage() {
       <footer className="bg-[#020202] border-t border-[#222] py-8 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-600 text-sm">
           <p className="mb-2">
-            (주)엑스라지 플라워 | 대표: 김대표
+            Snake Steak Co., Ltd.
           </p>
           <p className="mb-2">
             Email: <a href="mailto:foohlower@pprk.xyz" className="hover:text-[#00F5A0] transition-colors">foohlower@pprk.xyz</a>
@@ -354,7 +359,7 @@ export default function ContactPage() {
           <p className="mb-4">
             Address: Republic of Korea, Seoul, Mapo-gu, World Cup buk-ro 56-gil, 12, TRUTEC Building, 11F
           </p>
-          <p>Copyright © 2025 XLARGE FLOWER. All rights reserved.</p>
+          <p>Copyright © 2025 Snake Steak Co., Ltd. All rights reserved.</p>
         </div>
       </footer>
     </div>

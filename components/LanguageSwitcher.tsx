@@ -5,12 +5,39 @@ import { useLocale } from 'next-intl';
 import { useRouter, usePathname } from 'next/navigation';
 import { locales, localeNames, localeFlags, type Locale } from '@/i18n/config';
 
+// 테마 감지 훅
+function useThemeDetector() {
+  const [isLightTheme, setIsLightTheme] = useState(false);
+
+  useEffect(() => {
+    const checkTheme = () => {
+      const theme = document.documentElement.getAttribute('data-theme');
+      setIsLightTheme(theme === 'light');
+    };
+    checkTheme();
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'data-theme') {
+          checkTheme();
+        }
+      });
+    });
+    observer.observe(document.documentElement, { attributes: true });
+
+    return () => observer.disconnect();
+  }, []);
+
+  return isLightTheme;
+}
+
 export default function LanguageSwitcher() {
   const locale = useLocale() as Locale;
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const isLightTheme = useThemeDetector();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -50,13 +77,21 @@ export default function LanguageSwitcher() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-sm"
+        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors text-sm ${
+          isLightTheme
+            ? 'bg-gray-100 hover:bg-gray-200 border border-gray-200'
+            : 'bg-white/5 hover:bg-white/10'
+        }`}
         aria-label="Select language"
       >
         <span className="text-base">{localeFlags[locale]}</span>
-        <span className="hidden sm:inline text-white/70">{localeNames[locale]}</span>
+        <span className={`hidden sm:inline ${isLightTheme ? 'text-gray-700' : 'text-white/70'}`}>
+          {localeNames[locale]}
+        </span>
         <svg
-          className={`w-3.5 h-3.5 text-white/50 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''} ${
+            isLightTheme ? 'text-gray-500' : 'text-white/50'
+          }`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -66,15 +101,23 @@ export default function LanguageSwitcher() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 py-1 w-36 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-xl z-50">
+        <div className={`absolute right-0 mt-2 py-1 w-36 rounded-lg shadow-xl z-50 ${
+          isLightTheme
+            ? 'bg-white border border-gray-200'
+            : 'bg-[#1a1a1a] border border-white/10'
+        }`}>
           {locales.map((loc) => (
             <button
               key={loc}
               onClick={() => handleLocaleChange(loc)}
               className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors ${
                 loc === locale
-                  ? 'bg-[#00F5A0]/10 text-[#00F5A0]'
-                  : 'text-white/70 hover:bg-white/5 hover:text-white'
+                  ? isLightTheme
+                    ? 'bg-purple-50 text-purple-600'
+                    : 'bg-[#00F5A0]/10 text-[#00F5A0]'
+                  : isLightTheme
+                    ? 'text-gray-700 hover:bg-gray-50'
+                    : 'text-white/70 hover:bg-white/5 hover:text-white'
               }`}
             >
               <span className="text-base">{localeFlags[loc]}</span>

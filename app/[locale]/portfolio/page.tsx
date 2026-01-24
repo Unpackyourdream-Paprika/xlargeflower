@@ -1,21 +1,12 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { getPortfolioItems, XLargeFlowerPortfolio } from '@/lib/supabase';
 
-// 업종 카테고리 (납품 사례용) - 어드민과 일치해야 함
-const categories = [
-  { id: 'all', name: '전체' },
-  { id: '기타', name: '기타' },
-  { id: '뷰티', name: '뷰티' },
-  { id: '패션', name: '패션' },
-  { id: 'F&B', name: '식음료' },
-  { id: '테크', name: '테크' },
-  { id: '라이프스타일', name: '라이프스타일' },
-];
-
-function CaseStudyCard({ item }: { item: XLargeFlowerPortfolio }) {
+function CaseStudyCard({ item, categories }: { item: XLargeFlowerPortfolio; categories: { id: string; name: string }[] }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isHovering, setIsHovering] = useState(false);
 
@@ -151,6 +142,20 @@ function CaseStudyCard({ item }: { item: XLargeFlowerPortfolio }) {
 }
 
 export default function PortfolioPage() {
+  const params = useParams();
+  const locale = (params?.locale as string) || 'ko';
+  const t = useTranslations('portfolio');
+
+  const categories = [
+    { id: 'all', name: t('categories.all') },
+    { id: '기타', name: t('categories.other') },
+    { id: '뷰티', name: t('categories.beauty') },
+    { id: '패션', name: t('categories.fashion') },
+    { id: 'F&B', name: t('categories.food') },
+    { id: '테크', name: t('categories.tech') },
+    { id: '라이프스타일', name: t('categories.lifestyle') },
+  ];
+
   const [activeCategory, setActiveCategory] = useState('all');
   const [caseStudies, setCaseStudies] = useState<XLargeFlowerPortfolio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -179,12 +184,12 @@ export default function PortfolioPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-16">
-          <p className="label-tag mb-4">PORTFOLIO</p>
+          <p className="label-tag mb-4">{t('label')}</p>
           <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">
-            실제 납품 사례
+            {t('title')}
           </h1>
           <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            국내외 유수 기업에 납품한 AI 광고 크리에이티브. 측정 가능한 성과로 증명합니다.
+            {t('subtitle')}
           </p>
         </div>
 
@@ -195,7 +200,7 @@ export default function PortfolioPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
             <span className="text-sm font-medium text-gray-300">
-              실제 광고 성과 데이터 기반
+              {t('trustBadge')}
             </span>
           </div>
         </div>
@@ -222,7 +227,7 @@ export default function PortfolioPage() {
           <div className="flex items-center justify-center py-20">
             <div className="flex items-center gap-3 text-gray-400">
               <div className="w-5 h-5 border-2 border-[#00F5A0] border-t-transparent rounded-full animate-spin" />
-              로딩 중...
+              {t('loading')}
             </div>
           </div>
         ) : filteredItems.length === 0 ? (
@@ -232,13 +237,13 @@ export default function PortfolioPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
-            <p className="text-gray-500 mb-2">등록된 납품 사례가 없습니다.</p>
-            <p className="text-gray-600 text-sm">곧 새로운 성공 사례가 업로드될 예정입니다.</p>
+            <p className="text-gray-500 mb-2">{t('emptyTitle')}</p>
+            <p className="text-gray-600 text-sm">{t('emptyDesc')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 mb-16">
             {filteredItems.map((item) => (
-              <CaseStudyCard key={item.id} item={item} />
+              <CaseStudyCard key={item.id} item={item} categories={categories} />
             ))}
           </div>
         )}
@@ -247,25 +252,25 @@ export default function PortfolioPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-16">
           <div className="p-4 sm:p-6 bg-[#0A0A0A] border border-white/10 rounded-2xl text-center">
             <div className="text-2xl sm:text-3xl font-bold gradient-text mb-2">500+</div>
-            <div className="text-xs sm:text-sm text-gray-400">납품 완료 영상</div>
+            <div className="text-xs sm:text-sm text-gray-400">{t('stats.videos')}</div>
           </div>
           <div className="p-4 sm:p-6 bg-[#0A0A0A] border border-white/10 rounded-2xl text-center">
             <div className="text-2xl sm:text-3xl font-bold gradient-text mb-2">+285%</div>
-            <div className="text-xs sm:text-sm text-gray-400">평균 ROAS 상승</div>
+            <div className="text-xs sm:text-sm text-gray-400">{t('stats.roas')}</div>
           </div>
           <div className="p-4 sm:p-6 bg-[#0A0A0A] border border-white/10 rounded-2xl text-center">
-            <div className="text-2xl sm:text-3xl font-bold gradient-text mb-2">48시간</div>
-            <div className="text-xs sm:text-sm text-gray-400">평균 납품 시간</div>
+            <div className="text-2xl sm:text-3xl font-bold gradient-text mb-2">48h</div>
+            <div className="text-xs sm:text-sm text-gray-400">{t('stats.delivery')}</div>
           </div>
           <div className="p-4 sm:p-6 bg-[#0A0A0A] border border-white/10 rounded-2xl text-center">
             <div className="text-2xl sm:text-3xl font-bold gradient-text mb-2">150+</div>
-            <div className="text-xs sm:text-sm text-gray-400">만족한 고객사</div>
+            <div className="text-xs sm:text-sm text-gray-400">{t('stats.clients')}</div>
           </div>
         </div>
 
         {/* Testimonials */}
         <div className="mb-16">
-          <h2 className="text-2xl font-bold text-center text-white mb-8">고객 후기</h2>
+          <h2 className="text-2xl font-bold text-center text-white mb-8">{t('testimonials.title')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-6 bg-[#0A0A0A] border border-white/10 rounded-2xl">
               <div className="flex gap-1 mb-4">
@@ -276,11 +281,11 @@ export default function PortfolioPage() {
                 ))}
               </div>
               <p className="text-gray-300 text-sm mb-4">
-                &quot;저희 업계에서 속도가 생명인데, XLarge는 어떤 프로덕션보다 빠르게 퀄리티 있는 소재를 뽑아줍니다.&quot;
+                &quot;{t('testimonials.review1')}&quot;
               </p>
               <div className="text-sm">
-                <div className="font-semibold text-white">김민수 이사</div>
-                <div className="text-gray-500">뷰티라이프 마케팅본부</div>
+                <div className="font-semibold text-white">{t('testimonials.reviewer1Name')}</div>
+                <div className="text-gray-500">{t('testimonials.reviewer1Company')}</div>
               </div>
             </div>
             <div className="p-6 bg-[#0A0A0A] border border-white/10 rounded-2xl">
@@ -292,11 +297,11 @@ export default function PortfolioPage() {
                 ))}
               </div>
               <p className="text-gray-300 text-sm mb-4">
-                &quot;이제 한 번에 8개 크리에이티브를 A/B 테스트할 수 있게 됐습니다. ROAS가 40% 개선됐어요.&quot;
+                &quot;{t('testimonials.review2')}&quot;
               </p>
               <div className="text-sm">
-                <div className="font-semibold text-white">이지영 팀장</div>
-                <div className="text-gray-500">애드픽셀 퍼포먼스팀</div>
+                <div className="font-semibold text-white">{t('testimonials.reviewer2Name')}</div>
+                <div className="text-gray-500">{t('testimonials.reviewer2Company')}</div>
               </div>
             </div>
             <div className="p-6 bg-[#0A0A0A] border border-white/10 rounded-2xl">
@@ -308,11 +313,11 @@ export default function PortfolioPage() {
                 ))}
               </div>
               <p className="text-gray-300 text-sm mb-4">
-                &quot;퀄리티에 깜짝 놀랐습니다. 촬영 안 하고 만들었다는 게 믿기지 않아요.&quot;
+                &quot;{t('testimonials.review3')}&quot;
               </p>
               <div className="text-sm">
-                <div className="font-semibold text-white">박준혁 대표</div>
-                <div className="text-gray-500">굿즈마켓</div>
+                <div className="font-semibold text-white">{t('testimonials.reviewer3Name')}</div>
+                <div className="text-gray-500">{t('testimonials.reviewer3Company')}</div>
               </div>
             </div>
           </div>
@@ -320,15 +325,15 @@ export default function PortfolioPage() {
 
         {/* CTA */}
         <div className="text-center p-8 sm:p-12 bg-gradient-to-r from-[#00F5A0]/5 to-[#00D9F5]/5 border border-[#00F5A0]/20 rounded-3xl">
-          <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">다음 성공 사례의 주인공이 되세요</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">{t('ctaTitle')}</h2>
           <p className="text-gray-400 mb-8 max-w-xl mx-auto text-sm sm:text-base">
-            48시간 내 AI 생성 광고 소재를 받아보세요. 촬영 없이, 기다림 없이.
+            {t('ctaSubtitle')}
           </p>
           <Link
-            href="/contact"
+            href={`/${locale}/contact`}
             className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-white rounded-full font-semibold hover:shadow-lg hover:shadow-[#00F5A0]/25 transition-all text-sm sm:text-base"
           >
-            프로젝트 시작하기
+            {t('ctaButton')}
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>

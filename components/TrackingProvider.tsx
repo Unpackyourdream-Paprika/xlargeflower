@@ -6,14 +6,12 @@ import { tracking } from '@/lib/userTracking';
 // 추적할 섹션 정의
 const TRACKED_SECTIONS = [
   { selector: '[data-section="hero"]', name: 'Hero' },
+  { selector: '[data-section="comparison"]', name: 'Comparison' },
   { selector: '[data-section="video-showcase"]', name: 'Video Showcase' },
   { selector: '[data-section="artist-lineup"]', name: 'Artist Lineup' },
   { selector: '[data-section="how-it-works"]', name: 'How It Works' },
   { selector: '[data-section="portfolio"]', name: 'Portfolio' },
-  { selector: '#why-ai', name: 'Why AI' },
-  { selector: '[data-section="our-position"]', name: 'Our Position' },
   { selector: '[data-section="pricing"]', name: 'Pricing' },
-  { selector: '[data-section="social-proof"]', name: 'Social Proof' },
   { selector: '[data-section="final-cta"]', name: 'Final CTA' },
 ];
 

@@ -1,13 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { supabase } from '@/lib/supabase';
 
 type SearchType = 'orderId' | 'email';
 
 export default function OrderTrackingPage() {
+  const params = useParams();
+  const locale = (params?.locale as string) || 'ko';
+  const t = useTranslations('track');
   const [searchType, setSearchType] = useState<SearchType>('email');
   const [orderNumber, setOrderNumber] = useState('');
   const [email, setEmail] = useState('');
@@ -24,27 +28,27 @@ export default function OrderTrackingPage() {
     if (searchType === 'orderId') {
       // 주문번호로 조회
       if (!orderNumber.trim()) {
-        setError('주문번호를 입력해주세요.');
+        setError(t('errors.orderRequired'));
         return;
       }
 
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (!uuidRegex.test(orderNumber.trim())) {
-        setError('올바른 주문번호 형식이 아닙니다.');
+        setError(t('errors.orderInvalid'));
         return;
       }
 
-      router.push(`/track/${orderNumber.trim()}`);
+      router.push(`/${locale}/track/${orderNumber.trim()}`);
     } else {
       // 이메일로 조회
       if (!email.trim()) {
-        setError('이메일을 입력해주세요.');
+        setError(t('errors.emailRequired'));
         return;
       }
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email.trim())) {
-        setError('올바른 이메일 형식이 아닙니다.');
+        setError(t('errors.emailInvalid'));
         return;
       }
 
@@ -83,16 +87,16 @@ export default function OrderTrackingPage() {
         const data = combinedData;
 
         if (!data || data.length === 0) {
-          setError('해당 이메일로 등록된 주문이 없습니다.');
+          setError(t('errors.notFound'));
         } else if (data.length === 1) {
           // 주문이 1개면 바로 이동
-          router.push(`/track/${data[0].id}`);
+          router.push(`/${locale}/track/${data[0].id}`);
         } else {
           // 여러 주문이 있으면 목록 표시
           setOrders(data);
         }
       } catch {
-        setError('주문 조회 중 오류가 발생했습니다. 다시 시도해주세요.');
+        setError(t('errors.searchError'));
       } finally {
         setIsLoading(false);
       }
@@ -108,22 +112,27 @@ export default function OrderTrackingPage() {
   };
 
   const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
+    const statusKeys: Record<string, string> = {
       // orders 상태
-      pending: '결제 대기',
-      confirmed: '결제 완료',
-      in_progress: '제작 중',
-      review: '검토 중',
-      revision: '수정 중',
-      completed: '완료',
-      cancelled: '취소됨',
+      pending: 'pending_payment',
+      confirmed: 'paid',
+      in_progress: 'in_production',
+      review: 'in_review',
+      revision: 'revision',
+      completed: 'completed',
+      cancelled: 'cancelled',
       // contacts 상태
-      new: '새 문의',
-      contacted: '연락 완료',
-      converted: '계약 완료',
-      closed: '종료',
+      new: 'new',
+      contacted: 'contacted',
+      converted: 'contracted',
+      closed: 'closed',
     };
-    return labels[status] || status;
+    const key = statusKeys[status] || status;
+    try {
+      return t(`status.${key}`);
+    } catch {
+      return status;
+    }
   };
 
   return (
@@ -134,9 +143,9 @@ export default function OrderTrackingPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <h1 className="text-3xl font-bold text-white mb-4">주문 조회</h1>
+          <h1 className="text-3xl font-bold text-white mb-4">{t('title')}</h1>
           <p className="text-gray-400">
-            이메일 또는 주문번호로 작업 진행 상태를 확인하세요.
+            {t('subtitle')}
           </p>
         </motion.div>
 
@@ -156,7 +165,7 @@ export default function OrderTrackingPage() {
                 : 'bg-[#111] border border-[#333] text-gray-400 hover:border-[#00F5A0]/50'
             }`}
           >
-            이메일로 조회
+            {t('emailTab')}
           </button>
           <button
             type="button"
@@ -167,7 +176,7 @@ export default function OrderTrackingPage() {
                 : 'bg-[#111] border border-[#333] text-gray-400 hover:border-[#00F5A0]/50'
             }`}
           >
-            주문번호로 조회
+            {t('orderTab')}
           </button>
         </motion.div>
 
@@ -181,7 +190,7 @@ export default function OrderTrackingPage() {
           {searchType === 'email' ? (
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2">
-                이메일 주소
+                {t('emailLabel')}
               </label>
               <input
                 type="email"
@@ -191,14 +200,14 @@ export default function OrderTrackingPage() {
                   setError('');
                   setOrders([]);
                 }}
-                placeholder="결제 시 입력한 이메일"
+                placeholder={t('emailPlaceholder')}
                 className="w-full px-4 py-4 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
               />
             </div>
           ) : (
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2">
-                주문번호
+                {t('orderLabel')}
               </label>
               <input
                 type="text"
@@ -207,7 +216,7 @@ export default function OrderTrackingPage() {
                   setOrderNumber(e.target.value);
                   setError('');
                 }}
-                placeholder="예: a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                placeholder={t('orderPlaceholder')}
                 className="w-full px-4 py-4 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors text-sm"
               />
             </div>
@@ -222,7 +231,7 @@ export default function OrderTrackingPage() {
             disabled={isLoading}
             className="w-full py-4 rounded-full font-bold text-center transition-all bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black hover:opacity-90 disabled:opacity-50"
           >
-            {isLoading ? '조회 중...' : '조회하기'}
+            {isLoading ? t('searching') : t('searchButton')}
           </button>
         </motion.form>
 
@@ -233,19 +242,19 @@ export default function OrderTrackingPage() {
             animate={{ opacity: 1, y: 0 }}
             className="mt-8"
           >
-            <h3 className="text-white font-medium mb-4">주문 내역 ({orders.length}건)</h3>
+            <h3 className="text-white font-medium mb-4">{t('orderListTitle')} ({t('orderCount', { count: orders.length })})</h3>
             <div className="space-y-3">
               {orders.map((order) => (
                 <button
                   key={order.id}
-                  onClick={() => router.push(`/track/${order.id}`)}
+                  onClick={() => router.push(`/${locale}/track/${order.id}`)}
                   className="w-full p-4 bg-[#111] border border-[#333] rounded-xl text-left hover:border-[#00F5A0]/50 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-gray-400 text-xs">{formatDate(order.created_at)}</span>
                       {order.source === 'contact' && (
-                        <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded">문의</span>
+                        <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded">{t('inquiry')}</span>
                       )}
                     </div>
                     <span className="text-[#00F5A0] text-xs font-medium">{getStatusLabel(order.status)}</span>
@@ -266,15 +275,15 @@ export default function OrderTrackingPage() {
           transition={{ delay: 0.2 }}
           className="mt-12 p-6 bg-[#111] border border-[#222] rounded-xl"
         >
-          <h3 className="text-white font-medium mb-4">조회 방법</h3>
+          <h3 className="text-white font-medium mb-4">{t('helpTitle')}</h3>
           <ul className="text-gray-400 text-sm space-y-2">
             <li className="flex items-start gap-2">
               <span className="text-[#00F5A0]">•</span>
-              <span><strong>이메일</strong>: 결제 시 입력한 이메일로 모든 주문을 조회합니다.</span>
+              <span><strong>{t('helpEmail')}</strong>: {t('helpEmailDesc')}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-[#00F5A0]">•</span>
-              <span><strong>주문번호</strong>: 이메일로 받은 주문번호로 특정 주문을 조회합니다.</span>
+              <span><strong>{t('helpOrder')}</strong>: {t('helpOrderDesc')}</span>
             </li>
           </ul>
         </motion.div>

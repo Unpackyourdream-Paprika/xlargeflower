@@ -34,14 +34,24 @@ export default function PricingManagement() {
 
   const [planFormData, setPlanFormData] = useState({
     title: '',
+    title_en: '',
+    title_ja: '',
     subtitle: '',
+    subtitle_en: '',
+    subtitle_ja: '',
     price: 0,
     price_suffix: '',
     features: [''],
+    features_en: [''],
+    features_ja: [''],
     is_featured: false,
     badge_text: '',
+    badge_text_en: '',
+    badge_text_ja: '',
     badge_color: '#00F5A0',
     button_text: '시작하기',
+    button_text_en: '',
+    button_text_ja: '',
     button_action: 'link',
     button_link: '/products',
     chat_trigger: '',
@@ -50,14 +60,22 @@ export default function PricingManagement() {
     is_active: true
   });
 
+  const [isTranslating, setIsTranslating] = useState(false);
+
   const [promoFormData, setPromoFormData] = useState({
     title: '',
+    title_en: '',
+    title_ja: '',
     discount_rate: 50,
     start_date: '',
     end_date: '',
     is_active: true,
-    badge_text: ''
+    badge_text: '',
+    badge_text_en: '',
+    badge_text_ja: ''
   });
+
+  const [isTranslatingPromo, setIsTranslatingPromo] = useState(false);
 
   const ADMIN_PASSWORD = 'xlarge2024';
 
@@ -117,14 +135,24 @@ export default function PricingManagement() {
   const resetPlanForm = () => {
     setPlanFormData({
       title: '',
+      title_en: '',
+      title_ja: '',
       subtitle: '',
+      subtitle_en: '',
+      subtitle_ja: '',
       price: 0,
       price_suffix: '',
       features: [''],
+      features_en: [''],
+      features_ja: [''],
       is_featured: false,
       badge_text: '',
+      badge_text_en: '',
+      badge_text_ja: '',
       badge_color: '#00F5A0',
       button_text: '시작하기',
+      button_text_en: '',
+      button_text_ja: '',
       button_action: 'link',
       button_link: '/products',
       chat_trigger: '',
@@ -132,6 +160,97 @@ export default function PricingManagement() {
       sort_order: plans.length,
       is_active: true
     });
+  };
+
+  // 번역 함수
+  const translatePlanTexts = async () => {
+    if (!planFormData.title && !planFormData.subtitle && planFormData.features.filter(f => f.trim()).length === 0) {
+      setError('번역할 한국어 텍스트를 먼저 입력해주세요.');
+      return;
+    }
+
+    setIsTranslating(true);
+    try {
+      // 번역할 텍스트 수집
+      const textsToTranslate: string[] = [];
+      const textMapping: { type: string; index?: number }[] = [];
+
+      if (planFormData.title) {
+        textsToTranslate.push(planFormData.title);
+        textMapping.push({ type: 'title' });
+      }
+      if (planFormData.subtitle) {
+        textsToTranslate.push(planFormData.subtitle);
+        textMapping.push({ type: 'subtitle' });
+      }
+      if (planFormData.badge_text) {
+        textsToTranslate.push(planFormData.badge_text);
+        textMapping.push({ type: 'badge_text' });
+      }
+      if (planFormData.button_text) {
+        textsToTranslate.push(planFormData.button_text);
+        textMapping.push({ type: 'button_text' });
+      }
+      planFormData.features.forEach((feature, index) => {
+        if (feature.trim()) {
+          textsToTranslate.push(feature);
+          textMapping.push({ type: 'feature', index });
+        }
+      });
+
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          texts: textsToTranslate,
+          targetLanguages: ['en', 'ja']
+        })
+      });
+
+      if (!response.ok) throw new Error('번역 요청 실패');
+
+      const data = await response.json();
+      const { translations } = data;
+
+      // 번역 결과 적용
+      const newFormData = { ...planFormData };
+      const newFeaturesEn: string[] = [...planFormData.features_en];
+      const newFeaturesJa: string[] = [...planFormData.features_ja];
+
+      // features 배열 크기 맞추기
+      while (newFeaturesEn.length < planFormData.features.length) newFeaturesEn.push('');
+      while (newFeaturesJa.length < planFormData.features.length) newFeaturesJa.push('');
+
+      translations.forEach((t: { original: string; en?: string; ja?: string }, i: number) => {
+        const mapping = textMapping[i];
+        if (mapping.type === 'title') {
+          newFormData.title_en = t.en || '';
+          newFormData.title_ja = t.ja || '';
+        } else if (mapping.type === 'subtitle') {
+          newFormData.subtitle_en = t.en || '';
+          newFormData.subtitle_ja = t.ja || '';
+        } else if (mapping.type === 'badge_text') {
+          newFormData.badge_text_en = t.en || '';
+          newFormData.badge_text_ja = t.ja || '';
+        } else if (mapping.type === 'button_text') {
+          newFormData.button_text_en = t.en || '';
+          newFormData.button_text_ja = t.ja || '';
+        } else if (mapping.type === 'feature' && mapping.index !== undefined) {
+          newFeaturesEn[mapping.index] = t.en || '';
+          newFeaturesJa[mapping.index] = t.ja || '';
+        }
+      });
+
+      newFormData.features_en = newFeaturesEn;
+      newFormData.features_ja = newFeaturesJa;
+      setPlanFormData(newFormData);
+      setSuccessMessage('번역 완료!');
+    } catch (err) {
+      console.error('Translation error:', err);
+      setError('번역에 실패했습니다.');
+    } finally {
+      setIsTranslating(false);
+    }
   };
 
   const openCreatePlanModal = () => {
@@ -144,14 +263,24 @@ export default function PricingManagement() {
     setEditingPlan(plan);
     setPlanFormData({
       title: plan.title || '',
+      title_en: plan.title_en || '',
+      title_ja: plan.title_ja || '',
       subtitle: plan.subtitle || '',
+      subtitle_en: plan.subtitle_en || '',
+      subtitle_ja: plan.subtitle_ja || '',
       price: plan.price || 0,
       price_suffix: plan.price_suffix || '',
       features: plan.features?.length ? plan.features : [''],
+      features_en: plan.features_en?.length ? plan.features_en : [''],
+      features_ja: plan.features_ja?.length ? plan.features_ja : [''],
       is_featured: plan.is_featured || false,
       badge_text: plan.badge_text || '',
+      badge_text_en: plan.badge_text_en || '',
+      badge_text_ja: plan.badge_text_ja || '',
       badge_color: plan.badge_color || '#00F5A0',
       button_text: plan.button_text || '시작하기',
+      button_text_en: plan.button_text_en || '',
+      button_text_ja: plan.button_text_ja || '',
       button_action: plan.button_action || 'link',
       button_link: plan.button_link || '/products',
       chat_trigger: plan.chat_trigger || '',
@@ -172,7 +301,9 @@ export default function PricingManagement() {
     try {
       const submitData = {
         ...planFormData,
-        features: planFormData.features.filter(f => f.trim() !== '')
+        features: planFormData.features.filter(f => f.trim() !== ''),
+        features_en: planFormData.features_en.filter(f => f.trim() !== ''),
+        features_ja: planFormData.features_ja.filter(f => f.trim() !== '')
       };
 
       if (editingPlan) {
@@ -245,12 +376,73 @@ export default function PricingManagement() {
     const endDate = new Date('2026-02-15T23:59:59');
     setPromoFormData({
       title: '기간 한정 할인',
+      title_en: '',
+      title_ja: '',
       discount_rate: 50,
       start_date: now.toISOString().slice(0, 16),
       end_date: endDate.toISOString().slice(0, 16),
       is_active: true,
-      badge_text: '50% OFF'
+      badge_text: '50% OFF',
+      badge_text_en: '',
+      badge_text_ja: ''
     });
+  };
+
+  // 프로모션 번역 함수
+  const translatePromoTexts = async () => {
+    if (!promoFormData.title && !promoFormData.badge_text) {
+      setError('번역할 한국어 텍스트를 먼저 입력해주세요.');
+      return;
+    }
+
+    setIsTranslatingPromo(true);
+    try {
+      const textsToTranslate: string[] = [];
+      const textMapping: string[] = [];
+
+      if (promoFormData.title) {
+        textsToTranslate.push(promoFormData.title);
+        textMapping.push('title');
+      }
+      if (promoFormData.badge_text) {
+        textsToTranslate.push(promoFormData.badge_text);
+        textMapping.push('badge_text');
+      }
+
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          texts: textsToTranslate,
+          targetLanguages: ['en', 'ja']
+        })
+      });
+
+      if (!response.ok) throw new Error('번역 요청 실패');
+
+      const data = await response.json();
+      const { translations } = data;
+
+      const newFormData = { ...promoFormData };
+      translations.forEach((t: { original: string; en?: string; ja?: string }, i: number) => {
+        const mapping = textMapping[i];
+        if (mapping === 'title') {
+          newFormData.title_en = t.en || '';
+          newFormData.title_ja = t.ja || '';
+        } else if (mapping === 'badge_text') {
+          newFormData.badge_text_en = t.en || '';
+          newFormData.badge_text_ja = t.ja || '';
+        }
+      });
+
+      setPromoFormData(newFormData);
+      setSuccessMessage('번역 완료!');
+    } catch (err) {
+      console.error('Translation error:', err);
+      setError('번역에 실패했습니다.');
+    } finally {
+      setIsTranslatingPromo(false);
+    }
   };
 
   const openCreatePromoModal = () => {
@@ -263,11 +455,15 @@ export default function PricingManagement() {
     setEditingPromo(promo);
     setPromoFormData({
       title: promo.title || '',
+      title_en: promo.title_en || '',
+      title_ja: promo.title_ja || '',
       discount_rate: promo.discount_rate || 50,
       start_date: promo.start_date ? new Date(promo.start_date).toISOString().slice(0, 16) : '',
       end_date: promo.end_date ? new Date(promo.end_date).toISOString().slice(0, 16) : '',
       is_active: promo.is_active,
-      badge_text: promo.badge_text || ''
+      badge_text: promo.badge_text || '',
+      badge_text_en: promo.badge_text_en || '',
+      badge_text_ja: promo.badge_text_ja || ''
     });
     setIsPromoModalOpen(true);
   };
@@ -649,47 +845,206 @@ export default function PricingManagement() {
       {/* Plan Modal */}
       {isPlanModalOpen && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-[#0A0A0A] border border-[#222] rounded-2xl p-6 w-full max-w-2xl my-8">
-            <h3 className="text-lg font-bold text-white mb-6">
-              {editingPlan ? '플랜 수정' : '새 플랜 추가'}
-            </h3>
+          <div className="bg-[#0A0A0A] border border-[#222] rounded-2xl p-6 w-full max-w-4xl my-8">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-white">
+                {editingPlan ? '플랜 수정' : '새 플랜 추가'}
+              </h3>
+              <button
+                onClick={translatePlanTexts}
+                disabled={isTranslating}
+                className="px-4 py-2 bg-blue-500/20 border border-blue-500/50 text-blue-400 font-medium rounded-lg hover:bg-blue-500/30 transition-all disabled:opacity-50 flex items-center gap-2"
+              >
+                {isTranslating ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                    번역 중...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                    </svg>
+                    자동 번역 (EN/JA)
+                  </>
+                )}
+              </button>
+            </div>
 
             <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
-              {/* Basic Info */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">플랜명 *</label>
+              {/* Basic Info - Korean */}
+              <div className="p-4 bg-[#111] rounded-xl border border-[#222]">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs font-bold rounded">KO</span>
+                  <span className="text-sm text-gray-400">한국어 (기본)</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">플랜명 *</label>
+                    <input
+                      type="text"
+                      value={planFormData.title}
+                      onChange={(e) => setPlanFormData({ ...planFormData, title: e.target.value })}
+                      className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                      placeholder="예: Starter"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">카드 스타일</label>
+                    <select
+                      value={planFormData.card_style}
+                      onChange={(e) => setPlanFormData({ ...planFormData, card_style: e.target.value })}
+                      className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                    >
+                      {CARD_STYLES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <label className="block text-sm text-gray-400 mb-2">부제목</label>
                   <input
                     type="text"
-                    value={planFormData.title}
-                    onChange={(e) => setPlanFormData({ ...planFormData, title: e.target.value })}
-                    className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
-                    placeholder="예: Starter"
+                    value={planFormData.subtitle}
+                    onChange={(e) => setPlanFormData({ ...planFormData, subtitle: e.target.value })}
+                    className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                    placeholder="예: 테스트 도입을 위한 베이직 플랜"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">카드 스타일</label>
-                  <select
-                    value={planFormData.card_style}
-                    onChange={(e) => setPlanFormData({ ...planFormData, card_style: e.target.value })}
-                    className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
-                  >
-                    {CARD_STYLES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                  </select>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">버튼 텍스트</label>
+                    <input
+                      type="text"
+                      value={planFormData.button_text}
+                      onChange={(e) => setPlanFormData({ ...planFormData, button_text: e.target.value })}
+                      className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                      placeholder="시작하기"
+                    />
+                  </div>
+                  {planFormData.is_featured && (
+                    <div>
+                      <label className="block text-sm text-gray-400 mb-2">뱃지 텍스트</label>
+                      <input
+                        type="text"
+                        value={planFormData.badge_text}
+                        onChange={(e) => setPlanFormData({ ...planFormData, badge_text: e.target.value })}
+                        className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                        placeholder="BEST CHOICE"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">부제목</label>
-                <input
-                  type="text"
-                  value={planFormData.subtitle}
-                  onChange={(e) => setPlanFormData({ ...planFormData, subtitle: e.target.value })}
-                  className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
-                  placeholder="예: 테스트 도입을 위한 베이직 플랜"
-                />
+              {/* English Translation */}
+              <div className="p-4 bg-[#111] rounded-xl border border-blue-500/30">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs font-bold rounded">EN</span>
+                  <span className="text-sm text-gray-400">English</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">Plan Name</label>
+                    <input
+                      type="text"
+                      value={planFormData.title_en}
+                      onChange={(e) => setPlanFormData({ ...planFormData, title_en: e.target.value })}
+                      className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-blue-500 focus:outline-none text-white text-sm"
+                      placeholder="e.g. Starter"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">Subtitle</label>
+                    <input
+                      type="text"
+                      value={planFormData.subtitle_en}
+                      onChange={(e) => setPlanFormData({ ...planFormData, subtitle_en: e.target.value })}
+                      className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-blue-500 focus:outline-none text-white text-sm"
+                      placeholder="e.g. Basic plan for testing"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">Button Text</label>
+                    <input
+                      type="text"
+                      value={planFormData.button_text_en}
+                      onChange={(e) => setPlanFormData({ ...planFormData, button_text_en: e.target.value })}
+                      className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-blue-500 focus:outline-none text-white text-sm"
+                      placeholder="Get Started"
+                    />
+                  </div>
+                  {planFormData.is_featured && (
+                    <div>
+                      <label className="block text-sm text-gray-400 mb-2">Badge Text</label>
+                      <input
+                        type="text"
+                        value={planFormData.badge_text_en}
+                        onChange={(e) => setPlanFormData({ ...planFormData, badge_text_en: e.target.value })}
+                        className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-blue-500 focus:outline-none text-white text-sm"
+                        placeholder="BEST CHOICE"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
 
+              {/* Japanese Translation */}
+              <div className="p-4 bg-[#111] rounded-xl border border-pink-500/30">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="px-2 py-1 bg-pink-500/20 text-pink-400 text-xs font-bold rounded">JA</span>
+                  <span className="text-sm text-gray-400">日本語</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">プラン名</label>
+                    <input
+                      type="text"
+                      value={planFormData.title_ja}
+                      onChange={(e) => setPlanFormData({ ...planFormData, title_ja: e.target.value })}
+                      className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-pink-500 focus:outline-none text-white text-sm"
+                      placeholder="例: スターター"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">サブタイトル</label>
+                    <input
+                      type="text"
+                      value={planFormData.subtitle_ja}
+                      onChange={(e) => setPlanFormData({ ...planFormData, subtitle_ja: e.target.value })}
+                      className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-pink-500 focus:outline-none text-white text-sm"
+                      placeholder="例: テスト導入のためのベーシックプラン"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">ボタンテキスト</label>
+                    <input
+                      type="text"
+                      value={planFormData.button_text_ja}
+                      onChange={(e) => setPlanFormData({ ...planFormData, button_text_ja: e.target.value })}
+                      className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-pink-500 focus:outline-none text-white text-sm"
+                      placeholder="始める"
+                    />
+                  </div>
+                  {planFormData.is_featured && (
+                    <div>
+                      <label className="block text-sm text-gray-400 mb-2">バッジテキスト</label>
+                      <input
+                        type="text"
+                        value={planFormData.badge_text_ja}
+                        onChange={(e) => setPlanFormData({ ...planFormData, badge_text_ja: e.target.value })}
+                        className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-pink-500 focus:outline-none text-white text-sm"
+                        placeholder="おすすめ"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Price */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">가격 (원) *</label>
@@ -713,9 +1068,12 @@ export default function PricingManagement() {
                 </div>
               </div>
 
-              {/* Features */}
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">기능 목록</label>
+              {/* Features - Korean */}
+              <div className="p-4 bg-[#111] rounded-xl border border-[#222]">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs font-bold rounded">KO</span>
+                  <span className="text-sm text-gray-400">기능 목록 (한국어)</span>
+                </div>
                 <div className="space-y-2">
                   {planFormData.features.map((feature, index) => (
                     <div key={index} className="flex gap-2">
@@ -723,7 +1081,7 @@ export default function PricingManagement() {
                         type="text"
                         value={feature}
                         onChange={(e) => updateFeature(index, e.target.value)}
-                        className="flex-1 px-4 py-2 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                        className="flex-1 px-4 py-2 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
                         placeholder={`기능 ${index + 1}`}
                       />
                       <button onClick={() => removeFeature(index)}
@@ -741,53 +1099,76 @@ export default function PricingManagement() {
                 </div>
               </div>
 
-              {/* Badge */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setPlanFormData({ ...planFormData, is_featured: !planFormData.is_featured })}
-                    className={`relative w-12 h-6 rounded-full transition-colors ${planFormData.is_featured ? 'bg-[#00F5A0]' : 'bg-[#333]'}`}
-                  >
-                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${planFormData.is_featured ? 'translate-x-7' : 'translate-x-1'}`} />
-                  </button>
-                  <span className="text-sm text-gray-400">추천 뱃지 표시</span>
+              {/* Features - English */}
+              <div className="p-4 bg-[#111] rounded-xl border border-blue-500/30">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs font-bold rounded">EN</span>
+                  <span className="text-sm text-gray-400">Features (English)</span>
                 </div>
-                {planFormData.is_featured && (
-                  <div>
+                <div className="space-y-2">
+                  {planFormData.features.map((_, index) => (
                     <input
+                      key={index}
                       type="text"
-                      value={planFormData.badge_text}
-                      onChange={(e) => setPlanFormData({ ...planFormData, badge_text: e.target.value })}
-                      className="w-full px-4 py-2 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
-                      placeholder="뱃지 텍스트 (예: BEST CHOICE)"
+                      value={planFormData.features_en[index] || ''}
+                      onChange={(e) => {
+                        const newFeaturesEn = [...planFormData.features_en];
+                        newFeaturesEn[index] = e.target.value;
+                        setPlanFormData({ ...planFormData, features_en: newFeaturesEn });
+                      }}
+                      className="w-full px-4 py-2 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-blue-500 focus:outline-none text-white text-sm"
+                      placeholder={`Feature ${index + 1}`}
                     />
-                  </div>
-                )}
+                  ))}
+                </div>
               </div>
 
-              {/* Button */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">버튼 텍스트</label>
-                  <input
-                    type="text"
-                    value={planFormData.button_text}
-                    onChange={(e) => setPlanFormData({ ...planFormData, button_text: e.target.value })}
-                    className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
-                    placeholder="시작하기"
-                  />
+              {/* Features - Japanese */}
+              <div className="p-4 bg-[#111] rounded-xl border border-pink-500/30">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="px-2 py-1 bg-pink-500/20 text-pink-400 text-xs font-bold rounded">JA</span>
+                  <span className="text-sm text-gray-400">機能一覧 (日本語)</span>
                 </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">버튼 링크</label>
-                  <input
-                    type="text"
-                    value={planFormData.button_link}
-                    onChange={(e) => setPlanFormData({ ...planFormData, button_link: e.target.value })}
-                    className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
-                    placeholder="/products"
-                  />
+                <div className="space-y-2">
+                  {planFormData.features.map((_, index) => (
+                    <input
+                      key={index}
+                      type="text"
+                      value={planFormData.features_ja[index] || ''}
+                      onChange={(e) => {
+                        const newFeaturesJa = [...planFormData.features_ja];
+                        newFeaturesJa[index] = e.target.value;
+                        setPlanFormData({ ...planFormData, features_ja: newFeaturesJa });
+                      }}
+                      className="w-full px-4 py-2 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-pink-500 focus:outline-none text-white text-sm"
+                      placeholder={`機能 ${index + 1}`}
+                    />
+                  ))}
                 </div>
+              </div>
+
+              {/* Badge */}
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPlanFormData({ ...planFormData, is_featured: !planFormData.is_featured })}
+                  className={`relative w-12 h-6 rounded-full transition-colors ${planFormData.is_featured ? 'bg-[#00F5A0]' : 'bg-[#333]'}`}
+                >
+                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${planFormData.is_featured ? 'translate-x-7' : 'translate-x-1'}`} />
+                </button>
+                <span className="text-sm text-gray-400">추천 뱃지 표시</span>
+              </div>
+
+              {/* Button Link */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">버튼 링크</label>
+                <input
+                  type="text"
+                  value={planFormData.button_link}
+                  onChange={(e) => setPlanFormData({ ...planFormData, button_link: e.target.value })}
+                  className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-[#00F5A0] focus:outline-none text-white text-sm"
+                  placeholder="/products"
+                />
               </div>
 
               {/* Active */}
@@ -820,23 +1201,124 @@ export default function PricingManagement() {
       {/* Promo Modal */}
       {isPromoModalOpen && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-[#0A0A0A] border border-[#222] rounded-2xl p-6 w-full max-w-lg my-8">
-            <h3 className="text-lg font-bold text-white mb-6">
-              {editingPromo ? '프로모션 수정' : '새 프로모션'}
-            </h3>
+          <div className="bg-[#0A0A0A] border border-[#222] rounded-2xl p-6 w-full max-w-2xl my-8">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-white">
+                {editingPromo ? '프로모션 수정' : '새 프로모션'}
+              </h3>
+              <button
+                onClick={translatePromoTexts}
+                disabled={isTranslatingPromo}
+                className="px-4 py-2 bg-blue-500/20 border border-blue-500/50 text-blue-400 font-medium rounded-lg hover:bg-blue-500/30 transition-all disabled:opacity-50 flex items-center gap-2"
+              >
+                {isTranslatingPromo ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                    번역 중...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                    </svg>
+                    자동 번역 (EN/JA)
+                  </>
+                )}
+              </button>
+            </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">프로모션명 *</label>
-                <input
-                  type="text"
-                  value={promoFormData.title}
-                  onChange={(e) => setPromoFormData({ ...promoFormData, title: e.target.value })}
-                  className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-yellow-500 focus:outline-none text-white text-sm"
-                  placeholder="예: 2월 반값 할인"
-                />
+            <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+              {/* Korean */}
+              <div className="p-4 bg-[#111] rounded-xl border border-[#222]">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs font-bold rounded">KO</span>
+                  <span className="text-sm text-gray-400">한국어 (기본)</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">프로모션명 *</label>
+                    <input
+                      type="text"
+                      value={promoFormData.title}
+                      onChange={(e) => setPromoFormData({ ...promoFormData, title: e.target.value })}
+                      className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-yellow-500 focus:outline-none text-white text-sm"
+                      placeholder="예: 2월 반값 할인"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">뱃지 텍스트</label>
+                    <input
+                      type="text"
+                      value={promoFormData.badge_text}
+                      onChange={(e) => setPromoFormData({ ...promoFormData, badge_text: e.target.value })}
+                      className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-yellow-500 focus:outline-none text-white text-sm"
+                      placeholder="예: 2.15까지 50%"
+                    />
+                  </div>
+                </div>
               </div>
 
+              {/* English */}
+              <div className="p-4 bg-[#111] rounded-xl border border-blue-500/30">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs font-bold rounded">EN</span>
+                  <span className="text-sm text-gray-400">English</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">Promotion Name</label>
+                    <input
+                      type="text"
+                      value={promoFormData.title_en}
+                      onChange={(e) => setPromoFormData({ ...promoFormData, title_en: e.target.value })}
+                      className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-blue-500 focus:outline-none text-white text-sm"
+                      placeholder="e.g. February Half Price Sale"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">Badge Text</label>
+                    <input
+                      type="text"
+                      value={promoFormData.badge_text_en}
+                      onChange={(e) => setPromoFormData({ ...promoFormData, badge_text_en: e.target.value })}
+                      className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-blue-500 focus:outline-none text-white text-sm"
+                      placeholder="e.g. 50% OFF until 2.15"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Japanese */}
+              <div className="p-4 bg-[#111] rounded-xl border border-pink-500/30">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="px-2 py-1 bg-pink-500/20 text-pink-400 text-xs font-bold rounded">JA</span>
+                  <span className="text-sm text-gray-400">日本語</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">プロモーション名</label>
+                    <input
+                      type="text"
+                      value={promoFormData.title_ja}
+                      onChange={(e) => setPromoFormData({ ...promoFormData, title_ja: e.target.value })}
+                      className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-pink-500 focus:outline-none text-white text-sm"
+                      placeholder="例: 2月半額セール"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">バッジテキスト</label>
+                    <input
+                      type="text"
+                      value={promoFormData.badge_text_ja}
+                      onChange={(e) => setPromoFormData({ ...promoFormData, badge_text_ja: e.target.value })}
+                      className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#333] rounded-lg focus:border-pink-500 focus:outline-none text-white text-sm"
+                      placeholder="例: 2.15まで50%OFF"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Common Settings */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">할인율 (%) *</label>
@@ -848,16 +1330,6 @@ export default function PricingManagement() {
                     onChange={(e) => setPromoFormData({ ...promoFormData, discount_rate: parseInt(e.target.value) || 0 })}
                     className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-yellow-500 focus:outline-none text-white text-sm"
                     placeholder="50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">뱃지 텍스트</label>
-                  <input
-                    type="text"
-                    value={promoFormData.badge_text}
-                    onChange={(e) => setPromoFormData({ ...promoFormData, badge_text: e.target.value })}
-                    className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-lg focus:border-yellow-500 focus:outline-none text-white text-sm"
-                    placeholder="예: 2.15까지 50%"
                   />
                 </div>
               </div>

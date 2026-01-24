@@ -8,9 +8,40 @@ interface PricingCardProps {
   plan: PricingPlan;
   promotion?: PromotionSettings | null;
   onPlanSelect?: (planName: string) => void;
+  locale?: string;
 }
 
-export default function PricingCard({ plan, promotion, onPlanSelect }: PricingCardProps) {
+export default function PricingCard({ plan, promotion, onPlanSelect, locale = 'ko' }: PricingCardProps) {
+  // locale에 따라 적절한 데이터 선택
+  const getLocalizedTitle = () => {
+    if (locale === 'en' && plan.title_en) return plan.title_en;
+    if (locale === 'ja' && plan.title_ja) return plan.title_ja;
+    return plan.title;
+  };
+
+  const getLocalizedSubtitle = () => {
+    if (locale === 'en' && plan.subtitle_en) return plan.subtitle_en;
+    if (locale === 'ja' && plan.subtitle_ja) return plan.subtitle_ja;
+    return plan.subtitle || '';
+  };
+
+  const getLocalizedFeatures = () => {
+    if (locale === 'en' && plan.features_en && plan.features_en.length > 0) return plan.features_en;
+    if (locale === 'ja' && plan.features_ja && plan.features_ja.length > 0) return plan.features_ja;
+    return plan.features || [];
+  };
+
+  const getLocalizedButtonText = () => {
+    if (locale === 'en' && plan.button_text_en) return plan.button_text_en;
+    if (locale === 'ja' && plan.button_text_ja) return plan.button_text_ja;
+    return plan.button_text || '';
+  };
+
+  const getLocalizedBadgeText = () => {
+    if (locale === 'en' && plan.badge_text_en) return plan.badge_text_en;
+    if (locale === 'ja' && plan.badge_text_ja) return plan.badge_text_ja;
+    return plan.badge_text || '';
+  };
   const formatPrice = (price: number) => new Intl.NumberFormat('ko-KR').format(price);
 
   // 가격 계산 (프로모션 할인 적용)
@@ -95,16 +126,16 @@ export default function PricingCard({ plan, promotion, onPlanSelect }: PricingCa
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className={`text-xs font-bold tracking-wider ${getLabelColor()}`}>{plan.title}</span>
+              <span className={`text-xs font-bold tracking-wider ${getLabelColor()}`}>{getLocalizedTitle()}</span>
               <svg className="w-4 h-4 text-[#FFD700]" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
               </svg>
             </div>
-            <h3 className="text-2xl font-bold text-white mb-2">{plan.subtitle}</h3>
-            <p className="text-[#FFD700]/80 text-sm">{plan.features?.join(' + ')}</p>
+            <h3 className="text-2xl font-bold text-white mb-2">{getLocalizedSubtitle()}</h3>
+            <p className="text-[#FFD700]/80 text-sm">{getLocalizedFeatures().join(' + ')}</p>
           </div>
           <button onClick={handleButtonClick} className={`shrink-0 ${getButtonClass()}`}>
-            {plan.button_text}
+            {getLocalizedButtonText()}
           </button>
         </div>
       </div>
@@ -114,9 +145,9 @@ export default function PricingCard({ plan, promotion, onPlanSelect }: PricingCa
   return (
     <div className={`${getCardClass()} h-full flex flex-col`}>
       {/* Featured Badge */}
-      {plan.is_featured && plan.badge_text && (
+      {plan.is_featured && getLocalizedBadgeText() && (
         <span className="absolute -top-3 left-6 px-3 py-1 text-xs font-bold tracking-wide bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black rounded-sm">
-          {plan.badge_text}
+          {getLocalizedBadgeText()}
         </span>
       )}
 
@@ -130,7 +161,7 @@ export default function PricingCard({ plan, promotion, onPlanSelect }: PricingCa
       )}
 
       {/* Plan Title */}
-      <p className={`label-tag mb-4 ${getLabelColor()}`}>{plan.title}</p>
+      <p className={`label-tag mb-4 ${getLabelColor()}`}>{getLocalizedTitle()}</p>
 
       {/* Price */}
       <div className="mb-1">
@@ -147,13 +178,13 @@ export default function PricingCard({ plan, promotion, onPlanSelect }: PricingCa
 
       {/* Subtitle */}
       <p className={`text-sm mb-6 ${plan.card_style === 'purple' ? 'text-purple-300/80' : 'text-white/60'}`}>
-        {plan.subtitle}
+        {getLocalizedSubtitle()}
       </p>
 
       {/* Features */}
       {plan.card_style === 'purple' ? (
         <ul className="space-y-2 mb-8 flex-1">
-          {plan.features?.map((feature, index) => (
+          {getLocalizedFeatures().map((feature, index) => (
             <li key={index} className="flex items-start gap-2 text-sm text-gray-300">
               <svg className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -164,7 +195,7 @@ export default function PricingCard({ plan, promotion, onPlanSelect }: PricingCa
         </ul>
       ) : (
         <ul className="feature-list mb-8 flex-1">
-          {plan.features?.map((feature, index) => {
+          {getLocalizedFeatures().map((feature, index) => {
             const isHighlighted = plan.highlighted_features?.includes(index);
             return (
               <li key={index}>
@@ -181,7 +212,7 @@ export default function PricingCard({ plan, promotion, onPlanSelect }: PricingCa
 
       {/* Button - 항상 버튼으로 처리 (컨택트 폼 스크롤) */}
       <button onClick={handleButtonClick} className={getButtonClass()}>
-        {plan.button_text}
+        {getLocalizedButtonText()}
       </button>
     </div>
   );

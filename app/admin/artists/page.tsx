@@ -26,9 +26,14 @@ const CATEGORIES: { key: ArtistCategory; label: string }[] = [
 interface ArtistFormData {
   name: string;
   name_ko: string;
+  name_ja: string;
   categories: ArtistCategory[];
   description: string;
+  description_en: string;
+  description_ja: string;
   tags: string;
+  tags_en: string;
+  tags_ja: string;
   thumbnail_url: string;
   hover_video_url: string;
   shorts_url: string;
@@ -38,9 +43,14 @@ interface ArtistFormData {
 const initialFormData: ArtistFormData = {
   name: '',
   name_ko: '',
+  name_ja: '',
   categories: ['FASHION'],
   description: '',
+  description_en: '',
+  description_ja: '',
   tags: '',
+  tags_en: '',
+  tags_ja: '',
   thumbnail_url: '',
   hover_video_url: '',
   shorts_url: '',
@@ -64,6 +74,10 @@ export default function ArtistManagement() {
 
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+
+  // 번역 상태
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [isTranslatingCustomModel, setIsTranslatingCustomModel] = useState(false);
 
   // 커스텀 모델 설정 상태
   const [customModelSettings, setCustomModelSettings] = useState<CustomModelSettings>({
@@ -168,15 +182,158 @@ export default function ArtistManagement() {
     setFormData({
       name: artist.name,
       name_ko: artist.name_ko || '',
+      name_ja: artist.name_ja || '',
       categories: categoriesArray,
       description: artist.description,
+      description_en: artist.description_en || '',
+      description_ja: artist.description_ja || '',
       tags: artist.tags?.join(', ') || '',
+      tags_en: artist.tags_en?.join(', ') || '',
+      tags_ja: artist.tags_ja?.join(', ') || '',
       thumbnail_url: artist.thumbnail_url,
       hover_video_url: artist.hover_video_url || '',
       shorts_url: artist.shorts_url || '',
       price: artist.price?.toString() || '',
     });
     setIsModalOpen(true);
+  };
+
+  // 아티스트 번역 함수
+  const translateArtistTexts = async () => {
+    setIsTranslating(true);
+    try {
+      const textsToTranslate: string[] = [];
+      const textMapping: { type: string }[] = [];
+
+      // 번역할 텍스트 수집 (한국어 필드)
+      if (formData.name_ko) {
+        textsToTranslate.push(formData.name_ko);
+        textMapping.push({ type: 'name_ja' });
+      }
+      if (formData.description) {
+        textsToTranslate.push(formData.description);
+        textMapping.push({ type: 'description' });
+      }
+      if (formData.tags) {
+        textsToTranslate.push(formData.tags);
+        textMapping.push({ type: 'tags' });
+      }
+
+      if (textsToTranslate.length === 0) {
+        setError('번역할 한국어 텍스트가 없습니다.');
+        return;
+      }
+
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          texts: textsToTranslate,
+          targetLanguages: ['en', 'ja']
+        })
+      });
+
+      if (!response.ok) throw new Error('번역 API 오류');
+
+      const { translations } = await response.json();
+
+      // 번역 결과 적용
+      const newFormData = { ...formData };
+      translations.forEach((t: { original: string; en?: string; ja?: string }, index: number) => {
+        const mapping = textMapping[index];
+        if (mapping.type === 'name_ja') {
+          newFormData.name_ja = t.ja || '';
+        } else if (mapping.type === 'description') {
+          newFormData.description_en = t.en || '';
+          newFormData.description_ja = t.ja || '';
+        } else if (mapping.type === 'tags') {
+          newFormData.tags_en = t.en || '';
+          newFormData.tags_ja = t.ja || '';
+        }
+      });
+
+      setFormData(newFormData);
+      setSuccessMessage('번역이 완료되었습니다!');
+    } catch (err) {
+      console.error('Translation failed:', err);
+      setError('번역 중 오류가 발생했습니다.');
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  // 커스텀 모델 설정 번역 함수
+  const translateCustomModelTexts = async () => {
+    setIsTranslatingCustomModel(true);
+    try {
+      const textsToTranslate: string[] = [];
+      const textMapping: { type: string }[] = [];
+
+      if (customModelSettings.title) {
+        textsToTranslate.push(customModelSettings.title);
+        textMapping.push({ type: 'title' });
+      }
+      if (customModelSettings.description) {
+        textsToTranslate.push(customModelSettings.description);
+        textMapping.push({ type: 'description' });
+      }
+      if (customModelSettings.features && customModelSettings.features.length > 0) {
+        customModelSettings.features.forEach((_, idx) => {
+          textsToTranslate.push(customModelSettings.features[idx]);
+          textMapping.push({ type: `feature_${idx}` });
+        });
+      }
+
+      if (textsToTranslate.length === 0) {
+        setError('번역할 한국어 텍스트가 없습니다.');
+        return;
+      }
+
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          texts: textsToTranslate,
+          targetLanguages: ['en', 'ja']
+        })
+      });
+
+      if (!response.ok) throw new Error('번역 API 오류');
+
+      const { translations } = await response.json();
+
+      // 번역 결과 적용
+      const newSettings = { ...customModelSettings };
+      const featuresEn: string[] = [];
+      const featuresJa: string[] = [];
+
+      translations.forEach((t: { original: string; en?: string; ja?: string }, index: number) => {
+        const mapping = textMapping[index];
+        if (mapping.type === 'title') {
+          newSettings.title_en = t.en || '';
+          newSettings.title_ja = t.ja || '';
+        } else if (mapping.type === 'description') {
+          newSettings.description_en = t.en || '';
+          newSettings.description_ja = t.ja || '';
+        } else if (mapping.type.startsWith('feature_')) {
+          featuresEn.push(t.en || '');
+          featuresJa.push(t.ja || '');
+        }
+      });
+
+      if (featuresEn.length > 0) {
+        newSettings.features_en = featuresEn;
+        newSettings.features_ja = featuresJa;
+      }
+
+      setCustomModelSettings(newSettings);
+      setSuccessMessage('커스텀 모델 설정 번역이 완료되었습니다!');
+    } catch (err) {
+      console.error('Translation failed:', err);
+      setError('번역 중 오류가 발생했습니다.');
+    } finally {
+      setIsTranslatingCustomModel(false);
+    }
   };
 
   const handleDownloadImage = async (url: string, fileName: string) => {
@@ -230,9 +387,14 @@ export default function ArtistManagement() {
       const artistData = {
         name: formData.name,
         name_ko: formData.name_ko || undefined,
+        name_ja: formData.name_ja || undefined,
         category: formData.categories.join(', ') as ArtistCategory,
         description: formData.description,
+        description_en: formData.description_en || undefined,
+        description_ja: formData.description_ja || undefined,
         tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+        tags_en: formData.tags_en ? formData.tags_en.split(',').map(t => t.trim()).filter(Boolean) : [],
+        tags_ja: formData.tags_ja ? formData.tags_ja.split(',').map(t => t.trim()).filter(Boolean) : [],
         thumbnail_url: formData.thumbnail_url,
         hover_video_url: formData.hover_video_url || undefined,
         shorts_url: formData.shorts_url || undefined,
@@ -490,68 +652,140 @@ export default function ArtistManagement() {
 
         {/* 커스텀 모델 설정 섹션 */}
         <div className="bg-[#0A0A0A] border border-purple-500/30 rounded-2xl p-6 mb-8">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center">
-              <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">커스텀 모델 주문제작 설정</h3>
+                <p className="text-sm text-gray-500">주문서에서 표시되는 커스텀 모델 가격 및 설명을 관리합니다.</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-white">커스텀 모델 주문제작 설정</h3>
-              <p className="text-sm text-gray-500">주문서에서 표시되는 커스텀 모델 가격 및 설명을 관리합니다.</p>
-            </div>
+            <button
+              type="button"
+              onClick={translateCustomModelTexts}
+              disabled={isTranslatingCustomModel}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-bold rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
+            >
+              {isTranslatingCustomModel ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  번역 중...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                  </svg>
+                  자동 번역
+                </>
+              )}
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* 가격 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">
-                가격 (원)
-              </label>
-              <input
-                type="text"
-                value={customModelSettings.price ? customModelSettings.price.toLocaleString('ko-KR') : ''}
-                onChange={(e) => {
-                  const rawValue = e.target.value.replace(/[^\d]/g, '');
-                  setCustomModelSettings(prev => ({ ...prev, price: rawValue ? parseInt(rawValue, 10) : 0 }));
-                }}
-                className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl focus:border-purple-500 focus:outline-none text-white placeholder-gray-600"
-                placeholder="2,000,000"
-              />
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* 가격 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  가격 (원)
+                </label>
+                <input
+                  type="text"
+                  value={customModelSettings.price ? customModelSettings.price.toLocaleString('ko-KR') : ''}
+                  onChange={(e) => {
+                    const rawValue = e.target.value.replace(/[^\d]/g, '');
+                    setCustomModelSettings(prev => ({ ...prev, price: rawValue ? parseInt(rawValue, 10) : 0 }));
+                  }}
+                  className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl focus:border-purple-500 focus:outline-none text-white placeholder-gray-600"
+                  placeholder="2,000,000"
+                />
+              </div>
+
+              {/* 타이틀 (KO) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  타이틀 <span className="text-red-400">(KO)</span>
+                </label>
+                <input
+                  type="text"
+                  value={customModelSettings.title}
+                  onChange={(e) => setCustomModelSettings(prev => ({ ...prev, title: e.target.value }))}
+                  className="w-full px-4 py-3 bg-[#111] border border-red-500/30 rounded-xl focus:border-red-500 focus:outline-none text-white placeholder-gray-600"
+                  placeholder="커스텀 모델 주문제작"
+                />
+              </div>
             </div>
 
-            {/* 타이틀 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">
-                타이틀
-              </label>
-              <input
-                type="text"
-                value={customModelSettings.title}
-                onChange={(e) => setCustomModelSettings(prev => ({ ...prev, title: e.target.value }))}
-                className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl focus:border-purple-500 focus:outline-none text-white placeholder-gray-600"
-                placeholder="커스텀 모델 주문제작"
-              />
+            {/* 타이틀 번역 필드 */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-blue-400 mb-1">타이틀 (EN)</label>
+                <input
+                  type="text"
+                  value={customModelSettings.title_en || ''}
+                  onChange={(e) => setCustomModelSettings(prev => ({ ...prev, title_en: e.target.value }))}
+                  className="w-full px-3 py-2 bg-[#111] border border-blue-500/30 rounded-lg focus:border-blue-500 focus:outline-none text-white text-sm placeholder-gray-600"
+                  placeholder="Custom Model Production"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-pink-400 mb-1">タイトル (JA)</label>
+                <input
+                  type="text"
+                  value={customModelSettings.title_ja || ''}
+                  onChange={(e) => setCustomModelSettings(prev => ({ ...prev, title_ja: e.target.value }))}
+                  className="w-full px-3 py-2 bg-[#111] border border-pink-500/30 rounded-lg focus:border-pink-500 focus:outline-none text-white text-sm placeholder-gray-600"
+                  placeholder="カスタムモデル受注製作"
+                />
+              </div>
             </div>
 
-            {/* 설명 */}
+            {/* 설명 (KO) */}
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2">
-                간단 설명
+                간단 설명 <span className="text-red-400">(KO)</span>
               </label>
               <input
                 type="text"
                 value={customModelSettings.description}
                 onChange={(e) => setCustomModelSettings(prev => ({ ...prev, description: e.target.value }))}
-                className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl focus:border-purple-500 focus:outline-none text-white placeholder-gray-600"
+                className="w-full px-4 py-3 bg-[#111] border border-red-500/30 rounded-xl focus:border-red-500 focus:outline-none text-white placeholder-gray-600"
                 placeholder="브랜드 전용 AI 모델 개발"
               />
             </div>
 
-            {/* 특징 리스트 */}
+            {/* 설명 번역 필드 */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-blue-400 mb-1">설명 (EN)</label>
+                <input
+                  type="text"
+                  value={customModelSettings.description_en || ''}
+                  onChange={(e) => setCustomModelSettings(prev => ({ ...prev, description_en: e.target.value }))}
+                  className="w-full px-3 py-2 bg-[#111] border border-blue-500/30 rounded-lg focus:border-blue-500 focus:outline-none text-white text-sm placeholder-gray-600"
+                  placeholder="Brand-exclusive AI model development"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-pink-400 mb-1">説明 (JA)</label>
+                <input
+                  type="text"
+                  value={customModelSettings.description_ja || ''}
+                  onChange={(e) => setCustomModelSettings(prev => ({ ...prev, description_ja: e.target.value }))}
+                  className="w-full px-3 py-2 bg-[#111] border border-pink-500/30 rounded-lg focus:border-pink-500 focus:outline-none text-white text-sm placeholder-gray-600"
+                  placeholder="ブランド専用AIモデル開発"
+                />
+              </div>
+            </div>
+
+            {/* 특징 리스트 (KO) */}
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2">
-                특징 (쉼표로 구분)
+                특징 (쉼표로 구분) <span className="text-red-400">(KO)</span>
               </label>
               <input
                 type="text"
@@ -560,10 +794,40 @@ export default function ArtistManagement() {
                   const features = e.target.value.split(',').map(f => f.trim()).filter(Boolean);
                   setCustomModelSettings(prev => ({ ...prev, features }));
                 }}
-                className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl focus:border-purple-500 focus:outline-none text-white placeholder-gray-600"
+                className="w-full px-4 py-3 bg-[#111] border border-red-500/30 rounded-xl focus:border-red-500 focus:outline-none text-white placeholder-gray-600"
                 placeholder="컨셉 기획, 전담 디자이너, 무제한 수정"
               />
               <p className="text-xs text-gray-500 mt-1">예: 컨셉 기획 및 제안서 제공, 전담 디자이너 배정</p>
+            </div>
+
+            {/* 특징 번역 필드 */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-blue-400 mb-1">특징 (EN)</label>
+                <input
+                  type="text"
+                  value={customModelSettings.features_en?.join(', ') || ''}
+                  onChange={(e) => {
+                    const features_en = e.target.value.split(',').map(f => f.trim()).filter(Boolean);
+                    setCustomModelSettings(prev => ({ ...prev, features_en }));
+                  }}
+                  className="w-full px-3 py-2 bg-[#111] border border-blue-500/30 rounded-lg focus:border-blue-500 focus:outline-none text-white text-sm placeholder-gray-600"
+                  placeholder="Concept planning, Dedicated designer, Unlimited revisions"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-pink-400 mb-1">特徴 (JA)</label>
+                <input
+                  type="text"
+                  value={customModelSettings.features_ja?.join(', ') || ''}
+                  onChange={(e) => {
+                    const features_ja = e.target.value.split(',').map(f => f.trim()).filter(Boolean);
+                    setCustomModelSettings(prev => ({ ...prev, features_ja }));
+                  }}
+                  className="w-full px-3 py-2 bg-[#111] border border-pink-500/30 rounded-lg focus:border-pink-500 focus:outline-none text-white text-sm placeholder-gray-600"
+                  placeholder="コンセプト企画, 専任デザイナー, 無制限修正"
+                />
+              </div>
             </div>
           </div>
 
@@ -777,14 +1041,36 @@ export default function ArtistManagement() {
               <h3 className="text-xl font-bold text-white">
                 {editingArtist ? '아티스트 수정' : '새 아티스트 등록'}
               </h3>
-              <button
-                onClick={closeModal}
-                className="p-2 text-gray-500 hover:text-white transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={translateArtistTexts}
+                  disabled={isTranslating}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-bold rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
+                >
+                  {isTranslating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      번역 중...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                      </svg>
+                      자동 번역
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={closeModal}
+                  className="p-2 text-gray-500 hover:text-white transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -859,30 +1145,42 @@ export default function ArtistManagement() {
               </div>
 
               {/* Name Fields */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-2">
-                    영문 이름 *
+                    영문 이름 * <span className="text-blue-400">(EN)</span>
                   </label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value.toUpperCase() }))}
-                    className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl focus:border-[#00F5A0] focus:outline-none text-white placeholder-gray-600"
+                    className="w-full px-4 py-3 bg-[#111] border border-blue-500/30 rounded-xl focus:border-blue-500 focus:outline-none text-white placeholder-gray-600"
                     placeholder="FLOWER"
                     required
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-2">
-                    한글 이름
+                    한글 이름 <span className="text-red-400">(KO)</span>
                   </label>
                   <input
                     type="text"
                     value={formData.name_ko}
                     onChange={(e) => setFormData(prev => ({ ...prev, name_ko: e.target.value }))}
-                    className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl focus:border-[#00F5A0] focus:outline-none text-white placeholder-gray-600"
+                    className="w-full px-4 py-3 bg-[#111] border border-red-500/30 rounded-xl focus:border-red-500 focus:outline-none text-white placeholder-gray-600"
                     placeholder="플라워"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                    일본어 이름 <span className="text-pink-400">(JA)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name_ja}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name_ja: e.target.value }))}
+                    className="w-full px-4 py-3 bg-[#111] border border-pink-500/30 rounded-xl focus:border-pink-500 focus:outline-none text-white placeholder-gray-600"
+                    placeholder="フラワー"
                   />
                 </div>
               </div>
@@ -915,29 +1213,73 @@ export default function ArtistManagement() {
               {/* Description */}
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">
-                  소개 문구
+                  소개 문구 <span className="text-red-400">(KO)</span>
                 </label>
                 <input
                   type="text"
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl focus:border-[#00F5A0] focus:outline-none text-white placeholder-gray-600"
+                  className="w-full px-4 py-3 bg-[#111] border border-red-500/30 rounded-xl focus:border-red-500 focus:outline-none text-white placeholder-gray-600"
                   placeholder="20대 타겟의 힙한 스트릿 패션 전문"
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-blue-400 mb-1">소개 문구 (EN)</label>
+                  <input
+                    type="text"
+                    value={formData.description_en}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description_en: e.target.value }))}
+                    className="w-full px-3 py-2 bg-[#111] border border-blue-500/30 rounded-lg focus:border-blue-500 focus:outline-none text-white text-sm placeholder-gray-600"
+                    placeholder="English description"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-pink-400 mb-1">紹介文 (JA)</label>
+                  <input
+                    type="text"
+                    value={formData.description_ja}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description_ja: e.target.value }))}
+                    className="w-full px-3 py-2 bg-[#111] border border-pink-500/30 rounded-lg focus:border-pink-500 focus:outline-none text-white text-sm placeholder-gray-600"
+                    placeholder="日本語紹介文"
+                  />
+                </div>
               </div>
 
               {/* Tags */}
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">
-                  태그 (쉼표로 구분)
+                  태그 (쉼표로 구분) <span className="text-red-400">(KO)</span>
                 </label>
                 <input
                   type="text"
                   value={formData.tags}
                   onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
-                  className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl focus:border-[#00F5A0] focus:outline-none text-white placeholder-gray-600"
+                  className="w-full px-4 py-3 bg-[#111] border border-red-500/30 rounded-xl focus:border-red-500 focus:outline-none text-white placeholder-gray-600"
                   placeholder="시크, 스트릿, MZ"
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-blue-400 mb-1">태그 (EN)</label>
+                  <input
+                    type="text"
+                    value={formData.tags_en}
+                    onChange={(e) => setFormData(prev => ({ ...prev, tags_en: e.target.value }))}
+                    className="w-full px-3 py-2 bg-[#111] border border-blue-500/30 rounded-lg focus:border-blue-500 focus:outline-none text-white text-sm placeholder-gray-600"
+                    placeholder="chic, street, gen-z"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-pink-400 mb-1">タグ (JA)</label>
+                  <input
+                    type="text"
+                    value={formData.tags_ja}
+                    onChange={(e) => setFormData(prev => ({ ...prev, tags_ja: e.target.value }))}
+                    className="w-full px-3 py-2 bg-[#111] border border-pink-500/30 rounded-lg focus:border-pink-500 focus:outline-none text-white text-sm placeholder-gray-600"
+                    placeholder="シック, ストリート, MZ"
+                  />
+                </div>
               </div>
 
               {/* Price */}

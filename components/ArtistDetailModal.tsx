@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { ArtistModel } from '@/lib/supabase';
 
 interface ArtistDetailModalProps {
@@ -10,6 +11,7 @@ interface ArtistDetailModalProps {
   onClose: () => void;
   isLightTheme: boolean;
   onStartWithModel?: (artistName: string, noModelNeeded: boolean) => void;
+  locale?: string;
 }
 
 // YouTube/TikTok Shorts URL을 embed URL로 변환
@@ -49,8 +51,30 @@ function getEmbedUrl(url: string): string | null {
   return url;
 }
 
-export default function ArtistDetailModal({ artist, isOpen, onClose, isLightTheme, onStartWithModel }: ArtistDetailModalProps) {
+export default function ArtistDetailModal({ artist, isOpen, onClose, isLightTheme, onStartWithModel, locale = 'ko' }: ArtistDetailModalProps) {
   const [isMounted, setIsMounted] = useState(false);
+  const t = useTranslations('artistLineup');
+
+  // locale에 따라 적절한 데이터 선택
+  const getLocalizedDescription = () => {
+    if (!artist) return '';
+    if (locale === 'en' && artist.description_en) return artist.description_en;
+    if (locale === 'ja' && artist.description_ja) return artist.description_ja;
+    return artist.description || '';
+  };
+
+  const getLocalizedTags = () => {
+    if (!artist) return [];
+    if (locale === 'en' && artist.tags_en && artist.tags_en.length > 0) return artist.tags_en;
+    if (locale === 'ja' && artist.tags_ja && artist.tags_ja.length > 0) return artist.tags_ja;
+    return artist.tags || [];
+  };
+
+  const getLocalizedName = () => {
+    if (!artist) return '';
+    if (locale === 'ja' && artist.name_ja) return artist.name_ja;
+    return artist.name_ko || '';
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -140,17 +164,17 @@ export default function ArtistDetailModal({ artist, isOpen, onClose, isLightThem
                 {/* Name - 테마에 따라 색상 변경 */}
                 <h2 className="text-2xl font-bold tracking-tight" style={{ color: isLightTheme ? '#000000' : '#FFFFFF' }}>
                   {artist.name}
-                  {artist.name_ko && (
+                  {getLocalizedName() && (
                     <span className="ml-2 text-lg font-normal" style={{ color: isLightTheme ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.7)' }}>
-                      {artist.name_ko}
+                      {getLocalizedName()}
                     </span>
                   )}
                 </h2>
 
-                {/* Tags - 작게 */}
-                {artist.tags && artist.tags.length > 0 && (
+                {/* Tags - 작게 (locale에 따라 번역된 태그 표시) */}
+                {getLocalizedTags().length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-2">
-                    {artist.tags.map((tag, i) => (
+                    {getLocalizedTags().map((tag, i) => (
                       <span
                         key={i}
                         className={`px-2 py-0.5 text-[10px] font-medium rounded-full ${
@@ -165,12 +189,12 @@ export default function ArtistDetailModal({ artist, isOpen, onClose, isLightThem
                   </div>
                 )}
 
-                {/* Description - 아티스트 설명 */}
-                {artist.description && (
+                {/* Description - 아티스트 설명 (locale에 따라 번역된 설명 표시) */}
+                {getLocalizedDescription() && (
                   <p className={`mt-3 text-sm leading-relaxed ${
                     isLightTheme ? 'text-gray-600' : 'text-white/70'
                   }`}>
-                    {artist.description}
+                    {getLocalizedDescription()}
                   </p>
                 )}
 
@@ -206,7 +230,7 @@ export default function ArtistDetailModal({ artist, isOpen, onClose, isLightThem
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                           <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
                         </svg>
-                        TikTok에서 보기
+                        {t('viewOnTiktok')}
                       </a>
                     )}
                   </div>
@@ -227,7 +251,7 @@ export default function ArtistDetailModal({ artist, isOpen, onClose, isLightThem
                   }`}
                   style={{ color: isLightTheme ? '#FFFFFF' : '#000000' }}
                 >
-                  '{artist.name}'로 만들기
+                  {t('createWithModel', { name: artist.name })}
                 </button>
               </div>
             </div>

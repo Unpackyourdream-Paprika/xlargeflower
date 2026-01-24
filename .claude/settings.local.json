@@ -23,7 +23,9 @@
       "Bash(lsof:*)",
       "Bash(pkill:*)",
       "Bash(xargs kill:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git diff:*)",
+      "Bash(node -e:*)"
     ]
   }
 }
