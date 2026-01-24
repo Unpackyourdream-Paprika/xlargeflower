@@ -147,7 +147,7 @@ export default function PricingCard({ plan, promotion, paymentType, onPlanSelect
       {/* Promotion Badge */}
       {promotion && (
         <div className="mb-3">
-          <span className="inline-block px-3 py-1.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs font-bold rounded-md shadow-lg shadow-pink-500/30">
+          <span className="inline-block px-3 py-1.5 bg-gradient-to-r from-pink-500 to-rose-500 text-xs font-bold rounded-md shadow-lg shadow-pink-500/30" style={{ color: '#ffffff' }}>
             {promotion.badge_text || `${promotion.discount_rate}% OFF`}
           </span>
         </div>
