@@ -1060,10 +1060,10 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-6 text-center">
           <ScrollReveal>
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4" style={{ wordBreak: 'keep-all' }}>
-              도입이 고민되신다면,<br className="md:hidden" /> 전문가와 먼저 상의하세요.
+              무엇이든 물어보세요.<br className="md:hidden" /> 5분 안에 답변해 드립니다.
             </h2>
             <p className="text-white/60 text-base md:text-lg mb-8 max-w-2xl mx-auto" style={{ wordBreak: 'keep-all' }}>
-              우리 브랜드에 딱 맞는 솔루션을 제안해 드립니다.<br className="md:hidden" /> 부담 갖지 말고 편하게 문의주세요.
+              복잡한 절차 없이, 실시간 채팅으로 바로 궁금증을 해결하세요.
             </p>
 
             {/* Phone Number - Highlighted */}
