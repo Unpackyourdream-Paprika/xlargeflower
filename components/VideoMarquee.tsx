@@ -38,9 +38,9 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Cloudinary URL 최적화
+  // Cloudinary URL 최적화 - 모바일은 더 작게
   const optimizedVideoUrl = src.includes('cloudinary.com')
-    ? src.replace('/upload/', '/upload/w_280,h_500,c_limit,q_auto:low/')
+    ? src.replace('/upload/', isMobile ? '/upload/w_150,h_267,c_limit,q_auto:low/' : '/upload/w_280,h_500,c_limit,q_auto:low/')
     : src;
 
   // 비디오 첫 프레임 썸네일 (Cloudinary 자동 추출)
@@ -48,17 +48,15 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
     ? src.replace('/upload/', '/upload/w_180,h_320,c_fill,so_0,f_jpg,q_auto:eco/').replace('.mp4', '.jpg')
     : '';
 
-  // 비디오 재생 함수 - 데스크톱 전용
+  // 비디오 재생 함수
   const playVideo = (video: HTMLVideoElement) => {
     video.muted = true;
     video.playsInline = true;
     video.play().catch(() => {});
   };
 
-  // 데스크톱에서만 IntersectionObserver 사용
+  // IntersectionObserver로 뷰포트에 들어오면 재생
   useEffect(() => {
-    if (isMobile) return; // 모바일에서는 비디오 로드 안함
-
     const video = videoRef.current;
     const container = containerRef.current;
     if (!video || !container) return;
@@ -76,7 +74,7 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
 
     observer.observe(container);
     return () => observer.disconnect();
-  }, [isMobile]);
+  }, []);
 
   return (
     <div
@@ -98,27 +96,25 @@ function VideoCard({ src, webpSrc, index, isMobile = false }: VideoCardProps) {
           src={thumbnailUrl}
           alt=""
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
-            !isMobile && isVideoLoaded ? 'opacity-0' : 'opacity-100'
+            isVideoLoaded ? 'opacity-0' : 'opacity-100'
           }`}
           loading="lazy"
         />
       )}
 
-      {/* 데스크톱: 비디오 재생 */}
-      {!isMobile && (
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          onLoadedData={(e) => playVideo(e.currentTarget)}
-          onCanPlay={() => setIsVideoLoaded(true)}
-          className="w-full h-full object-cover relative z-10"
-          src={optimizedVideoUrl}
-        />
-      )}
+      {/* 비디오 재생 - 모바일/데스크톱 모두 */}
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        onLoadedData={(e) => playVideo(e.currentTarget)}
+        onCanPlay={() => setIsVideoLoaded(true)}
+        className="w-full h-full object-cover relative z-10"
+        src={optimizedVideoUrl}
+      />
     </div>
   );
 }
