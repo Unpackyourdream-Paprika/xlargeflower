@@ -1,8 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import ScrollReveal from './animations/ScrollReveal';
+import { useState, useEffect } from 'react';
 import { getArtistModels, ArtistModel, ArtistCategory } from '@/lib/supabase';
 import CustomModelModal from './CustomModelModal';
 import ArtistDetailModal from './ArtistDetailModal';
@@ -101,19 +99,16 @@ interface ArtistCardProps {
   onClick: () => void;
 }
 
-function ArtistCard({ artist, index, isLightTheme, onClick }: ArtistCardProps) {
+function ArtistCard({ artist, isLightTheme, onClick }: Omit<ArtistCardProps, 'index'>) {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <ScrollReveal delay={index * 0.1} direction="up">
-      <motion.div
-        className={`group relative cursor-pointer overflow-hidden rounded-2xl ${isLightTheme ? 'bg-white shadow-lg' : 'bg-[#0A0A0A]'}`}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        onClick={onClick}
-        whileHover={{ scale: 1.02 }}
-        transition={{ duration: 0.3 }}
-      >
+    <div
+      className={`group relative cursor-pointer overflow-hidden rounded-2xl transition-transform duration-300 hover:scale-[1.02] ${isLightTheme ? 'bg-white shadow-lg' : 'bg-[#0A0A0A]'}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={onClick}
+    >
         {/* 카드 테두리 글로우 효과 */}
         <div
           className={`absolute inset-0 rounded-2xl transition-all duration-500 pointer-events-none z-10 ${
@@ -180,122 +175,115 @@ function ArtistCard({ artist, index, isLightTheme, onClick }: ArtistCardProps) {
             )}
           </h3>
         </div>
-      </motion.div>
-    </ScrollReveal>
+    </div>
   );
 }
 
 // 빈 상태 플레이스홀더 카드
-function PlaceholderCard({ index }: { index: number }) {
+function PlaceholderCard() {
   return (
-    <ScrollReveal delay={index * 0.1} direction="up">
-      <div className="relative overflow-hidden rounded-2xl bg-[#0A0A0A] border border-white/10">
-        <div className="aspect-[4/5] relative">
-          {/* 실루엣 배경 */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#111] to-[#0A0A0A]">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <svg
-                className="w-24 h-24 text-white/10"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-              </svg>
-            </div>
+    <div className="relative overflow-hidden rounded-2xl bg-[#0A0A0A] border border-white/10">
+      <div className="aspect-[4/5] relative">
+        {/* 실루엣 배경 */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#111] to-[#0A0A0A]">
+          <div className="absolute inset-0 flex items-center justify-center">
+            <svg
+              className="w-24 h-24 text-white/10"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+            </svg>
           </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
         </div>
-        <div className="absolute bottom-0 left-0 right-0 p-5">
-          <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/30">
-            COMING SOON
-          </span>
-          <h3 className="mt-1 text-xl font-bold text-white/30 tracking-tight">
-            NEW ARTIST
-          </h3>
-          <p className="mt-2 text-sm text-white/20">
-            새로운 아티스트가 데뷔 준비 중입니다
-          </p>
-        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
       </div>
-    </ScrollReveal>
+      <div className="absolute bottom-0 left-0 right-0 p-5">
+        <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/30">
+          COMING SOON
+        </span>
+        <h3 className="mt-1 text-xl font-bold text-white/30 tracking-tight">
+          NEW ARTIST
+        </h3>
+        <p className="mt-2 text-sm text-white/20">
+          새로운 아티스트가 데뷔 준비 중입니다
+        </p>
+      </div>
+    </div>
   );
 }
 
 // 커스텀 모델 제작 CTA 카드 - PC: 가로형 배너, 모바일: 세로형 카드
-function CustomModelCard({ index, onOpenModal, isLightTheme }: { index: number; onOpenModal: () => void; isLightTheme: boolean }) {
+function CustomModelCard({ onOpenModal, isLightTheme }: { onOpenModal: () => void; isLightTheme: boolean }) {
   return (
-    <ScrollReveal delay={index * 0.1} direction="up">
-      <motion.div
-        className={`group relative cursor-pointer overflow-hidden rounded-2xl border transition-all duration-500 ${
-          isLightTheme
-            ? 'bg-gradient-to-r md:bg-gradient-to-r from-[#F5F0FF] to-white border-purple-300 hover:border-purple-500'
-            : 'bg-gradient-to-b md:bg-gradient-to-r from-[#1a0a2e] to-[#0A0A0A] border-purple-500/30 hover:border-[#00F5A0]/50'
-        }`}
-        whileHover={{ scale: 1.01 }}
-        transition={{ duration: 0.3 }}
-        onClick={onOpenModal}
-      >
-        {/* 글로우 효과 */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-          <div className="absolute inset-0 rounded-2xl shadow-[0_0_40px_rgba(0,245,160,0.2)]" />
-        </div>
+    <div
+      className={`group relative cursor-pointer overflow-hidden rounded-2xl border transition-all duration-500 hover:scale-[1.01] ${
+        isLightTheme
+          ? 'bg-gradient-to-r md:bg-gradient-to-r from-[#F5F0FF] to-white border-purple-300 hover:border-purple-500'
+          : 'bg-gradient-to-b md:bg-gradient-to-r from-[#1a0a2e] to-[#0A0A0A] border-purple-500/30 hover:border-[#00F5A0]/50'
+      }`}
+      onClick={onOpenModal}
+    >
+      {/* 글로우 효과 */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+        <div className="absolute inset-0 rounded-2xl shadow-[0_0_40px_rgba(0,245,160,0.2)]" />
+      </div>
 
-        {/* 모바일: 세로 레이아웃, PC: 가로 레이아웃 */}
-        <div className="aspect-[4/5] md:aspect-auto md:py-8 relative flex flex-col md:flex-row items-center justify-center md:justify-between p-6 md:px-12 gap-4 md:gap-8">
-          {/* 왼쪽: 아이콘 + 텍스트 */}
-          <div className="flex flex-col md:flex-row items-center md:items-center gap-4 md:gap-6">
-            {/* 아이콘 */}
-            <div className="w-16 h-16 md:w-14 md:h-14 rounded-full bg-gradient-to-r from-[#00F5A0]/20 to-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
-              <svg
-                className="w-8 h-8 md:w-7 md:h-7 text-[#00F5A0]"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-            </div>
-
-            {/* 텍스트 */}
-            <div className="text-center md:text-left">
-              <span className={`text-[10px] font-bold tracking-[0.2em] uppercase ${isLightTheme ? 'text-purple-600' : 'text-purple-400'}`}>
-                CUSTOM MODEL
-              </span>
-              <h3 className={`text-xl md:text-2xl font-bold tracking-tight mt-1 ${isLightTheme ? 'text-gray-900' : 'text-white'}`}>
-                나만의 AI 모델 만들기
-              </h3>
-              <p className={`text-sm mt-1 ${isLightTheme ? 'text-gray-600' : 'text-white/60'}`}>
-                <span className="md:hidden">원하는 얼굴이 없나요?<br />브랜드 전용 AI 모델을 만들어 드립니다</span>
-                <span className="hidden md:inline">원하는 얼굴이 없나요? 브랜드 전용 AI 모델을 만들어 드립니다</span>
-              </p>
-            </div>
+      {/* 모바일: 세로 레이아웃, PC: 가로 레이아웃 */}
+      <div className="aspect-[4/5] md:aspect-auto md:py-8 relative flex flex-col md:flex-row items-center justify-center md:justify-between p-6 md:px-12 gap-4 md:gap-8">
+        {/* 왼쪽: 아이콘 + 텍스트 */}
+        <div className="flex flex-col md:flex-row items-center md:items-center gap-4 md:gap-6">
+          {/* 아이콘 */}
+          <div className="w-16 h-16 md:w-14 md:h-14 rounded-full bg-gradient-to-r from-[#00F5A0]/20 to-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+            <svg
+              className="w-8 h-8 md:w-7 md:h-7 text-[#00F5A0]"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
           </div>
 
-          {/* 오른쪽: 태그 + CTA 버튼 */}
-          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
-            {/* 특징 태그 */}
-            <div className="flex flex-wrap justify-center gap-2">
-              <span className={`px-3 py-1.5 text-xs font-medium rounded-full ${isLightTheme ? 'bg-purple-100 text-purple-600' : 'bg-white/10 text-white/70'}`}>
-                독점 라이선스
-              </span>
-              <span className={`px-3 py-1.5 text-xs font-medium rounded-full ${isLightTheme ? 'bg-purple-100 text-purple-600' : 'bg-white/10 text-white/70'}`}>
-                수정 3회
-              </span>
-            </div>
-
-            {/* CTA 버튼 */}
-            <div className="px-6 py-3 rounded-full bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black text-sm font-bold group-hover:shadow-[0_0_20px_rgba(0,245,160,0.4)] transition-all duration-300 whitespace-nowrap">
-              제작 문의하기 →
-            </div>
+          {/* 텍스트 */}
+          <div className="text-center md:text-left">
+            <span className={`text-[10px] font-bold tracking-[0.2em] uppercase ${isLightTheme ? 'text-purple-600' : 'text-purple-400'}`}>
+              CUSTOM MODEL
+            </span>
+            <h3 className={`text-xl md:text-2xl font-bold tracking-tight mt-1 ${isLightTheme ? 'text-gray-900' : 'text-white'}`}>
+              나만의 AI 모델 만들기
+            </h3>
+            <p className={`text-sm mt-1 ${isLightTheme ? 'text-gray-600' : 'text-white/60'}`}>
+              <span className="md:hidden">원하는 얼굴이 없나요?<br />브랜드 전용 AI 모델을 만들어 드립니다</span>
+              <span className="hidden md:inline">원하는 얼굴이 없나요? 브랜드 전용 AI 모델을 만들어 드립니다</span>
+            </p>
           </div>
         </div>
-      </motion.div>
-    </ScrollReveal>
+
+        {/* 오른쪽: 태그 + CTA 버튼 */}
+        <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
+          {/* 특징 태그 */}
+          <div className="flex flex-wrap justify-center gap-2">
+            <span className={`px-3 py-1.5 text-xs font-medium rounded-full ${isLightTheme ? 'bg-purple-100 text-purple-600' : 'bg-white/10 text-white/70'}`}>
+              독점 라이선스
+            </span>
+            <span className={`px-3 py-1.5 text-xs font-medium rounded-full ${isLightTheme ? 'bg-purple-100 text-purple-600' : 'bg-white/10 text-white/70'}`}>
+              수정 3회
+            </span>
+          </div>
+
+          {/* CTA 버튼 */}
+          <div className="px-6 py-3 rounded-full bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black text-sm font-bold group-hover:shadow-[0_0_20px_rgba(0,245,160,0.4)] transition-all duration-300 whitespace-nowrap">
+            제작 문의하기 →
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -371,40 +359,36 @@ export default function ArtistLineup() {
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         {/* 섹션 헤더 */}
-        <ScrollReveal>
-          <div className="text-center mb-16">
-            <span className="label-gradient">XLARGE AI ARTIST LINEUP</span>
-            <h2 className="mt-4 text-4xl md:text-5xl font-bold text-white tracking-tight">
-              소속 XLARGE 아티스트
-            </h2>
-            <p className="mt-4 text-white/60 max-w-2xl mx-auto" style={{ wordBreak: 'keep-all' }}>
-              <span className="block sm:inline">셀러와 브랜드에 최적화된</span>{' '}
-              <span className="block sm:inline text-nowrap">XLARGE 모델을 선택해 보세요.</span>
-              <br className="hidden md:block" />
-              <span className="block sm:inline mt-2 sm:mt-0">XLARGE 아티스트는 고유한 페르소나와</span>{' '}
-              <span className="block sm:inline text-nowrap">전문 분야를 가지고 있습니다.</span>
-            </p>
-          </div>
-        </ScrollReveal>
+        <div className="text-center mb-16">
+          <span className="label-gradient">XLARGE AI ARTIST LINEUP</span>
+          <h2 className="mt-4 text-4xl md:text-5xl font-bold text-white tracking-tight">
+            소속 XLARGE 아티스트
+          </h2>
+          <p className="mt-4 text-white/60 max-w-2xl mx-auto" style={{ wordBreak: 'keep-all' }}>
+            <span className="block sm:inline">셀러와 브랜드에 최적화된</span>{' '}
+            <span className="block sm:inline text-nowrap">XLARGE 모델을 선택해 보세요.</span>
+            <br className="hidden md:block" />
+            <span className="block sm:inline mt-2 sm:mt-0">XLARGE 아티스트는 고유한 페르소나와</span>{' '}
+            <span className="block sm:inline text-nowrap">전문 분야를 가지고 있습니다.</span>
+          </p>
+        </div>
 
         {/* 카테고리 필터 탭 */}
-        <ScrollReveal delay={0.1}>
-          <div className="flex flex-wrap justify-center gap-3 mb-12">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.key}
-                onClick={() => setActiveCategory(cat.key)}
-                className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
-                  activeCategory === cat.key
-                    ? 'bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black shadow-[0_0_20px_rgba(0,245,160,0.3)]'
-                    : 'bg-transparent border border-white/20 text-white/70 hover:border-white/40 hover:text-white'
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-        </ScrollReveal>
+        <div className="flex flex-wrap justify-center gap-3 mb-12">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat.key}
+              onClick={() => setActiveCategory(cat.key)}
+              className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
+                activeCategory === cat.key
+                  ? 'bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black shadow-[0_0_20px_rgba(0,245,160,0.3)]'
+                  : 'bg-transparent border border-white/20 text-white/70 hover:border-white/40 hover:text-white'
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
 
         {/* 로딩 상태 */}
         {isLoading && (
@@ -415,45 +399,26 @@ export default function ArtistLineup() {
 
         {/* 아티스트 그리드 */}
         {!isLoading && (
-          <motion.div
-            layout
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
-          >
-            <AnimatePresence mode="popLayout">
-              {showPlaceholders
-                ? PLACEHOLDER_CARDS.map((_, index) => (
-                    <motion.div
-                      key={`placeholder-${index}`}
-                      layout
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <PlaceholderCard index={index} />
-                    </motion.div>
-                  ))
-                : filteredArtists.map((artist, index) => (
-                    <motion.div
-                      key={artist.id}
-                      layout
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <ArtistCard artist={artist} index={index} isLightTheme={isLightTheme} onClick={() => setSelectedArtist(artist)} />
-                    </motion.div>
-                  ))}
-            </AnimatePresence>
-          </motion.div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {showPlaceholders
+              ? PLACEHOLDER_CARDS.map((_, index) => (
+                  <PlaceholderCard key={`placeholder-${index}`} />
+                ))
+              : filteredArtists.map((artist) => (
+                  <ArtistCard
+                    key={artist.id}
+                    artist={artist}
+                    isLightTheme={isLightTheme}
+                    onClick={() => setSelectedArtist(artist)}
+                  />
+                ))}
+          </div>
         )}
 
         {/* 커스텀 모델 제작 CTA - 별도 섹션 */}
         {!isLoading && activeCategory === 'ALL' && (
           <div className="mt-8">
             <CustomModelCard
-              index={filteredArtists.length}
               onOpenModal={() => setIsCustomModelModalOpen(true)}
               isLightTheme={isLightTheme}
             />
