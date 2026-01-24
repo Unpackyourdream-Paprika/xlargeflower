@@ -91,6 +91,7 @@ export async function getFeaturedCaseStudies() {
 // 주문 관련 타입 및 함수
 export interface XLargeFlowerOrder {
   id?: string;
+  order_number?: string;  // 읽기 쉬운 주문번호 (예: XLF-20260124-0001)
   created_at?: string;
   updated_at?: string;
   customer_name?: string;
@@ -132,6 +133,29 @@ export interface OrderSummaryInput {
   [key: string]: unknown;
 }
 
+// 주문번호 생성 함수 (XLF-YYYYMMDD-NNNN 형식)
+async function generateOrderNumber(): Promise<string> {
+  const today = new Date();
+  const dateStr = today.toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
+  const prefix = `XLF-${dateStr}-`;
+
+  // 오늘 날짜의 마지막 주문번호 조회
+  const { data, error } = await supabase
+    .from('xlarge_flower_orders')
+    .select('order_number')
+    .like('order_number', `${prefix}%`)
+    .order('order_number', { ascending: false })
+    .limit(1);
+
+  let nextNumber = 1;
+  if (!error && data && data.length > 0 && data[0].order_number) {
+    const lastNumber = parseInt(data[0].order_number.split('-').pop() || '0', 10);
+    nextNumber = lastNumber + 1;
+  }
+
+  return `${prefix}${nextNumber.toString().padStart(4, '0')}`;
+}
+
 export async function createOrder(data: {
   chat_log: Array<{ role: string; content: string }>;
   order_summary: OrderSummaryInput;
@@ -139,9 +163,13 @@ export async function createOrder(data: {
   customer_email?: string;
   customer_phone?: string;
 }) {
+  // 주문번호 자동 생성
+  const orderNumber = await generateOrderNumber();
+
   const { data: order, error } = await supabase
     .from('xlarge_flower_orders')
     .insert([{
+      order_number: orderNumber,
       chat_log: data.chat_log,
       order_summary: data.order_summary,
       customer_name: data.customer_name || null,

@@ -13,7 +13,7 @@ export default function OrderTrackingPage() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [orders, setOrders] = useState<Array<{ id: string; created_at: string; status: string; customer_name?: string }>>([]);
+  const [orders, setOrders] = useState<Array<{ id: string; order_number?: string; created_at: string; status: string; customer_name?: string; source?: 'order' | 'contact' }>>([]);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,14 +51,36 @@ export default function OrderTrackingPage() {
       setIsLoading(true);
 
       try {
-        // Supabase에서 이메일로 주문 조회
-        const { data, error: fetchError } = await supabase
+        // Supabase에서 이메일로 주문 조회 (orders 테이블)
+        const { data: ordersData, error: ordersError } = await supabase
           .from('xlarge_flower_orders')
-          .select('id, created_at, status, customer_name')
+          .select('id, order_number, created_at, status, customer_name')
           .eq('customer_email', email.trim().toLowerCase())
           .order('created_at', { ascending: false });
 
-        if (fetchError) throw fetchError;
+        // contacts 테이블에서도 조회
+        const { data: contactsData, error: contactsError } = await supabase
+          .from('xlarge_flower_contacts')
+          .select('id, created_at, status, name')
+          .eq('email', email.trim().toLowerCase())
+          .order('created_at', { ascending: false });
+
+        if (ordersError && contactsError) throw ordersError;
+
+        // 두 결과 합치기 (contacts는 order_number가 없으므로 id 사용)
+        const combinedData = [
+          ...(ordersData || []).map(o => ({ ...o, source: 'order' as const })),
+          ...(contactsData || []).map(c => ({
+            id: c.id,
+            order_number: undefined,
+            created_at: c.created_at,
+            status: c.status || 'new',
+            customer_name: c.name,
+            source: 'contact' as const
+          }))
+        ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        const data = combinedData;
 
         if (!data || data.length === 0) {
           setError('해당 이메일로 등록된 주문이 없습니다.');
@@ -87,6 +109,7 @@ export default function OrderTrackingPage() {
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
+      // orders 상태
       pending: '결제 대기',
       confirmed: '결제 완료',
       in_progress: '제작 중',
@@ -94,6 +117,11 @@ export default function OrderTrackingPage() {
       revision: '수정 중',
       completed: '완료',
       cancelled: '취소됨',
+      // contacts 상태
+      new: '새 문의',
+      contacted: '연락 완료',
+      converted: '계약 완료',
+      closed: '종료',
     };
     return labels[status] || status;
   };
@@ -214,10 +242,15 @@ export default function OrderTrackingPage() {
                   className="w-full p-4 bg-[#111] border border-[#333] rounded-xl text-left hover:border-[#00F5A0]/50 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-gray-400 text-xs">{formatDate(order.created_at)}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400 text-xs">{formatDate(order.created_at)}</span>
+                      {order.source === 'contact' && (
+                        <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded">문의</span>
+                      )}
+                    </div>
                     <span className="text-[#00F5A0] text-xs font-medium">{getStatusLabel(order.status)}</span>
                   </div>
-                  <p className="text-white text-sm font-mono truncate">{order.id}</p>
+                  <p className="text-white text-sm font-bold">{order.order_number || order.id.slice(0, 8) + '...'}</p>
                   {order.customer_name && (
                     <p className="text-gray-500 text-xs mt-1">{order.customer_name}</p>
                   )}

@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { getOrderById, XLargeFlowerOrder } from '@/lib/supabase';
+import { getOrderById, XLargeFlowerOrder, supabase } from '@/lib/supabase';
 
 // 상태별 정보
 const STATUS_INFO: Record<string, { label: string; color: string; description: string; step: number }> = {
+  // orders 상태
   pending: {
     label: '결제 대기',
     color: '#FFA500',
@@ -48,6 +49,31 @@ const STATUS_INFO: Record<string, { label: string; color: string; description: s
     color: '#E74C3C',
     description: '주문이 취소되었습니다.',
     step: 0
+  },
+  // contacts 상태
+  new: {
+    label: '새 문의',
+    color: '#9B59B6',
+    description: '문의가 접수되었습니다. 담당자가 곧 연락드릴 예정입니다.',
+    step: 1
+  },
+  contacted: {
+    label: '연락 완료',
+    color: '#00D9F5',
+    description: '담당자가 연락을 드렸습니다.',
+    step: 2
+  },
+  converted: {
+    label: '계약 완료',
+    color: '#00F5A0',
+    description: '계약이 완료되었습니다.',
+    step: 5
+  },
+  closed: {
+    label: '종료',
+    color: '#888888',
+    description: '문의가 종료되었습니다.',
+    step: 5
   }
 };
 
@@ -71,10 +97,42 @@ export default function OrderDetailPage() {
   useEffect(() => {
     async function fetchOrder() {
       try {
+        // 먼저 orders 테이블에서 조회
         const data = await getOrderById(orderId);
         setOrder(data);
       } catch {
-        setError('주문을 찾을 수 없습니다. 주문번호를 다시 확인해주세요.');
+        // orders에 없으면 contacts 테이블에서 조회
+        try {
+          const { data: contactData, error: contactError } = await supabase
+            .from('xlarge_flower_contacts')
+            .select('*')
+            .eq('id', orderId)
+            .single();
+
+          if (contactError || !contactData) {
+            setError('주문을 찾을 수 없습니다. 주문번호를 다시 확인해주세요.');
+          } else {
+            // contacts 데이터를 orders 형식으로 변환
+            const convertedOrder: XLargeFlowerOrder = {
+              id: contactData.id,
+              created_at: contactData.created_at,
+              customer_name: contactData.name,
+              customer_email: contactData.email,
+              customer_phone: contactData.phone,
+              customer_company: contactData.company,
+              status: contactData.status || 'new',
+              chat_log: [],
+              order_summary: {
+                product: contactData.product_interest,
+              },
+              admin_note: contactData.message,
+              final_price: contactData.budget ? parseInt(contactData.budget.replace(/[^0-9]/g, '')) : undefined,
+            };
+            setOrder(convertedOrder);
+          }
+        } catch {
+          setError('주문을 찾을 수 없습니다. 주문번호를 다시 확인해주세요.');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -148,7 +206,10 @@ export default function OrderDetailPage() {
           className="text-center mb-12"
         >
           <p className="text-gray-500 text-sm mb-2">주문번호</p>
-          <h1 className="text-lg font-mono text-white/60 mb-6 break-all">{orderId}</h1>
+          <h1 className="text-2xl font-bold text-white mb-2">{order.order_number || orderId}</h1>
+          {order.order_number && (
+            <p className="text-xs font-mono text-white/40 break-all">{orderId}</p>
+          )}
 
           {/* 상태 뱃지 */}
           <div
