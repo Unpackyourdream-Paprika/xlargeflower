@@ -9,6 +9,7 @@ interface OrderBottomSheetProps {
   onClose: () => void;
   pricingPlans: PricingPlan[];
   initialArtist?: string;
+  initialPlan?: string;
   promotion?: PromotionSettings | null;
 }
 
@@ -311,7 +312,7 @@ const calculateEstimatedReach = (mediaBudget: number, totalPotentialReach: numbe
   };
 };
 
-export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initialArtist, promotion }: OrderBottomSheetProps) {
+export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initialArtist, initialPlan, promotion }: OrderBottomSheetProps) {
   const [step, setStep] = useState<Step>(1);
   const [artists, setArtists] = useState<ArtistModel[]>([]);
   const [modelOption, setModelOption] = useState<ModelOption>('select');
@@ -443,6 +444,16 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
       }
     }
   }, [initialArtist, artists]);
+
+  // 초기 플랜 설정 - 플랜이 지정되면 자동 선택
+  useEffect(() => {
+    if (initialPlan && pricingPlans.length > 0) {
+      const plan = pricingPlans.find(p => p.title === initialPlan);
+      if (plan && plan.id) {
+        setSelectedPlanId(plan.id);
+      }
+    }
+  }, [initialPlan, pricingPlans]);
 
   // 금액 포맷
   const formatPrice = (price: number) => {
@@ -1672,8 +1683,8 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
                   </div>
 
                   <p className="text-gray-500 text-sm mb-6">
-                    입금 확인 후 빠른 시일 내에 연락드리겠습니다.<br />
-                    주문 후 이메일에서 내용만 체크해주세요.
+                    입금 확인 요청이 완료되었습니다.<br />
+                    영업 시간 기준 1시간 이내에 담당자가 연락드립니다.
                   </p>
 
                   <button

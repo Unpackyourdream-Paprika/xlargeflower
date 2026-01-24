@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { triggerOpenChat } from '@/components/GlobalChatButton';
 import { getActivePromotion, PromotionSettings, getPricingPlans, PricingPlan } from '@/lib/supabase';
 import PricingCard from '@/components/PricingCard';
 
 export default function ProductsPage() {
-  const [paymentType, setPaymentType] = useState<'card' | 'invoice'>('card');
   const [promotion, setPromotion] = useState<PromotionSettings | null>(null);
   const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
 
@@ -40,33 +39,6 @@ export default function ProductsPage() {
           </p>
         </div>
 
-        {/* 결제 방식 토글 */}
-        <div className="flex justify-center mb-8">
-          <div className="inline-flex items-center gap-2 p-1 bg-[#111] rounded-full border border-[#333]">
-            <button
-              onClick={() => setPaymentType('card')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                paymentType === 'card'
-                  ? 'bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              카드 결제
-            </button>
-            <button
-              onClick={() => setPaymentType('invoice')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                paymentType === 'invoice'
-                  ? 'bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              세금계산서
-              <span className="ml-1 text-[10px] text-[#00F5A0]">10% 할인</span>
-            </button>
-          </div>
-        </div>
-
         {/* Promotion Banner */}
         {promotion && (
           <div className="mb-8 p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl text-center">
@@ -79,7 +51,7 @@ export default function ProductsPage() {
         {pricingPlans.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {pricingPlans.filter(p => p.card_style !== 'gold').map((plan) => (
-              <PricingCard key={plan.id} plan={plan} promotion={promotion} paymentType={paymentType} />
+              <PricingCard key={plan.id} plan={plan} promotion={promotion} />
             ))}
           </div>
         ) : (
@@ -91,7 +63,7 @@ export default function ProductsPage() {
         {/* VIP 플랜 (gold 스타일) */}
         {pricingPlans.filter(p => p.card_style === 'gold').map((plan) => (
           <div key={plan.id} className="mb-8">
-            <PricingCard plan={plan} promotion={promotion} paymentType={paymentType} />
+            <PricingCard plan={plan} promotion={promotion} />
           </div>
         ))}
 

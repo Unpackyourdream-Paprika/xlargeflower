@@ -16,7 +16,6 @@ export default function Home() {
   const [showcaseVideos, setShowcaseVideos] = useState<ShowcaseVideo[]>([]);
   const [landingPortfolios, setLandingPortfolios] = useState<LandingPortfolio[]>([]);
   const [beforeAfterAsset, setBeforeAfterAsset] = useState<BeforeAfterAsset | null>(null);
-  const [paymentType, setPaymentType] = useState<'card' | 'invoice'>('card');
   const [promotion, setPromotion] = useState<PromotionSettings | null>(null);
   const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
 
@@ -24,6 +23,7 @@ export default function Home() {
   const [showBottomSheet, setShowBottomSheet] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [initialOrderArtist, setInitialOrderArtist] = useState<string>('');
+  const [initialOrderPlan, setInitialOrderPlan] = useState<string>('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -77,6 +77,7 @@ export default function Home() {
     setIsContactModalOpen(false);
     document.body.style.overflow = '';
     setInitialOrderArtist('');
+    setInitialOrderPlan('');
   };
 
   // 아티스트 모델 선택 이벤트 리스너
@@ -88,7 +89,9 @@ export default function Home() {
       document.body.style.overflow = 'hidden';
     };
 
-    const handleOpenOrderWithPlan = () => {
+    const handleOpenOrderWithPlan = (e: CustomEvent<{ planName: string }>) => {
+      const { planName } = e.detail;
+      setInitialOrderPlan(planName);
       setIsContactModalOpen(true);
       document.body.style.overflow = 'hidden';
     };
@@ -101,7 +104,7 @@ export default function Home() {
     };
   }, []);
 
-  // 가격 계산 (프로모션 할인 > 세금계산서 할인 순으로 적용)
+  // 가격 계산 (프로모션 할인 적용)
   const getPrice = (basePrice: number) => {
     let price = basePrice;
 
@@ -110,22 +113,11 @@ export default function Home() {
       price = Math.round(price * (100 - promotion.discount_rate) / 100);
     }
 
-    // 세금계산서 할인 추가 적용
-    if (paymentType === 'invoice') {
-      price = Math.round(price * 0.9);
-    }
-
     return price;
   };
 
   // 원래 가격 (취소선에 표시할 가격)
-  // 프로모션이 있으면 기본 가격을, 세금계산서만 있으면 기본 가격을 표시
   const getOriginalPrice = (basePrice: number) => {
-    // 프로모션이 있으면 항상 기본 가격 표시 (할인 전 가격)
-    if (promotion) {
-      return basePrice;
-    }
-    // 프로모션 없고 세금계산서면 기본 가격 표시
     return basePrice;
   };
 
@@ -730,37 +722,6 @@ export default function Home() {
               <p className="label-tag mb-4">SELECT YOUR PLAN</p>
               <h2 className="text-3xl sm:text-4xl font-bold text-white">여러분의 클래스에 맞는 플랜</h2>
               <p className="text-white/60 mt-4">프리미엄 AI 크리에이티브 솔루션</p>
-
-              {/* 결제 방식 토글 */}
-              <div className="mt-8 flex justify-center">
-                <div className="inline-flex bg-[#0A0A0A] border border-[#222] rounded-full p-1">
-                  <button
-                    onClick={() => setPaymentType('card')}
-                    className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all ${
-                      paymentType === 'card'
-                        ? 'bg-white text-black'
-                        : 'text-white/60 hover:text-white'
-                    }`}
-                  >
-                    카드 결제
-                  </button>
-                  <button
-                    onClick={() => setPaymentType('invoice')}
-                    className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all ${
-                      paymentType === 'invoice'
-                        ? 'bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black'
-                        : 'text-white/60 hover:text-white'
-                    }`}
-                  >
-                    세금계산서 (10% 할인)
-                  </button>
-                </div>
-              </div>
-              {paymentType === 'invoice' && (
-                <p className="mt-3 text-sm text-[#00F5A0]">
-                  기업 고객은 세금계산서 발행 시 10% 제휴 할인이 적용됩니다
-                </p>
-              )}
             </div>
           </ScrollReveal>
 
@@ -769,7 +730,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {pricingPlans.filter(p => p.card_style !== 'gold').map((plan, index) => (
                 <ScrollReveal key={plan.id} delay={0.1 * (index + 1)} direction="up">
-                  <PricingCard plan={plan} promotion={promotion} paymentType={paymentType} />
+                  <PricingCard plan={plan} promotion={promotion} />
                 </ScrollReveal>
               ))}
             </div>
@@ -788,12 +749,13 @@ export default function Home() {
                   )}
                   <p className="label-tag mb-4">STARTER</p>
                   <div className="mb-1">
-                    {(paymentType === 'invoice' || promotion) && (
+                    {promotion && (
                       <span className="text-white/40 text-sm line-through mr-2">₩{formatPrice(getOriginalPrice(3300000))}</span>
                     )}
                     <h3 className="text-2xl font-bold text-white inline">
                       ₩{formatPrice(getPrice(3300000))}~
                     </h3>
+                    <span className="text-white/40 text-xs ml-1">(VAT 별도)</span>
                   </div>
                   <p className="text-white/60 text-sm mb-6">테스트 도입을 위한 베이직 플랜</p>
                   <ul className="feature-list mb-8 flex-1">
@@ -823,12 +785,13 @@ export default function Home() {
                   )}
                   <p className="label-tag mb-4">GROWTH</p>
                   <div className="mb-1">
-                    {(paymentType === 'invoice' || promotion) && (
+                    {promotion && (
                       <span className="text-white/40 text-sm line-through mr-2">₩{formatPrice(getOriginalPrice(5500000))}</span>
                     )}
                     <h3 className="text-2xl font-bold text-white inline">
                       ₩{formatPrice(getPrice(5500000))}
                     </h3>
+                    <span className="text-white/40 text-xs ml-1">(VAT 별도)</span>
                   </div>
                   <p className="text-white/60 text-sm mb-6">본격적인 성과를 위한 주력 플랜</p>
                   <ul className="feature-list mb-8 flex-1">
@@ -856,12 +819,13 @@ export default function Home() {
                   )}
                   <p className="label-tag mb-4 text-[#00D9F5]">PERFORMANCE</p>
                   <div className="mb-1">
-                    {(paymentType === 'invoice' || promotion) && (
+                    {promotion && (
                       <span className="text-white/40 text-sm line-through mr-2">₩{formatPrice(getOriginalPrice(9000000))}</span>
                     )}
                     <h3 className="text-2xl font-bold text-white inline">
                       ₩{formatPrice(getPrice(9000000))}
                     </h3>
+                    <span className="text-white/40 text-xs ml-1">(VAT 별도)</span>
                   </div>
                   <p className="text-white/60 text-sm mb-6">고퀄리티 연출이 필요한 프리미엄 플랜</p>
                   <ul className="feature-list mb-8 flex-1">
@@ -892,12 +856,13 @@ export default function Home() {
                     <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-[10px] font-bold rounded">NEW</span>
                   </div>
                   <div className="mb-1">
-                    {(paymentType === 'invoice' || promotion) && (
+                    {promotion && (
                       <span className="text-white/40 text-sm line-through mr-2">₩{formatPrice(getOriginalPrice(15000000))}~</span>
                     )}
                     <h3 className="text-2xl font-bold text-white inline">
                       ₩{formatPrice(getPrice(15000000))}~
                     </h3>
+                    <span className="text-white/40 text-xs ml-1">(VAT 별도)</span>
                   </div>
                   <p className="text-purple-300/80 text-sm mb-6">영상 제작 + 광고 운영 올인원</p>
                   <ul className="space-y-2 mb-8 flex-1">
@@ -945,7 +910,7 @@ export default function Home() {
           {pricingPlans.filter(p => p.card_style === 'gold').map((plan) => (
             <ScrollReveal key={plan.id} delay={0.5}>
               <div className="mt-8">
-                <PricingCard plan={plan} promotion={promotion} paymentType={paymentType} />
+                <PricingCard plan={plan} promotion={promotion} />
               </div>
             </ScrollReveal>
           ))}
@@ -1042,6 +1007,7 @@ export default function Home() {
         onClose={closeContactModal}
         pricingPlans={pricingPlans}
         initialArtist={initialOrderArtist}
+        initialPlan={initialOrderPlan}
         promotion={promotion}
       />
     </div>

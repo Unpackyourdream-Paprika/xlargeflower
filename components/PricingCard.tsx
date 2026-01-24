@@ -7,14 +7,13 @@ import { trackConversion } from '@/lib/analytics';
 interface PricingCardProps {
   plan: PricingPlan;
   promotion?: PromotionSettings | null;
-  paymentType: 'card' | 'invoice';
   onPlanSelect?: (planName: string) => void;
 }
 
-export default function PricingCard({ plan, promotion, paymentType, onPlanSelect }: PricingCardProps) {
+export default function PricingCard({ plan, promotion, onPlanSelect }: PricingCardProps) {
   const formatPrice = (price: number) => new Intl.NumberFormat('ko-KR').format(price);
 
-  // 가격 계산 (프로모션 할인 > 세금계산서 할인 순으로 적용)
+  // 가격 계산 (프로모션 할인 적용)
   const getPrice = (basePrice: number) => {
     let price = basePrice;
 
@@ -23,35 +22,12 @@ export default function PricingCard({ plan, promotion, paymentType, onPlanSelect
       price = Math.round(price * (100 - promotion.discount_rate) / 100);
     }
 
-    // 세금계산서 할인 추가 적용
-    if (paymentType === 'invoice') {
-      price = Math.round(price * 0.9);
-    }
-
     return price;
   };
 
-  // 원래 가격 (취소선에 표시할 가격)
-  // - 프로모션이 있으면: 세금계산서 할인만 적용된 가격 (프로모션 할인 전)
-  // - 프로모션이 없고 세금계산서면: 기본 가격 (세금계산서 할인 전)
-  const getOriginalPrice = (basePrice: number) => {
-    if (promotion) {
-      // 프로모션 할인 전 가격 (세금계산서 할인은 적용)
-      if (paymentType === 'invoice') {
-        return Math.round(basePrice * 0.9);
-      }
-      return basePrice;
-    }
-    // 프로모션 없으면 기본 가격
-    return basePrice;
-  };
-
-  const showStrikethrough = promotion || paymentType === 'invoice';
+  const showStrikethrough = !!promotion;
   const finalPrice = getPrice(plan.price);
-  const originalPrice = getOriginalPrice(plan.price);
-
-  // 프로모션 + 세금계산서 둘 다 적용시 원래 가격도 할인 전으로 표시
-  const displayOriginalPrice = promotion ? plan.price : originalPrice;
+  const displayOriginalPrice = plan.price;
 
   // 카드 스타일에 따른 클래스
   const getCardClass = () => {
@@ -166,6 +142,7 @@ export default function PricingCard({ plan, promotion, paymentType, onPlanSelect
         <h3 className="text-2xl font-bold text-white inline">
           ₩{formatPrice(finalPrice)}{plan.price_suffix}
         </h3>
+        <span className="text-white/40 text-xs ml-1">(VAT 별도)</span>
       </div>
 
       {/* Subtitle */}

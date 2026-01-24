@@ -21,7 +21,8 @@
       "Bash(vercel:*)",
       "Bash(npx vercel:*)",
       "Bash(lsof:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(xargs kill:*)"
     ]
   }
 }
