@@ -1066,16 +1066,32 @@ export default function Home() {
               복잡한 절차 없이 전화, 실시간 채팅으로 바로 궁금증을 해결하세요.
             </p>
 
-            {/* Phone Number - Highlighted */}
-            <a
-              href="tel:02-3142-7218"
-              className="inline-flex items-center justify-center gap-3 px-8 py-5 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black font-bold text-2xl md:text-3xl rounded-2xl hover:opacity-90 transition-all shadow-[0_0_30px_rgba(0,245,160,0.3)] hover:shadow-[0_0_50px_rgba(0,245,160,0.5)]"
-            >
-              <svg className="w-7 h-7 md:w-8 md:h-8" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-              </svg>
-              02-3142-7218
-            </a>
+            {/* Contact Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              {/* Phone Number */}
+              <a
+                href="tel:02-3142-7218"
+                className="inline-flex items-center justify-center gap-3 px-8 py-5 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black font-bold text-2xl md:text-3xl rounded-2xl hover:opacity-90 transition-all shadow-[0_0_30px_rgba(0,245,160,0.3)] hover:shadow-[0_0_50px_rgba(0,245,160,0.5)]"
+              >
+                <svg className="w-7 h-7 md:w-8 md:h-8" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                </svg>
+                02-3142-7218
+              </a>
+
+              {/* KakaoTalk Chat */}
+              <a
+                href="http://pf.kakao.com/_lhqhX/chat"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-3 px-8 py-5 bg-[#FEE500] text-[#3C1E1E] font-bold text-xl md:text-2xl rounded-2xl hover:opacity-90 transition-all shadow-[0_0_30px_rgba(254,229,0,0.3)] hover:shadow-[0_0_50px_rgba(254,229,0,0.5)]"
+              >
+                <svg className="w-7 h-7 md:w-8 md:h-8" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 3C6.477 3 2 6.463 2 10.691c0 2.654 1.75 4.984 4.375 6.313-.137.48-.885 3.095-.915 3.31 0 0-.019.152.08.21.098.059.213.013.213.013.281-.039 3.252-2.127 3.765-2.49.78.117 1.593.178 2.482.178 5.523 0 10-3.463 10-7.534C22 6.463 17.523 3 12 3z"/>
+                </svg>
+                카카오톡 1:1 상담
+              </a>
+            </div>
 
             <p className="text-white/40 text-sm mt-6">
               24시간 상담 가능 · 연중무휴
