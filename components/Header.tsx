@@ -5,19 +5,29 @@ import Image from 'next/image';
 import { useState, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslations } from 'next-intl';
+import LanguageSwitcher from './LanguageSwitcher';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
+  const t = useTranslations('nav');
 
   // Admin 페이지에서는 Header 숨기기
-  if (pathname?.startsWith('/admin')) {
+  if (pathname?.includes('/admin')) {
     return null;
   }
 
+  // Extract locale from pathname
+  const pathSegments = pathname?.split('/') || [];
+  const locale = ['ko', 'en', 'ja'].includes(pathSegments[1]) ? pathSegments[1] : '';
+  const basePath = locale ? `/${locale}` : '';
+
   // Active 링크 스타일
   const getLinkClass = (href: string) => {
-    const isActive = pathname === href || (href === '/' && pathname === '/');
+    const fullHref = `${basePath}${href === '/' ? '' : href}`;
+    const currentPath = pathname || '';
+    const isActive = currentPath === fullHref || (href === '/' && currentPath === basePath);
     return isActive
       ? 'text-[#00F5A0] font-semibold text-sm drop-shadow-[0_0_8px_rgba(0,245,160,0.6)]'
       : 'text-white/70 hover:text-white transition-colors text-sm';
@@ -44,7 +54,7 @@ export default function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#050505]/90 backdrop-blur-md border-b border-[#222222]">
       <nav className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href={basePath || '/'} className="flex items-center gap-2">
             <Image
               src="/images/LOGO_XLARGE FLOWER.svg"
               alt="XLARGE FLOWER"
@@ -56,44 +66,48 @@ export default function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
-            <Link href="/" className={getLinkClass('/')}>
-              HOME
+          <div className="hidden md:flex items-center gap-6">
+            <Link href={basePath || '/'} className={getLinkClass('/')}>
+              {t('home')}
             </Link>
             <a
               href="#why-ai"
               className="text-white/70 hover:text-white transition-colors text-sm cursor-pointer"
               onClick={(e) => handleSmoothScroll(e, 'why-ai')}
             >
-              WHY AI?
+              {t('whyAi')}
             </a>
-            <Link href="/portfolio" className={getLinkClass('/portfolio')}>
-              PORTFOLIO
+            <Link href={`${basePath}/portfolio`} className={getLinkClass('/portfolio')}>
+              {t('portfolio')}
             </Link>
-            <Link href="/products" className={getLinkClass('/products')}>
-              PRICING
+            <Link href={`${basePath}/products`} className={getLinkClass('/products')}>
+              {t('pricing')}
             </Link>
-            <Link href="/track" className={getLinkClass('/track')}>
-              TRACK
+            <Link href={`${basePath}/track`} className={getLinkClass('/track')}>
+              {t('track')}
             </Link>
-            <Link href="/contact" className={pathname === '/contact' ? 'btn-primary text-sm py-2 px-5 ring-2 ring-[#00F5A0]/50' : 'btn-primary text-sm py-2 px-5'}>
-              CONTACT
+            <Link href={`${basePath}/contact`} className={pathname?.endsWith('/contact') ? 'btn-primary text-sm py-2 px-5 ring-2 ring-[#00F5A0]/50' : 'btn-primary text-sm py-2 px-5'}>
+              {t('contact')}
             </Link>
+            <LanguageSwitcher />
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            className="md:hidden text-white p-2"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {isMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
+          <div className="flex md:hidden items-center gap-3">
+            <LanguageSwitcher />
+            <button
+              className="text-white p-2"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {isMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation with Smooth Animation */}
@@ -126,11 +140,11 @@ export default function Header() {
                     transition={{ duration: 0.2 }}
                   >
                     <Link
-                      href="/"
+                      href={basePath || '/'}
                       className={`${getLinkClass('/')} block`}
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      HOME
+                      {t('home')}
                     </Link>
                   </motion.div>
                   <motion.div
@@ -145,7 +159,7 @@ export default function Header() {
                       className="text-white/70 hover:text-white transition-colors text-sm block cursor-pointer"
                       onClick={(e) => handleSmoothScroll(e, 'why-ai')}
                     >
-                      WHY AI?
+                      {t('whyAi')}
                     </a>
                   </motion.div>
                   <motion.div
@@ -156,11 +170,11 @@ export default function Header() {
                     transition={{ duration: 0.2 }}
                   >
                     <Link
-                      href="/portfolio"
+                      href={`${basePath}/portfolio`}
                       className={`${getLinkClass('/portfolio')} block`}
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      PORTFOLIO
+                      {t('portfolio')}
                     </Link>
                   </motion.div>
                   <motion.div
@@ -171,11 +185,11 @@ export default function Header() {
                     transition={{ duration: 0.2 }}
                   >
                     <Link
-                      href="/products"
+                      href={`${basePath}/products`}
                       className={`${getLinkClass('/products')} block`}
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      PRICING
+                      {t('pricing')}
                     </Link>
                   </motion.div>
                   <motion.div
@@ -186,11 +200,11 @@ export default function Header() {
                     transition={{ duration: 0.2 }}
                   >
                     <Link
-                      href="/contact"
+                      href={`${basePath}/contact`}
                       className={`${getLinkClass('/contact')} block`}
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      CONTACT
+                      {t('contact')}
                     </Link>
                   </motion.div>
                   <motion.div
@@ -201,11 +215,11 @@ export default function Header() {
                     transition={{ duration: 0.2 }}
                   >
                     <Link
-                      href="/track"
+                      href={`${basePath}/track`}
                       className={`${getLinkClass('/track')} block`}
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      TRACK
+                      {t('track')}
                     </Link>
                   </motion.div>
                 </motion.div>

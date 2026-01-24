@@ -3,14 +3,21 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 export default function Footer() {
   const pathname = usePathname();
+  const t = useTranslations('footer');
 
   // Admin 페이지에서는 Footer 숨기기
-  if (pathname?.startsWith('/admin')) {
+  if (pathname?.includes('/admin')) {
     return null;
   }
+
+  // Extract locale from pathname
+  const pathSegments = pathname?.split('/') || [];
+  const locale = ['ko', 'en', 'ja'].includes(pathSegments[1]) ? pathSegments[1] : '';
+  const basePath = locale ? `/${locale}` : '';
 
   return (
     <footer className="bg-[#080808] border-t border-white/10">
@@ -26,9 +33,9 @@ export default function Footer() {
               className="h-5 w-auto [html[data-theme='light']_&]:invert"
             />
             <p className="text-white/60 mt-4 max-w-md text-sm">
-              유입을 위한 XLARGE FLOWER
+              {t('tagline1')}
               <br />
-              촬영 없이 48시간 내 납품.
+              {t('tagline2')}
             </p>
             <div className="mt-6 flex gap-4">
               <a
@@ -67,20 +74,20 @@ export default function Footer() {
 
           {/* Links */}
           <div>
-            <h4 className="text-white/80 text-sm font-bold mb-4 tracking-wide">SERVICE</h4>
+            <h4 className="text-white/80 text-sm font-bold mb-4 tracking-wide">{t('service')}</h4>
             <ul className="space-y-3">
               <li>
-                <Link href="/products" className="text-white/60 hover:text-white transition-colors text-sm">
+                <Link href={`${basePath}/products`} className="text-white/60 hover:text-white transition-colors text-sm">
                   Products
                 </Link>
               </li>
               <li>
-                <Link href="/portfolio" className="text-white/60 hover:text-white transition-colors text-sm">
+                <Link href={`${basePath}/portfolio`} className="text-white/60 hover:text-white transition-colors text-sm">
                   Portfolio
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-white/60 hover:text-white transition-colors text-sm">
+                <Link href={`${basePath}/contact`} className="text-white/60 hover:text-white transition-colors text-sm">
                   Contact
                 </Link>
               </li>
@@ -89,13 +96,13 @@ export default function Footer() {
 
           {/* Company Info */}
           <div>
-            <h4 className="text-white/80 text-sm font-bold mb-4 tracking-wide">COMPANY</h4>
+            <h4 className="text-white/80 text-sm font-bold mb-4 tracking-wide">{t('company')}</h4>
             <ul className="space-y-2 text-white/60 text-sm">
-              <li className="font-medium text-white/80">스네이크 스테이크 주식회사</li>
-              <li>대표이사: 정재훈</li>
-              <li>사업자등록번호: 666-81-02807</li>
-              <li className="pt-2">서울특별시 마포구 월드컵북로56길 12, 11층</li>
-              <li>(상암동, Trutec Building)</li>
+              <li className="font-medium text-white/80">{t('companyName')}</li>
+              <li>{t('ceo')}</li>
+              <li>{t('businessNumber')}</li>
+              <li className="pt-2">{t('address1')}</li>
+              <li>{t('address2')}</li>
               <li>foohlower@pprk.xyz</li>
             </ul>
           </div>
@@ -103,14 +110,14 @@ export default function Footer() {
 
         <div className="border-t border-white/10 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-white/50 text-xs">
-            © 2025 스네이크 스테이크 주식회사 (Snake Steak Co., Ltd.). All rights reserved.
+            {t('copyright')}
           </p>
           <div className="flex gap-6">
-            <Link href="/privacy" className="text-white/50 hover:text-white transition-colors text-xs">
-              개인정보처리방침
+            <Link href={`${basePath}/privacy`} className="text-white/50 hover:text-white transition-colors text-xs">
+              {t('privacy')}
             </Link>
-            <Link href="/terms" className="text-white/50 hover:text-white transition-colors text-xs">
-              이용약관
+            <Link href={`${basePath}/terms`} className="text-white/50 hover:text-white transition-colors text-xs">
+              {t('terms')}
             </Link>
           </div>
         </div>

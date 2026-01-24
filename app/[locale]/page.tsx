@@ -19,8 +19,8 @@ export default function Home() {
   const [promotion, setPromotion] = useState<PromotionSettings | null>(null);
   const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
 
-  // Bottom sheet / modal state
-  const [showBottomSheet, setShowBottomSheet] = useState(false);
+  // Bottom sheet / modal state - 기본값 true로 처음부터 표시
+  const [showBottomSheet, setShowBottomSheet] = useState(true);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [initialOrderArtist, setInitialOrderArtist] = useState<string>('');
   const [initialOrderPlan, setInitialOrderPlan] = useState<string>('');
@@ -48,24 +48,7 @@ export default function Home() {
     fetchData();
   }, []);
 
-  // Scroll listener for bottom sheet visibility
-  useEffect(() => {
-    const handleScroll = () => {
-      const howItWorksSection = document.querySelector('[data-section="how-it-works"]');
-      if (howItWorksSection) {
-        const rect = howItWorksSection.getBoundingClientRect();
-        // 섹션의 상단이 뷰포트 상단 근처(80% 지점)에 도달했을 때 표시
-        // 섹션보다 위로 스크롤하면 다시 숨김
-        const triggerPoint = window.innerHeight * 0.8;
-        const isInView = rect.top < triggerPoint;
-        setShowBottomSheet(isInView);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Initial check
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  // 바텀시트는 항상 표시 (스크롤 리스너 제거)
 
   // 바텀 시트 열기/닫기
   const openContactModal = () => {
