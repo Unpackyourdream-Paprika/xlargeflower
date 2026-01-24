@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ScrollReveal from '@/components/animations/ScrollReveal';
 import VideoMarquee from '@/components/VideoMarquee';
@@ -13,6 +14,9 @@ import OrderBottomSheet from '@/components/OrderBottomSheet';
 import { trackConversion } from '@/lib/analytics';
 
 export default function Home() {
+  const params = useParams();
+  const locale = (params?.locale as string) || 'ko';
+
   const [showcaseVideos, setShowcaseVideos] = useState<ShowcaseVideo[]>([]);
   const [landingPortfolios, setLandingPortfolios] = useState<LandingPortfolio[]>([]);
   const [beforeAfterAsset, setBeforeAfterAsset] = useState<BeforeAfterAsset | null>(null);
@@ -992,6 +996,7 @@ export default function Home() {
         initialArtist={initialOrderArtist}
         initialPlan={initialOrderPlan}
         promotion={promotion}
+        locale={locale}
       />
     </div>
   );

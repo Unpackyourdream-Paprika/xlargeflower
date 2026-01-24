@@ -11,6 +11,7 @@ interface OrderBottomSheetProps {
   initialArtist?: string;
   initialPlan?: string;
   promotion?: PromotionSettings | null;
+  locale?: string; // 'ko', 'en', 'ja' 등
 }
 
 type ModelOption = 'select' | 'none' | 'custom';
@@ -312,7 +313,9 @@ const calculateEstimatedReach = (mediaBudget: number, totalPotentialReach: numbe
   };
 };
 
-export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initialArtist, initialPlan, promotion }: OrderBottomSheetProps) {
+export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initialArtist, initialPlan, promotion, locale = 'ko' }: OrderBottomSheetProps) {
+  // 한국어일 때만 무통장입금 표시
+  const showBankTransfer = locale === 'ko';
   const [step, setStep] = useState<Step>(1);
   const [artists, setArtists] = useState<ArtistModel[]>([]);
   const [modelOption, setModelOption] = useState<ModelOption>('select');
@@ -1587,26 +1590,28 @@ export default function OrderBottomSheet({ isOpen, onClose, pricingPlans, initia
 
                   {/* 결제 방법 선택 */}
                   <div className="space-y-4">
-                    {/* 무통장입금 */}
-                    <button
-                      onClick={handleBankTransfer}
-                      className="w-full p-6 bg-[#111] border border-[#333] rounded-2xl text-left hover:border-[#00F5A0]/50 transition-all group"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-[#00F5A0]/20 rounded-full flex items-center justify-center group-hover:bg-[#00F5A0]/30 transition-colors">
-                          <svg className="w-6 h-6 text-[#00F5A0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    {/* 무통장입금 - 한국어일 때만 표시 */}
+                    {showBankTransfer && (
+                      <button
+                        onClick={handleBankTransfer}
+                        className="w-full p-6 bg-[#111] border border-[#333] rounded-2xl text-left hover:border-[#00F5A0]/50 transition-all group"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-[#00F5A0]/20 rounded-full flex items-center justify-center group-hover:bg-[#00F5A0]/30 transition-colors">
+                            <svg className="w-6 h-6 text-[#00F5A0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-white font-bold text-lg">무통장입금</p>
+                            <p className="text-gray-500 text-sm">계좌이체로 결제합니다</p>
+                          </div>
+                          <svg className="w-5 h-5 text-gray-500 group-hover:text-[#00F5A0] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                           </svg>
                         </div>
-                        <div className="flex-1">
-                          <p className="text-white font-bold text-lg">무통장입금</p>
-                          <p className="text-gray-500 text-sm">계좌이체로 결제합니다</p>
-                        </div>
-                        <svg className="w-5 h-5 text-gray-500 group-hover:text-[#00F5A0] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </div>
-                    </button>
+                      </button>
+                    )}
 
                     {/* 카드결제 */}
                     <button
