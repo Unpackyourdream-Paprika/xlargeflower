@@ -200,11 +200,11 @@ export default function Header() {
                     transition={{ duration: 0.2 }}
                   >
                     <Link
-                      href={`${basePath}/contact`}
-                      className={`${getLinkClass('/contact')} block`}
+                      href={`${basePath}/track`}
+                      className={`${getLinkClass('/track')} block`}
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      {t('contact')}
+                      {t('track')}
                     </Link>
                   </motion.div>
                   <motion.div
@@ -215,11 +215,11 @@ export default function Header() {
                     transition={{ duration: 0.2 }}
                   >
                     <Link
-                      href={`${basePath}/track`}
-                      className={`${getLinkClass('/track')} block`}
+                      href={`${basePath}/contact`}
+                      className={`${getLinkClass('/contact')} block`}
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      {t('track')}
+                      {t('contact')}
                     </Link>
                   </motion.div>
                 </motion.div>
