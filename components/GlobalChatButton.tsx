@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, lazy, Suspense } from 'react';
+import { usePathname } from 'next/navigation';
 
 // ChatWidget을 동적 로딩 (초기 번들에서 제외)
 const ChatWidget = lazy(() => import('./ChatWidget'));
@@ -31,6 +32,10 @@ export default function GlobalChatButton() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [hasBeenOpened, setHasBeenOpened] = useState(false);
   const [chatContext, setChatContext] = useState<ChatContext>('default');
+  const pathname = usePathname();
+
+  // Admin 페이지에서는 GlobalChatButton 숨기기
+  const isAdminPage = pathname?.startsWith('/admin');
 
   useEffect(() => {
     const handleOpenChat = (e: Event) => {
@@ -55,6 +60,11 @@ export default function GlobalChatButton() {
     // 닫을 때 context 리셋
     setTimeout(() => setChatContext('default'), 300);
   };
+
+  // Admin 페이지에서는 렌더링하지 않음
+  if (isAdminPage) {
+    return null;
+  }
 
   return (
     <>

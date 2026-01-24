@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getOrderById, updateOrderStatus, updateOrderDelivery, XLargeFlowerOrder } from '@/lib/supabase';
+import { getOrderById, updateOrderStatus, updateOrderDelivery, updateOrderProposal, XLargeFlowerOrder } from '@/lib/supabase';
 
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -15,6 +15,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [deliveryUrl, setDeliveryUrl] = useState('');
   const [deliveryNote, setDeliveryNote] = useState('');
   const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+  // 기획안 관련 상태
+  const [proposalUrl, setProposalUrl] = useState('');
+  const [proposalNote, setProposalNote] = useState('');
+  const [showProposalModal, setShowProposalModal] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -46,12 +51,78 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     }
   };
 
+  // 이메일 발송 함수
+  const sendEmail = async (type: 'order_confirmation' | 'proposal_sent' | 'delivery_complete', extraData?: Record<string, unknown>) => {
+    if (!order) return;
+    setIsSendingEmail(true);
+
+    try {
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: order.id,
+          type,
+          ...extraData,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Email send failed');
+
+      alert('이메일이 발송되었습니다!');
+    } catch (error) {
+      console.error('Email send error:', error);
+      alert('이메일 발송에 실패했습니다.');
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
+  // 기획안 전송 처리
+  const handleProposalSend = async () => {
+    if (!order || !proposalUrl.trim()) return;
+    setIsUpdating(true);
+
+    try {
+      await updateOrderProposal(order.id!, [proposalUrl], proposalNote);
+
+      // 이메일 발송
+      await sendEmail('proposal_sent', {
+        proposalUrls: [proposalUrl],
+        proposalNote,
+      });
+
+      setOrder({
+        ...order,
+        status: 'review',
+        proposal_urls: [proposalUrl],
+        proposal_note: proposalNote,
+        proposal_sent_at: new Date().toISOString(),
+      });
+      setShowProposalModal(false);
+      setProposalUrl('');
+      setProposalNote('');
+    } catch (error) {
+      console.error('Failed to send proposal:', error);
+      alert('기획안 전송에 실패했습니다.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const handleDelivery = async () => {
     if (!order || !deliveryUrl.trim()) return;
     setIsUpdating(true);
 
     try {
       await updateOrderDelivery(order.id!, [deliveryUrl], deliveryNote);
+
+      // 이메일 발송
+      await sendEmail('delivery_complete', {
+        deliveryUrls: [deliveryUrl],
+        deliveryNote,
+      });
+
       setOrder({
         ...order,
         status: 'completed',
@@ -59,6 +130,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         delivery_note: deliveryNote
       });
       setShowDeliveryModal(false);
+      setDeliveryUrl('');
+      setDeliveryNote('');
     } catch (error) {
       console.error('Failed to deliver:', error);
       alert('납품 처리에 실패했습니다.');
@@ -226,6 +299,62 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               )}
             </div>
 
+            {/* 기획안 섹션 */}
+            <div className="bg-[#0A0A0A] border border-[#222] rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                  📄 기획안
+                  {order.proposal_urls && order.proposal_urls.length > 0 && (
+                    <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 text-xs rounded-full">
+                      전송완료
+                    </span>
+                  )}
+                </h2>
+                {!order.proposal_urls?.length && order.status !== 'completed' && (
+                  <button
+                    onClick={() => setShowProposalModal(true)}
+                    className="px-4 py-2 bg-purple-500/20 border border-purple-500/30 text-purple-400 rounded-lg text-sm font-medium hover:bg-purple-500/30 transition-colors"
+                  >
+                    기획안 전송
+                  </button>
+                )}
+              </div>
+
+              {order.proposal_urls && order.proposal_urls.length > 0 ? (
+                <div className="space-y-3">
+                  {order.proposal_urls.map((url, idx) => (
+                    <a
+                      key={idx}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 bg-[#111] border border-[#333] rounded-lg hover:border-purple-500/50 transition-colors"
+                    >
+                      <span className="text-2xl">📄</span>
+                      <div className="flex-1">
+                        <p className="text-white text-sm font-medium">기획안 {idx + 1}</p>
+                        <p className="text-gray-500 text-xs truncate">{url}</p>
+                      </div>
+                      <span className="text-purple-400 text-sm">열기 →</span>
+                    </a>
+                  ))}
+                  {order.proposal_note && (
+                    <div className="mt-3 p-3 bg-[#111] border border-[#333] rounded-lg">
+                      <p className="text-gray-500 text-xs mb-1">메모</p>
+                      <p className="text-gray-300 text-sm whitespace-pre-wrap">{order.proposal_note}</p>
+                    </div>
+                  )}
+                  {order.proposal_sent_at && (
+                    <p className="text-gray-500 text-xs mt-2">
+                      전송일: {formatDate(order.proposal_sent_at)}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm">아직 기획안이 전송되지 않았습니다.</p>
+              )}
+            </div>
+
             {/* Chat Log */}
             <div className="bg-[#0A0A0A] border border-[#222] rounded-xl p-6">
               <div className="flex items-center justify-between mb-4">
@@ -328,8 +457,27 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     href={`tel:${order.customer_phone}`}
                     className="block w-full py-3 px-4 bg-[#111] border border-[#333] text-white rounded-xl font-medium text-center hover:border-[#00F5A0]/50 transition-colors"
                   >
-                    전화하기
+                    📞 전화하기
                   </a>
+                )}
+
+                {order.customer_email && (
+                  <button
+                    onClick={() => sendEmail('order_confirmation')}
+                    disabled={isSendingEmail}
+                    className="block w-full py-3 px-4 bg-[#111] border border-[#333] text-white rounded-xl font-medium text-center hover:border-blue-500/50 transition-colors disabled:opacity-50"
+                  >
+                    {isSendingEmail ? '발송 중...' : '📧 주문확인 이메일 재발송'}
+                  </button>
+                )}
+
+                {order.status !== 'completed' && !order.proposal_urls?.length && (
+                  <button
+                    onClick={() => setShowProposalModal(true)}
+                    className="block w-full py-3 px-4 bg-purple-500/20 border border-purple-500/30 text-purple-400 rounded-xl font-medium text-center hover:bg-purple-500/30 transition-colors"
+                  >
+                    📄 기획안 전송
+                  </button>
                 )}
 
                 {order.status !== 'completed' && (
@@ -337,7 +485,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     onClick={() => setShowDeliveryModal(true)}
                     className="block w-full py-3 px-4 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black font-bold rounded-xl text-center hover:shadow-lg hover:shadow-[#00F5A0]/20 transition-all"
                   >
-                    납품하기
+                    🎬 영상 납품하기
                   </button>
                 )}
 
@@ -354,11 +502,74 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         </div>
       </main>
 
+      {/* Proposal Modal */}
+      {showProposalModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#0A0A0A] border border-[#222] rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold text-white mb-4">📄 기획안 전송</h3>
+            <p className="text-gray-400 text-sm mb-4">
+              기획안을 전송하면 고객에게 이메일 알림이 발송됩니다.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  기획안 URL <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="url"
+                  value={proposalUrl}
+                  onChange={(e) => setProposalUrl(e.target.value)}
+                  className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl focus:border-purple-500 focus:outline-none text-white placeholder-gray-600"
+                  placeholder="Google Drive, Notion, Figma 링크 등..."
+                />
+                <p className="text-gray-500 text-xs mt-1">
+                  공유 가능한 링크를 입력해주세요
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  메모 (선택)
+                </label>
+                <textarea
+                  value={proposalNote}
+                  onChange={(e) => setProposalNote(e.target.value)}
+                  rows={3}
+                  className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl focus:border-purple-500 focus:outline-none text-white placeholder-gray-600 resize-none"
+                  placeholder="기획안 관련 안내사항..."
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowProposalModal(false)}
+                  className="flex-1 py-3 bg-[#111] border border-[#333] text-white rounded-xl font-medium hover:border-[#555] transition-all"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleProposalSend}
+                  disabled={isUpdating || !proposalUrl.trim()}
+                  className="flex-1 py-3 bg-purple-500 text-white font-bold rounded-xl hover:bg-purple-600 transition-all disabled:opacity-50"
+                >
+                  {isUpdating ? '처리 중...' : '기획안 전송'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delivery Modal */}
       {showDeliveryModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-[#0A0A0A] border border-[#222] rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold text-white mb-4">납품하기</h3>
+            <h3 className="text-xl font-bold text-white mb-4">🎬 영상 납품하기</h3>
+            <p className="text-gray-400 text-sm mb-4">
+              영상을 납품하면 고객에게 이메일 알림이 발송됩니다.
+            </p>
 
             <div className="space-y-4">
               <div>
@@ -370,7 +581,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   value={deliveryUrl}
                   onChange={(e) => setDeliveryUrl(e.target.value)}
                   className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl focus:border-[#00F5A0] focus:outline-none text-white placeholder-gray-600"
-                  placeholder="https://..."
+                  placeholder="Google Drive, Dropbox 등 다운로드 링크..."
                 />
               </div>
 

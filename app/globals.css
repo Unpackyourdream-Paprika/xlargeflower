@@ -4,7 +4,8 @@
    XLARGE FLOWER - Cyber Mint & Speed
    ============================================= */
 
-:root {
+:root,
+[data-theme="dark"] {
   /* Background Colors */
   --bg-primary: #050505;
   --bg-surface: #0A0A0A;
@@ -24,6 +25,43 @@
   --gradient-accent: linear-gradient(90deg, #00F5A0 0%, #00D9F5 100%);
   --color-accent-start: #00F5A0;
   --color-accent-end: #00D9F5;
+
+  /* Theme specific */
+  --card-bg: #111111;
+  --card-border: rgba(255,255,255,0.1);
+  --button-text: #000000;
+  --inverse-text: #000000;
+}
+
+/* =============================================
+   Light Theme - White/Purple/Green
+   ============================================= */
+[data-theme="light"] {
+  /* Background Colors */
+  --bg-primary: #FAFAFA;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #F5F5F5;
+
+  /* Text Colors */
+  --text-primary: #1A1A1A;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+
+  /* Border Colors */
+  --border-default: #E5E5E5;
+  --border-subtle: rgba(0,0,0,0.08);
+  --border-hover: rgba(0,0,0,0.15);
+
+  /* Accent Gradient - Purple/Green */
+  --gradient-accent: linear-gradient(90deg, #8B5CF6 0%, #00D9A4 100%);
+  --color-accent-start: #8B5CF6;
+  --color-accent-end: #00D9A4;
+
+  /* Theme specific */
+  --card-bg: #FFFFFF;
+  --card-border: rgba(0,0,0,0.08);
+  --button-text: #FFFFFF;
+  --inverse-text: #FFFFFF;
 }
 
 @theme inline {
@@ -39,11 +77,73 @@ body {
   color: var(--text-primary);
   font-family: var(--font-sans);
   letter-spacing: -0.02em;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Theme transition for smooth switching */
+[data-theme] * {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
 /* Typography - Tight letter-spacing for headings */
 h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.04em;
+}
+
+/* =============================================
+   가독성 개선 스타일 (Readability Enhancement)
+   ============================================= */
+
+/* 기본 텍스트 줄 간격 */
+p, li, span {
+  line-height: 1.7;
+}
+
+/* 단어 단위 줄바꿈 (한글 최적화) */
+.readable-text,
+.readable-text p,
+.readable-text span {
+  word-break: keep-all;
+  word-wrap: break-word;
+}
+
+/* 텍스트 줄바꿈 방지 */
+.text-nowrap {
+  white-space: nowrap;
+}
+
+/* 모바일에서만 표시되는 줄바꿈 */
+.br-mobile {
+  display: none;
+}
+
+/* 모바일 텍스트 최적화 */
+@media (max-width: 768px) {
+  /* 모바일에서 좌우 여백 확보 */
+  .section-spacing > div {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  /* 본문 텍스트 줄 간격 더 넓게 */
+  p {
+    line-height: 1.8;
+  }
+
+  /* 모바일에서 한 줄 최대 글자 수 제한 (가독성) */
+  .readable-text p {
+    max-width: 100%;
+  }
+
+  /* 모바일에서만 줄바꿈 표시 */
+  .br-mobile {
+    display: block;
+  }
+
+  /* 모바일에서 긴 텍스트 줄바꿈 허용 (필요시) */
+  .text-nowrap-desktop {
+    white-space: normal;
+  }
 }
 
 /* Hide Scrollbar */
@@ -111,19 +211,23 @@ html, body {
    Component Styles
    ============================================= */
 
-/* Primary Button - Gradient with Black Text & Shine Effect */
+/* Primary Button - Gradient with dynamic Text & Shine Effect */
 .btn-primary {
   background: var(--gradient-accent);
-  color: #000000;
+  color: var(--button-text);
   font-weight: 700;
   padding: 16px 32px;
   border-radius: 9999px;
   border: none;
-  box-shadow: 0 0 20px rgba(0, 245, 160, 0.3);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--color-accent-start) 30%, transparent);
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
   text-align: center;
+}
+
+[data-theme="light"] .btn-primary {
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
 }
 
 .btn-primary::before {
@@ -178,28 +282,49 @@ html, body {
 
 /* Card Styles with Hover Effects */
 .card {
-  background: #111111;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: 16px;
   padding: 32px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 }
 
 .card:hover {
-  border-color: rgba(0, 245, 160, 0.4);
+  border-color: color-mix(in srgb, var(--color-accent-start) 40%, transparent);
   transform: translateY(-4px);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(0, 245, 160, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 0 0 30px color-mix(in srgb, var(--color-accent-start) 10%, transparent);
+}
+
+[data-theme="light"] .card {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .card:hover {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12), 0 0 30px rgba(139, 92, 246, 0.1);
 }
 
 /* Featured Card with Gradient Border & Breathing Glow */
 .card-featured {
-  background: #111111;
+  background: var(--card-bg);
   position: relative;
   border-radius: 16px;
   padding: 40px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   animation: breathingGlow 3s ease-in-out infinite;
+}
+
+[data-theme="light"] .card-featured {
+  animation: breathingGlowLight 3s ease-in-out infinite;
+}
+
+@keyframes breathingGlowLight {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.2);
+  }
 }
 
 @keyframes breathingGlow {
@@ -613,11 +738,15 @@ html, body {
   right: 0;
   padding: 16px 24px;
   padding-bottom: calc(16px + env(safe-area-inset-bottom));
-  background: linear-gradient(to top, rgba(5, 5, 5, 1) 0%, rgba(5, 5, 5, 0.95) 100%);
+  background: linear-gradient(to top, var(--bg-primary) 0%, color-mix(in srgb, var(--bg-primary) 95%, transparent) 100%);
   backdrop-filter: blur(10px);
   z-index: 50;
   display: none;
   border-top: 1px solid var(--border-subtle);
+}
+
+[data-theme="light"] .sticky-mobile-cta {
+  background: linear-gradient(to top, rgba(250, 250, 250, 1) 0%, rgba(250, 250, 250, 0.95) 100%);
 }
 
 @media (max-width: 768px) {
@@ -725,4 +854,584 @@ html, body {
     animation: none;
     background-position: 0% 50%;
   }
+}
+
+/* =============================================
+   Light Theme Overrides - Comprehensive
+   ============================================= */
+
+/* Light theme gradient text */
+[data-theme="light"] .gradient-text {
+  background: linear-gradient(90deg, #8B5CF6 0%, #00D9A4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Light theme label styles */
+[data-theme="light"] .label-tag {
+  color: #666666;
+}
+
+[data-theme="light"] .label-gradient {
+  background: linear-gradient(90deg, #8B5CF6 0%, #00D9A4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Light theme secondary button */
+[data-theme="light"] .btn-secondary {
+  color: var(--text-primary);
+  border-color: rgba(0,0,0,0.2);
+}
+
+[data-theme="light"] .btn-secondary:hover {
+  border-color: rgba(139, 92, 246, 0.5);
+  background: rgba(139, 92, 246, 0.05);
+}
+
+/* =============================================
+   Light Theme - Background Overrides
+   ============================================= */
+
+[data-theme="light"] .bg-\[\#050505\] {
+  background-color: #FAFAFA !important;
+}
+
+[data-theme="light"] .bg-\[\#0A0A0A\] {
+  background-color: #FFFFFF !important;
+}
+
+[data-theme="light"] .bg-\[\#111111\],
+[data-theme="light"] .bg-\[\#111\] {
+  background-color: #F5F5F5 !important;
+}
+
+[data-theme="light"] .bg-\[\#222\],
+[data-theme="light"] .bg-\[\#222222\] {
+  background-color: #E5E5E5 !important;
+}
+
+[data-theme="light"] .bg-black\/60,
+[data-theme="light"] .bg-black\/70 {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+[data-theme="light"] .from-\[\#0A0A0A\] {
+  --tw-gradient-from: #FFFFFF !important;
+}
+
+[data-theme="light"] .to-\[\#111111\],
+[data-theme="light"] .to-\[\#0A0A0A\] {
+  --tw-gradient-to: #F5F5F5 !important;
+}
+
+[data-theme="light"] .via-\[\#111\] {
+  --tw-gradient-via: #F5F5F5 !important;
+}
+
+[data-theme="light"] .from-\[\#1a1a1a\] {
+  --tw-gradient-from: #F0F0F0 !important;
+}
+
+/* =============================================
+   Light Theme - Text Color Overrides
+   ============================================= */
+
+[data-theme="light"] .text-white {
+  color: #1A1A1A !important;
+}
+
+[data-theme="light"] .text-white\/90 {
+  color: rgba(26, 26, 26, 0.9) !important;
+}
+
+[data-theme="light"] .text-white\/80 {
+  color: rgba(26, 26, 26, 0.8) !important;
+}
+
+[data-theme="light"] .text-white\/70 {
+  color: rgba(26, 26, 26, 0.7) !important;
+}
+
+[data-theme="light"] .text-white\/60 {
+  color: #666666 !important;
+}
+
+[data-theme="light"] .text-white\/50 {
+  color: #888888 !important;
+}
+
+[data-theme="light"] .text-white\/40 {
+  color: #999999 !important;
+}
+
+[data-theme="light"] .text-gray-300 {
+  color: #4A4A4A !important;
+}
+
+[data-theme="light"] .text-gray-400 {
+  color: #666666 !important;
+}
+
+[data-theme="light"] .text-gray-500 {
+  color: #888888 !important;
+}
+
+[data-theme="light"] .text-gray-600 {
+  color: #999999 !important;
+}
+
+[data-theme="light"] .placeholder-gray-600::placeholder {
+  color: #AAAAAA !important;
+}
+
+/* Light theme accent colors - change green to purple */
+[data-theme="light"] .text-\[\#00F5A0\] {
+  color: #8B5CF6 !important;
+}
+
+[data-theme="light"] .text-\[\#00D9F5\] {
+  color: #00D9A4 !important;
+}
+
+/* =============================================
+   Light Theme - Border Overrides
+   ============================================= */
+
+[data-theme="light"] .border-\[\#222\],
+[data-theme="light"] .border-\[\#222222\] {
+  border-color: #E5E5E5 !important;
+}
+
+[data-theme="light"] .border-\[\#333\] {
+  border-color: #D5D5D5 !important;
+}
+
+[data-theme="light"] .border-white\/10 {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .border-white\/20 {
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+[data-theme="light"] .border-\[\#00F5A0\]\/30 {
+  border-color: rgba(139, 92, 246, 0.3) !important;
+}
+
+[data-theme="light"] .border-\[\#00F5A0\]\/40 {
+  border-color: rgba(139, 92, 246, 0.4) !important;
+}
+
+[data-theme="light"] .border-\[\#00F5A0\]\/50 {
+  border-color: rgba(139, 92, 246, 0.5) !important;
+}
+
+[data-theme="light"] .border-\[\#00D9F5\]\/30 {
+  border-color: rgba(0, 217, 164, 0.3) !important;
+}
+
+[data-theme="light"] .border-t.border-\[\#222\] {
+  border-top-color: #E5E5E5 !important;
+}
+
+[data-theme="light"] .border-y.border-\[\#222\] {
+  border-top-color: #E5E5E5 !important;
+  border-bottom-color: #E5E5E5 !important;
+}
+
+/* =============================================
+   Light Theme - Gradient Overrides
+   ============================================= */
+
+[data-theme="light"] .from-\[\#00F5A0\] {
+  --tw-gradient-from: #8B5CF6 !important;
+}
+
+[data-theme="light"] .to-\[\#00D9F5\] {
+  --tw-gradient-to: #00D9A4 !important;
+}
+
+[data-theme="light"] .via-\[\#00F5A0\] {
+  --tw-gradient-via: #A78BFA !important;
+}
+
+/* Inline gradient styles override */
+[data-theme="light"] [style*="linear-gradient(90deg, #00F5A0"] {
+  background-image: linear-gradient(90deg, #8B5CF6, #00D9A4) !important;
+}
+
+[data-theme="light"] .bg-gradient-to-r.from-\[\#00F5A0\].to-\[\#00D9F5\] {
+  background-image: linear-gradient(to right, #8B5CF6, #00D9A4) !important;
+}
+
+[data-theme="light"] .bg-gradient-to-b.from-\[\#00F5A0\]\/10 {
+  background-image: linear-gradient(to bottom, rgba(139, 92, 246, 0.1), transparent) !important;
+}
+
+/* =============================================
+   Light Theme - Shadow Overrides
+   ============================================= */
+
+[data-theme="light"] .shadow-\[0_0_20px_rgba\(0\,245\,160\,0\.3\)\],
+[data-theme="light"] .shadow-\[0_0_20px_rgba\(0\,245\,160\,0\.4\)\] {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3) !important;
+}
+
+[data-theme="light"] .shadow-\[0_0_30px_rgba\(0\,245\,160\,0\.3\)\],
+[data-theme="light"] .shadow-\[0_0_30px_rgba\(0\,245\,160\,0\.4\)\] {
+  box-shadow: 0 0 30px rgba(139, 92, 246, 0.3) !important;
+}
+
+[data-theme="light"] .shadow-\[0_0_40px_rgba\(0\,245\,160\,0\.15\)\],
+[data-theme="light"] .shadow-\[0_0_40px_rgba\(0\,245\,160\,0\.2\)\],
+[data-theme="light"] .shadow-\[0_0_40px_rgba\(0\,245\,160\,0\.5\)\] {
+  box-shadow: 0 4px 40px rgba(139, 92, 246, 0.2) !important;
+}
+
+[data-theme="light"] .hover\:shadow-\[0_0_50px_rgba\(0\,245\,160\,0\.5\)\]:hover,
+[data-theme="light"] .hover\:shadow-\[0_0_60px_rgba\(0\,245\,160\,0\.25\)\]:hover {
+  box-shadow: 0 4px 50px rgba(139, 92, 246, 0.3) !important;
+}
+
+/* =============================================
+   Light Theme - Component Specific Overrides
+   ============================================= */
+
+/* Cards */
+[data-theme="light"] .card {
+  background: #FFFFFF !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .card:hover {
+  border-color: rgba(139, 92, 246, 0.4) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12), 0 0 30px rgba(139, 92, 246, 0.1) !important;
+}
+
+[data-theme="light"] .card-featured {
+  background: #FFFFFF !important;
+}
+
+/* Pricing toggle buttons */
+[data-theme="light"] .bg-white.text-black {
+  background-color: #1A1A1A !important;
+  color: #FFFFFF !important;
+}
+
+/* Input fields */
+[data-theme="light"] input,
+[data-theme="light"] textarea {
+  background-color: #FFFFFF !important;
+  border-color: #E5E5E5 !important;
+  color: #1A1A1A !important;
+}
+
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+  color: #AAAAAA !important;
+}
+
+[data-theme="light"] input:focus,
+[data-theme="light"] textarea:focus {
+  border-color: #8B5CF6 !important;
+}
+
+/* Floating chat button */
+[data-theme="light"] .floating-chat-btn {
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3) !important;
+}
+
+[data-theme="light"] .floating-chat-btn:hover {
+  box-shadow: 0 4px 30px rgba(139, 92, 246, 0.5) !important;
+}
+
+/* Aurora orbs - softer colors */
+[data-theme="light"] .aurora-orb-1 {
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+}
+
+[data-theme="light"] .aurora-orb-2 {
+  background: radial-gradient(circle, rgba(0, 217, 164, 0.12) 0%, transparent 70%);
+}
+
+[data-theme="light"] .aurora-orb-3 {
+  background: radial-gradient(circle, rgba(167, 139, 250, 0.1) 0%, transparent 70%);
+}
+
+[data-theme="light"] .aurora-orb-4 {
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, transparent 70%);
+}
+
+/* Spotlights */
+[data-theme="light"] .spotlight-center::before {
+  background: radial-gradient(
+    ellipse 80% 50% at 50% 50%,
+    rgba(139, 92, 246, 0.05) 0%,
+    rgba(0, 217, 164, 0.02) 40%,
+    transparent 80%
+  );
+}
+
+[data-theme="light"] .spotlight-top::before {
+  background: radial-gradient(
+    ellipse 50% 80% at 50% 0%,
+    rgba(139, 92, 246, 0.04) 0%,
+    rgba(139, 92, 246, 0.02) 30%,
+    transparent 80%
+  );
+}
+
+/* Bottom sheet modal */
+[data-theme="light"] .bg-\[\#0A0A0A\].border-t {
+  background-color: #FFFFFF !important;
+  border-top-color: #E5E5E5 !important;
+}
+
+[data-theme="light"] .bg-gray-600 {
+  background-color: #CCCCCC !important;
+}
+
+/* Backdrop */
+[data-theme="light"] .bg-black\/60 {
+  background-color: rgba(0, 0, 0, 0.4) !important;
+}
+
+/* =============================================
+   Light Theme - Accent Color Backgrounds
+   ============================================= */
+
+[data-theme="light"] .bg-\[\#00F5A0\]\/10,
+[data-theme="light"] .bg-\[\#00F5A0\]\/20 {
+  background-color: rgba(139, 92, 246, 0.1) !important;
+}
+
+[data-theme="light"] .bg-gradient-to-r.from-\[\#00F5A0\]\/20.to-\[\#00D9F5\]\/20 {
+  background-image: linear-gradient(to right, rgba(139, 92, 246, 0.2), rgba(0, 217, 164, 0.2)) !important;
+}
+
+/* Header/Navigation */
+[data-theme="light"] header {
+  background-color: rgba(250, 250, 250, 0.95) !important;
+  border-bottom-color: #E5E5E5 !important;
+}
+
+/* Footer */
+[data-theme="light"] footer {
+  background-color: #F5F5F5 !important;
+}
+
+/* Theme toggle indicator */
+[data-theme="light"] body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #8B5CF6, #00D9A4);
+  z-index: 9999;
+  opacity: 0;
+  animation: themeIndicator 0.5s ease-out;
+}
+
+@keyframes themeIndicator {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* =============================================
+   Light Theme - Specific Component Fixes
+   ============================================= */
+
+/* HOW IT WORKS section cards */
+[data-theme="light"] .bg-\[\#0A0A0A\].border.border-\[\#222\] {
+  background-color: #FFFFFF !important;
+  border-color: #E5E5E5 !important;
+}
+
+[data-theme="light"] .hover\:border-\[\#00F5A0\]\/30:hover {
+  border-color: rgba(139, 92, 246, 0.3) !important;
+}
+
+/* Output card glassmorphism */
+[data-theme="light"] .bg-\[\#0A0A0A\]\/80 {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+[data-theme="light"] .border-2.border-\[\#00F5A0\]\/40 {
+  border-color: rgba(139, 92, 246, 0.4) !important;
+}
+
+/* Video indicator */
+[data-theme="light"] .bg-black\/70.text-white {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  color: #1A1A1A !important;
+}
+
+/* Portfolio cards */
+[data-theme="light"] .bg-\[\#111\] {
+  background-color: #F5F5F5 !important;
+}
+
+/* Gradient background for featured sections */
+[data-theme="light"] .bg-gradient-to-b.from-\[\#00F5A0\]\/10.to-\[\#0A0A0A\] {
+  background-image: linear-gradient(to bottom, rgba(139, 92, 246, 0.08), #FFFFFF) !important;
+}
+
+/* Red accent for "Old Way" card */
+[data-theme="light"] .border-red-500\/20 {
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Purple accent for Performance Ads */
+[data-theme="light"] .border-purple-500\/40 {
+  border-color: rgba(139, 92, 246, 0.5) !important;
+}
+
+[data-theme="light"] .text-purple-400 {
+  color: #7C3AED !important;
+}
+
+[data-theme="light"] .text-purple-300 {
+  color: #8B5CF6 !important;
+}
+
+[data-theme="light"] .text-purple-300\/80 {
+  color: rgba(139, 92, 246, 0.8) !important;
+}
+
+[data-theme="light"] .bg-purple-500\/20 {
+  background-color: rgba(139, 92, 246, 0.15) !important;
+}
+
+/* Gold VIP styling */
+[data-theme="light"] .border-\[\#B8860B\]\/40 {
+  border-color: rgba(184, 134, 11, 0.5) !important;
+}
+
+[data-theme="light"] .text-\[\#FFD700\] {
+  color: #B8860B !important;
+}
+
+[data-theme="light"] .text-\[\#FFD700\]\/80 {
+  color: rgba(184, 134, 11, 0.8) !important;
+}
+
+/* Dropdown */
+[data-theme="light"] .bg-\[\#111\].border.border-\[\#333\] {
+  background-color: #FFFFFF !important;
+  border-color: #E5E5E5 !important;
+}
+
+[data-theme="light"] .hover\:bg-\[\#222\]:hover {
+  background-color: #F5F5F5 !important;
+}
+
+/* Glow effects for badges */
+[data-theme="light"] .blur-lg.opacity-30 {
+  background: linear-gradient(to right, rgba(139, 92, 246, 0.3), rgba(0, 217, 164, 0.3)) !important;
+}
+
+/* Custom Model Card - purple gradient background */
+[data-theme="light"] .from-\[\#1a0a2e\] {
+  --tw-gradient-from: #F5F0FF !important;
+}
+
+[data-theme="light"] .to-\[\#0A0A0A\] {
+  --tw-gradient-to: #FFFFFF !important;
+}
+
+[data-theme="light"] .bg-gradient-to-b.from-\[\#1a0a2e\].to-\[\#0A0A0A\] {
+  background-image: linear-gradient(to bottom, #F5F0FF, #FFFFFF) !important;
+}
+
+/* ArtistLineup section backgrounds - hide radial gradients in light mode */
+[data-theme="light"] .section-spacing.relative.overflow-hidden {
+  background-color: #FAFAFA !important;
+}
+
+/* ArtistCard backgrounds */
+[data-theme="light"] .rounded-2xl.bg-\[\#0A0A0A\] {
+  background-color: #FFFFFF !important;
+}
+
+/* Gradient overlays on cards - make lighter */
+[data-theme="light"] .bg-gradient-to-t.from-black\/90 {
+  background-image: linear-gradient(to top, rgba(255,255,255,0.95), rgba(255,255,255,0.3), transparent) !important;
+}
+
+[data-theme="light"] .bg-gradient-to-b.from-\[\#111\].to-\[\#0A0A0A\] {
+  background-image: linear-gradient(to bottom, #F5F5F5, #FFFFFF) !important;
+}
+
+/* Tag backgrounds in light mode */
+[data-theme="light"] .bg-black\/60 {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+[data-theme="light"] .bg-white\/5 {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Artist card info text */
+[data-theme="light"] .text-white\/50 {
+  color: #888888 !important;
+}
+
+[data-theme="light"] .text-white\/30 {
+  color: #AAAAAA !important;
+}
+
+[data-theme="light"] .text-white\/20 {
+  color: #CCCCCC !important;
+}
+
+/* Category button inactive state */
+[data-theme="light"] .border-white\/20 {
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+[data-theme="light"] .text-white\/70 {
+  color: #555555 !important;
+}
+
+[data-theme="light"] .hover\:border-white\/40:hover {
+  border-color: rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Custom model card specific */
+[data-theme="light"] .border-purple-500\/30 {
+  border-color: rgba(139, 92, 246, 0.4) !important;
+}
+
+[data-theme="light"] .hover\:border-\[\#00F5A0\]\/50:hover {
+  border-color: rgba(139, 92, 246, 0.6) !important;
+}
+
+/* Black text on cards in light mode */
+[data-theme="light"] .text-black {
+  color: #FFFFFF !important;
+}
+
+/* VIP Partner card gradient background */
+[data-theme="light"] .bg-gradient-to-r.from-\[\#1a1a1a\].via-\[\#111\].to-\[\#1a1a1a\] {
+  background-image: linear-gradient(to right, #FFFFFF, #F8F8F8, #FFFFFF) !important;
+}
+
+/* VIP Partner border */
+[data-theme="light"] .border-\[\#B8860B\]\/40 {
+  border-color: rgba(184, 134, 11, 0.5) !important;
+}
+
+/* VIP gold text in light mode - keep gold but darker */
+[data-theme="light"] .text-\[\#FFD700\] {
+  color: #B8860B !important;
+}
+
+[data-theme="light"] .text-\[\#FFD700\]\/80 {
+  color: rgba(184, 134, 11, 0.9) !important;
 }

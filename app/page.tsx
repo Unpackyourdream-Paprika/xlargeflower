@@ -7,8 +7,9 @@ import VideoMarquee from '@/components/VideoMarquee';
 import ArtistLineup from '@/components/ArtistLineup';
 import MainHeroContainer from '@/components/hero/MainHeroContainer';
 import { triggerOpenChat } from '@/components/GlobalChatButton';
-import { getShowcaseVideos, ShowcaseVideo, getBeforeAfterAsset, BeforeAfterAsset, getLandingPortfolios, LandingPortfolio, getActivePromotion, PromotionSettings, getPricingPlans, PricingPlan, submitContact } from '@/lib/supabase';
+import { getShowcaseVideos, ShowcaseVideo, getBeforeAfterAsset, BeforeAfterAsset, getLandingPortfolios, LandingPortfolio, getActivePromotion, PromotionSettings, getPricingPlans, PricingPlan } from '@/lib/supabase';
 import PricingCard from '@/components/PricingCard';
+import OrderBottomSheet from '@/components/OrderBottomSheet';
 import { trackConversion } from '@/lib/analytics';
 
 export default function Home() {
@@ -19,31 +20,10 @@ export default function Home() {
   const [promotion, setPromotion] = useState<PromotionSettings | null>(null);
   const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
 
-  // Contact form state
-  const [formData, setFormData] = useState({
-    name: '',
-    company: '',
-    email: '',
-    phone: '',
-    message: '',
-    selectedProduct: '',
-    productImages: [] as File[]
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  // Bottom sheet / modal state
   const [showBottomSheet, setShowBottomSheet] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
-
-  const productOptions = [
-    { value: '', label: '선택하세요 (선택사항)' },
-    { value: 'STARTER 플랜', label: 'STARTER 플랜' },
-    { value: 'GROWTH 플랜', label: 'GROWTH 플랜' },
-    { value: 'PERFORMANCE 플랜', label: 'PERFORMANCE 플랜' },
-    { value: 'PERFORMANCE ADS 패키지', label: 'PERFORMANCE ADS 패키지' },
-    { value: 'VIP PARTNER 플랜', label: 'VIP PARTNER 플랜' },
-    { value: '기타 문의', label: '기타 문의' }
-  ];
+  const [initialOrderArtist, setInitialOrderArtist] = useState<string>('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -55,6 +35,7 @@ export default function Home() {
           getActivePromotion(),
           getPricingPlans()
         ]);
+        console.log('Showcase videos loaded:', videos?.length, videos);
         setShowcaseVideos(videos);
         setLandingPortfolios(portfolios);
         setBeforeAfterAsset(beforeAfter);
@@ -86,6 +67,26 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // 아티스트 모델 선택 이벤트 리스너
+  useEffect(() => {
+    const handleOpenContactWithArtist = (e: CustomEvent<{ artistName: string; noModelNeeded: boolean }>) => {
+      const { artistName } = e.detail;
+      setInitialOrderArtist(artistName);
+      openContactModal();
+    };
+
+    const handleOpenOrderWithPlan = () => {
+      openContactModal();
+    };
+
+    window.addEventListener('openContactWithArtist', handleOpenContactWithArtist as EventListener);
+    window.addEventListener('openOrderWithPlan', handleOpenOrderWithPlan as EventListener);
+    return () => {
+      window.removeEventListener('openContactWithArtist', handleOpenContactWithArtist as EventListener);
+      window.removeEventListener('openOrderWithPlan', handleOpenOrderWithPlan as EventListener);
+    };
+  }, []);
+
   // 가격 계산 (프로모션 할인 > 세금계산서 할인 순으로 적용)
   const getPrice = (basePrice: number) => {
     let price = basePrice;
@@ -103,11 +104,14 @@ export default function Home() {
     return price;
   };
 
-  // 원래 가격 (프로모션 없을 때 세금계산서 할인만 적용)
+  // 원래 가격 (취소선에 표시할 가격)
+  // 프로모션이 있으면 기본 가격을, 세금계산서만 있으면 기본 가격을 표시
   const getOriginalPrice = (basePrice: number) => {
-    if (paymentType === 'invoice') {
-      return Math.round(basePrice * 0.9);
+    // 프로모션이 있으면 항상 기본 가격 표시 (할인 전 가격)
+    if (promotion) {
+      return basePrice;
     }
+    // 프로모션 없고 세금계산서면 기본 가격 표시
     return basePrice;
   };
 
@@ -123,36 +127,6 @@ export default function Home() {
     return `${month}/${day}`;
   };
 
-  // Contact form submit handler
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name || !formData.email || !formData.message) return;
-
-    setIsSubmitting(true);
-    try {
-      await submitContact({
-        name: formData.name,
-        company: formData.company || null,
-        email: formData.email,
-        phone: formData.phone || null,
-        budget: null,
-        product_interest: formData.selectedProduct || null,
-        message: formData.message
-      });
-      setIsSubmitted(true);
-    } catch (error) {
-      console.error('Submit error:', error);
-      alert('문의 전송 중 오류가 발생했습니다. 다시 시도해주세요.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // 플랜 선택 핸들러
-  const handlePlanSelect = (planName: string) => {
-    setFormData({ ...formData, selectedProduct: planName });
-  };
-
   // 바텀 시트 열기/닫기
   const openContactModal = () => {
     setIsContactModalOpen(true);
@@ -161,6 +135,7 @@ export default function Home() {
 
   const closeContactModal = () => {
     setIsContactModalOpen(false);
+    setInitialOrderArtist('');
     document.body.style.overflow = '';
   };
   return (
@@ -181,7 +156,8 @@ export default function Home() {
             <div className="text-center mb-12">
               <p className="label-tag mb-4">HOW IT WORKS</p>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white">
-                그러면 어떻게 제작이 되나요?
+                <span className="block">그러면 이제</span>
+                <span className="block">어떻게 제작이 되나요?</span>
               </h2>
             </div>
           </ScrollReveal>
@@ -296,18 +272,45 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* 제작 프로세스 설명 */}
-              <div className="mt-12 text-center max-w-3xl mx-auto">
-                <div className="bg-[#0A0A0A]/60 border border-[#222] rounded-2xl p-6 sm:p-8 backdrop-blur-sm">
-                  <div className="space-y-3 text-sm sm:text-base text-white/70 leading-relaxed">
-                    <p>
-                      <span className="text-[#00F5A0] font-semibold">① 제품 이미지 전달</span> → 문의란에 판매할 물건의 이미지를 함께 보내주세요
+              {/* 제작 프로세스 설명 - STEP 형식 */}
+              <div className="mt-12 max-w-4xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* STEP 1 */}
+                  <div className="bg-[#0A0A0A] border border-[#222] rounded-2xl p-6 text-center hover:border-[#00F5A0]/30 transition-colors">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black font-bold text-lg mb-4">
+                      1
+                    </div>
+                    <h4 className="text-white font-bold text-lg mb-2">이미지 전송</h4>
+                    <p className="text-white/60 text-sm leading-relaxed">
+                      가지고 계신<br />
+                      <strong className="text-white">제품 원본 사진</strong>만<br />
+                      보내주세요.
                     </p>
-                    <p>
-                      <span className="text-[#00F5A0] font-semibold">② 기획서 제공</span> → 구매 욕구를 자극하는 시나리오를 이메일로 보내드립니다 (최대 5회 무료 수정)
+                  </div>
+
+                  {/* STEP 2 */}
+                  <div className="bg-[#0A0A0A] border border-[#222] rounded-2xl p-6 text-center hover:border-[#00F5A0]/30 transition-colors">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black font-bold text-lg mb-4">
+                      2
+                    </div>
+                    <h4 className="text-white font-bold text-lg mb-2">기획 제안</h4>
+                    <p className="text-white/60 text-sm leading-relaxed">
+                      AI가 분석한<br />
+                      <strong className="text-[#00F5A0]">'소구점 맞춤 대본'</strong>을<br />
+                      먼저 보여드립니다.
                     </p>
-                    <p>
-                      <span className="text-[#00F5A0] font-semibold">③ 영상 제작</span> → 검토하신 시나리오 바탕으로 오차 없는 영상 제작이 진행됩니다
+                  </div>
+
+                  {/* STEP 3 */}
+                  <div className="bg-[#0A0A0A] border border-[#222] rounded-2xl p-6 text-center hover:border-[#00F5A0]/30 transition-colors">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black font-bold text-lg mb-4">
+                      3
+                    </div>
+                    <h4 className="text-white font-bold text-lg mb-2">제작 완료</h4>
+                    <p className="text-white/60 text-sm leading-relaxed">
+                      컨펌 후<br />
+                      <strong className="text-[#00F5A0]">48시간 이내</strong>,<br />
+                      고퀄리티 영상이 도착합니다.
                     </p>
                   </div>
                 </div>
@@ -363,16 +366,19 @@ export default function Home() {
       </section>
 
       {/* Real Portfolio / Case Study Section - DB 연동 */}
-      <section className="section-spacing bg-[#050505]">
+      <section data-section="portfolio" className="section-spacing bg-[#050505]">
         <div className="max-w-7xl mx-auto px-6">
           <ScrollReveal>
             <div className="text-center mb-16">
               <p className="label-tag mb-4">REAL PORTFOLIO</p>
               <h2 className="text-3xl sm:text-4xl font-bold text-white">
-                이미 여러 브랜드는<br />
+                <span className="block">이미 여러 브랜드는</span>
                 <span className="gradient-text">XLARGE와 함께 매출을 올리고 있습니다</span>
               </h2>
-              <p className="text-white/60 mt-4">셀러사 브랜드사의 얼굴로 만든 실제 성공 사례를 확인하세요.</p>
+              <p className="text-white/60 mt-4">
+                <span className="block sm:inline">셀러와 브랜드사의 얼굴로 만든</span>{' '}
+                <span className="block sm:inline text-nowrap">실제 성공 사례를 확인하세요.</span>
+              </p>
             </div>
           </ScrollReveal>
 
@@ -525,8 +531,14 @@ export default function Home() {
           <ScrollReveal>
             <div className="text-center mb-16">
               <p className="label-tag mb-4">WHY AI?</p>
-              <h2 className="text-3xl sm:text-4xl font-bold text-white">왜 인플루언서 아직도 거품을 믿으십니까?</h2>
-              <p className="text-white/60 mt-4">팔로워 10만? 알고리즘이 막으면 아무도 못 봅니다.</p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white">
+                <span className="block sm:inline">왜 인플루언서,</span>{' '}
+                <span className="block sm:inline text-nowrap">아직도 거품을 믿으십니까?</span>
+              </h2>
+              <p className="text-white/60 mt-4">
+                <span className="block sm:inline">팔로워 10만?</span>{' '}
+                <span className="block sm:inline text-nowrap">알고리즘이 막으면 아무도 못 봅니다.</span>
+              </p>
             </div>
           </ScrollReveal>
 
@@ -595,28 +607,28 @@ export default function Home() {
                 </div>
                 <ul className="space-y-4">
                   <li className="flex items-start gap-3">
-                    <span className="text-[#00F5A0] mt-1">O</span>
+                    <span className="w-5 h-5 mt-0.5 rounded-full border-2 border-[#00F5A0] flex-shrink-0" />
                     <div>
                       <p className="text-white font-medium">타겟 적중률 100%</p>
                       <p className="text-white/50 text-sm">우리 영상을 사서 귀사 계정으로 광고를 돌리세요. <strong className="text-[#00F5A0]">진짜 살 사람에게만</strong> 꽂힙니다.</p>
                     </div>
                   </li>
                   <li className="flex items-start gap-3">
-                    <span className="text-[#00F5A0] mt-1">O</span>
+                    <span className="w-5 h-5 mt-0.5 rounded-full border-2 border-[#00F5A0] flex-shrink-0" />
                     <div>
                       <p className="text-white font-medium">영구 소장 자산</p>
                       <p className="text-white/50 text-sm">한 번 구매하면 평생 귀사의 것. <strong className="text-[#00F5A0]">1년이고 2년이고</strong> 매출 날 때까지 돌리세요.</p>
                     </div>
                   </li>
                   <li className="flex items-start gap-3">
-                    <span className="text-[#00F5A0] mt-1">O</span>
+                    <span className="w-5 h-5 mt-0.5 rounded-full border-2 border-[#00F5A0] flex-shrink-0" />
                     <div>
                       <p className="text-white font-medium">완벽한 통제</p>
                       <p className="text-white/50 text-sm">브랜드가 원하는 표정, 멘트, 춤. <strong className="text-[#00F5A0]">100% 의도대로</strong> 연출합니다.</p>
                     </div>
                   </li>
                   <li className="flex items-start gap-3">
-                    <span className="text-[#00F5A0] mt-1">O</span>
+                    <span className="w-5 h-5 mt-0.5 rounded-full border-2 border-[#00F5A0] flex-shrink-0" />
                     <div>
                       <p className="text-white font-medium">리스크 제로</p>
                       <p className="text-white/50 text-sm">스캔들 없음, 단가 인상 없음, <strong className="text-[#00F5A0]">Clean AI</strong>로 안전하게.</p>
@@ -630,7 +642,10 @@ export default function Home() {
           {/* Bottom CTA */}
           <ScrollReveal delay={0.3}>
             <div className="mt-12 text-center">
-              <p className="text-white/60 mb-6">인플루언서 1회 섭외 비용으로, 평생 쓰는 브랜드 전속 모델을 만드세요.</p>
+              <p className="text-white/60 mb-6" style={{ wordBreak: 'keep-all' }}>
+                <span className="block sm:inline">인플루언서 1회 섭외 비용으로,</span>{' '}
+                <span className="block sm:inline text-nowrap">평생 쓰는 브랜드 전속 모델을 만드세요.</span>
+              </p>
               <button
                 onClick={() => {
                   trackConversion.consultClick('why_ai_section');
@@ -646,21 +661,36 @@ export default function Home() {
       </section>
 
       {/* Why It Works Section */}
-      <section className="section-spacing bg-[#050505]">
+      <section data-section="our-position" className="section-spacing bg-[#050505]">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <ScrollReveal>
             <p className="label-tag mb-4">OUR POSITION</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
-              엑스라지는 고객의 &apos;경험&apos;을 팝니다.
+              <span className="block sm:inline">엑스라지는</span>{' '}
+              <span className="block sm:inline">고객의 &apos;경험&apos;을 <span className="text-nowrap">팝니다.</span></span>
             </h2>
-            <div className="max-w-2xl mx-auto">
-              <p className="text-white/70 text-lg mb-8">
-                마케팅의 성공 공식은 <strong className="text-white">좋은 소재(Creative)</strong> X <strong className="text-white">정교한 타겟팅(Ads)</strong>입니다.
+            <div className="max-w-2xl mx-auto readable-text">
+              <p className="text-white/70 text-lg mb-6">
+                마케팅의 성공 공식, 아주 심플합니다.
               </p>
-              <p className="text-white/60 mb-12">
-                타겟팅은 귀사의 마케터가 제일 잘합니다.<br />
-                저희는 귀사의 마케터가 춤추게 할 <strong className="text-[#00F5A0]">&apos;압도적인 소재&apos;</strong>만 납품합니다.<br />
-                만약 타겟팅 광고가 어려우시다면 저희에게 함께 문의를 주세요.
+
+              {/* 공식 강조 박스 */}
+              <div className="inline-block px-6 py-4 bg-[#0A0A0A] border border-[#00F5A0]/30 rounded-xl mb-8">
+                <p className="text-xl sm:text-2xl font-bold">
+                  <span className="text-[#00F5A0]">좋은 소재(Creative)</span>
+                  <span className="text-white/60 mx-3">×</span>
+                  <span className="text-[#00D9F5]">정교한 타겟팅(Ads)</span>
+                </p>
+              </div>
+
+              <div className="space-y-4 text-white/60 mb-8">
+                <p>타겟팅은 귀사의 마케터가 제일 잘합니다.</p>
+                <p>저희는 그 마케터가 춤추게 할 <strong className="text-[#00F5A0]">'미친 소재'</strong>만 납품합니다.</p>
+              </div>
+
+              <p className="text-white/40 text-sm mb-12" style={{ wordBreak: 'keep-all' }}>
+                ※ 채널이 없거나 광고 집행이 어려우시다면, 문의 시 체크해 주세요.<br />
+                저희 채널에서 직접 배포해 드립니다. (매체비 별도)
               </p>
 
               {/* 임팩트 있는 200% 배지 */}
@@ -690,7 +720,7 @@ export default function Home() {
       </section>
 
       {/* Pricing Section - Premium */}
-      <section className="section-spacing bg-[#050505]">
+      <section data-section="pricing" className="section-spacing bg-[#050505]">
         <div className="max-w-7xl mx-auto px-6">
           <ScrollReveal>
             <div className="text-center mb-12">
@@ -736,7 +766,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {pricingPlans.filter(p => p.card_style !== 'gold').map((plan, index) => (
                 <ScrollReveal key={plan.id} delay={0.1 * (index + 1)} direction="up">
-                  <PricingCard plan={plan} promotion={promotion} paymentType={paymentType} onPlanSelect={handlePlanSelect} />
+                  <PricingCard plan={plan} promotion={promotion} paymentType={paymentType} />
                 </ScrollReveal>
               ))}
             </div>
@@ -946,7 +976,7 @@ export default function Home() {
       </section>
 
       {/* Social Proof Section */}
-      <section className="section-spacing bg-[#050505]">
+      <section data-section="social-proof" className="section-spacing bg-[#050505]">
         <div className="max-w-6xl mx-auto px-6">
           <ScrollReveal>
             <div className="text-center mb-16">
@@ -1022,6 +1052,35 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Final CTA Section - Phone Contact */}
+      <section data-section="final-cta" className="py-16 md:py-20 bg-[#0A0A0A] border-y border-[#222]">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <ScrollReveal>
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4" style={{ wordBreak: 'keep-all' }}>
+              도입이 고민되신다면,<br className="md:hidden" /> 전문가와 먼저 상의하세요.
+            </h2>
+            <p className="text-white/60 text-base md:text-lg mb-8 max-w-2xl mx-auto" style={{ wordBreak: 'keep-all' }}>
+              우리 브랜드에 딱 맞는 솔루션을 제안해 드립니다.<br className="md:hidden" /> 부담 갖지 말고 편하게 문의주세요.
+            </p>
+
+            {/* Phone Number - Highlighted */}
+            <a
+              href="tel:02-3142-7218"
+              className="inline-flex items-center justify-center gap-3 px-8 py-5 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] text-black font-bold text-2xl md:text-3xl rounded-2xl hover:opacity-90 transition-all shadow-[0_0_30px_rgba(0,245,160,0.3)] hover:shadow-[0_0_50px_rgba(0,245,160,0.5)]"
+            >
+              <svg className="w-7 h-7 md:w-8 md:h-8" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+              </svg>
+              02-3142-7218
+            </a>
+
+            <p className="text-white/40 text-sm mt-6">
+              24시간 상담 가능 · 연중무휴
+            </p>
+          </ScrollReveal>
+        </div>
+      </section>
+
       {/* Sticky Mobile CTA - HOW IT WORKS 섹션부터 표시 */}
       <div className={`sticky-mobile-cta transition-transform duration-300 ${showBottomSheet ? 'translate-y-0' : 'translate-y-full'}`}>
         <button
@@ -1031,256 +1090,18 @@ export default function Home() {
           }}
           className="btn-primary w-full text-center"
         >
-          문의
+          주문하기
         </button>
       </div>
 
-      {/* Contact Form Bottom Sheet Modal */}
-      {isContactModalOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] animate-fadeIn"
-            onClick={closeContactModal}
-          />
-
-          {/* Bottom Sheet */}
-          <div className="fixed inset-x-0 bottom-0 z-[101] animate-slideUp">
-            <div className="bg-[#0A0A0A] border-t border-[#222] rounded-t-3xl max-h-[85vh] overflow-y-auto">
-              {/* Handle Bar */}
-              <div className="flex justify-center pt-3 pb-2">
-                <div className="w-12 h-1 bg-gray-600 rounded-full" />
-              </div>
-
-              {/* Header */}
-              <div className="sticky top-0 bg-[#0A0A0A] border-b border-[#222] px-6 py-4 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-white">도입 문의 / 견적서 요청</h2>
-                <button
-                  onClick={closeContactModal}
-                  className="w-8 h-8 rounded-full bg-[#111] border border-[#333] flex items-center justify-center hover:bg-[#222] transition-colors"
-                >
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Content */}
-              <div className="px-6 py-6">
-                <p className="text-gray-500 mb-6 text-sm">
-                  고액 결제는 담당 매니저가 견적서 및 세금계산서 발행을 도와드립니다.
-                  <br />
-                  <span className="text-gray-600">담당자가 확인 후 빠르게 연락드립니다.</span>
-                </p>
-
-                {isSubmitted ? (
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] rounded-full flex items-center justify-center mx-auto mb-6">
-                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-2">문의가 접수되었습니다!</h3>
-                    <p className="text-gray-400 mb-6">빠른 시일 내에 연락드리겠습니다.</p>
-                    <button
-                      onClick={closeContactModal}
-                      className="px-6 py-3 bg-[#111] border border-[#333] text-white rounded-xl hover:border-[#00F5A0]/50 transition-colors"
-                    >
-                      닫기
-                    </button>
-                  </div>
-                ) : (
-                  <form onSubmit={handleSubmit} className="space-y-5">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">
-                          이름 <span className="text-[#00F5A0]">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                          placeholder="홍길동"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">
-                          셀러 or 회사명
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.company}
-                          onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                          className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                          placeholder="(주)회사명"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">
-                          이메일 <span className="text-[#00F5A0]">*</span>
-                        </label>
-                        <input
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                          placeholder="email@example.com"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">
-                          연락처
-                        </label>
-                        <input
-                          type="tel"
-                          value={formData.phone}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors"
-                          placeholder="010-1234-5678"
-                        />
-                      </div>
-                    </div>
-
-                    {/* 관심 상품 선택 */}
-                    <div className="relative">
-                      <label className="block text-sm font-medium text-gray-400 mb-2">
-                        관심 상품
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white focus:border-[#00F5A0] focus:outline-none transition-colors text-left flex items-center justify-between"
-                      >
-                        <span className={formData.selectedProduct ? 'text-white' : 'text-gray-500'}>
-                          {formData.selectedProduct || '선택하세요 (선택사항)'}
-                        </span>
-                        <svg
-                          className={`w-5 h-5 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
-
-                      {isDropdownOpen && (
-                        <div className="absolute z-50 w-full mt-2 bg-[#111] border border-[#333] rounded-xl overflow-hidden shadow-lg max-h-60 overflow-y-auto">
-                          {productOptions.map((option) => (
-                            <button
-                              key={option.value}
-                              type="button"
-                              onClick={() => {
-                                setFormData({ ...formData, selectedProduct: option.value });
-                                setIsDropdownOpen(false);
-                              }}
-                              className={`w-full px-4 py-3 text-left transition-colors ${
-                                formData.selectedProduct === option.value
-                                  ? 'bg-[#00F5A0]/20 text-[#00F5A0]'
-                                  : 'text-white hover:bg-[#222]'
-                              }`}
-                            >
-                              {option.label}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-2">
-                        제품 이미지 업로드 (선택사항)
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={(e) => {
-                            const files = Array.from(e.target.files || []);
-                            setFormData({ ...formData, productImages: files });
-                          }}
-                          className="hidden"
-                          id="product-images"
-                        />
-                        <label
-                          htmlFor="product-images"
-                          className="flex flex-col items-center justify-center w-full h-32 px-4 py-6 bg-[#111] border-2 border-dashed border-[#333] rounded-xl cursor-pointer hover:border-[#00F5A0]/50 transition-colors"
-                        >
-                          <svg className="w-8 h-8 text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                          <span className="text-sm text-gray-500">
-                            {formData.productImages.length > 0
-                              ? `${formData.productImages.length}개 파일 선택됨`
-                              : '클릭하여 제품 이미지 업로드'}
-                          </span>
-                          <span className="text-xs text-gray-600 mt-1">최대 5장, PNG/JPG/WEBP</span>
-                        </label>
-                      </div>
-                      {formData.productImages.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {formData.productImages.map((file, index) => (
-                            <div key={index} className="relative group">
-                              <div className="w-16 h-16 rounded-lg bg-[#222] border border-[#333] overflow-hidden">
-                                <img
-                                  src={URL.createObjectURL(file)}
-                                  alt={`제품 ${index + 1}`}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const newImages = formData.productImages.filter((_, i) => i !== index);
-                                  setFormData({ ...formData, productImages: newImages });
-                                }}
-                                className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-2">
-                        문의 내용 <span className="text-[#00F5A0]">*</span>
-                      </label>
-                      <textarea
-                        value={formData.message}
-                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                        rows={4}
-                        className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-gray-600 focus:border-[#00F5A0] focus:outline-none transition-colors resize-none"
-                        placeholder="어떤 영상이 필요하신지 자유롭게 말씀해주세요."
-                        required
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full btn-primary disabled:opacity-50"
-                    >
-                      {isSubmitting ? '전송 중...' : '문의 보내기'}
-                    </button>
-                  </form>
-                )}
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      {/* Order Bottom Sheet Modal */}
+      <OrderBottomSheet
+        isOpen={isContactModalOpen}
+        onClose={closeContactModal}
+        pricingPlans={pricingPlans}
+        initialArtist={initialOrderArtist}
+        promotion={promotion}
+      />
     </div>
   );
 }

@@ -5,16 +5,45 @@ import { useEffect, useState } from 'react';
 export default function AuroraBackground() {
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isLightTheme, setIsLightTheme] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+
+    // 테마 감지
+    const checkTheme = () => {
+      const theme = document.documentElement.getAttribute('data-theme');
+      setIsLightTheme(theme === 'light');
+    };
+    checkTheme();
+
+    // MutationObserver로 테마 변경 감지
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'data-theme') {
+          checkTheme();
+        }
+      });
+    });
+    observer.observe(document.documentElement, { attributes: true });
+
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      observer.disconnect();
+    };
   }, []);
 
   if (!mounted) return null;
+
+  // 라이트 테마에서는 오로라 배경 숨김 - 깔끔한 흰색 배경
+  if (isLightTheme) {
+    return (
+      <div className="absolute inset-0 overflow-hidden pointer-events-none bg-[#FAFAFA]" />
+    );
+  }
 
   // 모바일에서는 간소화된 버전 (오브 2개만, 애니메이션 없음)
   if (isMobile) {

@@ -9,7 +9,10 @@ import {
   deleteArtistModel,
   uploadArtistImage,
   ArtistModel,
-  ArtistCategory
+  ArtistCategory,
+  getCustomModelSettings,
+  updateCustomModelSettings,
+  CustomModelSettings
 } from '@/lib/supabase';
 
 const CATEGORIES: { key: ArtistCategory; label: string }[] = [
@@ -28,6 +31,8 @@ interface ArtistFormData {
   tags: string;
   thumbnail_url: string;
   hover_video_url: string;
+  shorts_url: string;
+  price: string;
 }
 
 const initialFormData: ArtistFormData = {
@@ -38,6 +43,8 @@ const initialFormData: ArtistFormData = {
   tags: '',
   thumbnail_url: '',
   hover_video_url: '',
+  shorts_url: '',
+  price: '',
 };
 
 export default function ArtistManagement() {
@@ -57,6 +64,15 @@ export default function ArtistManagement() {
 
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+
+  // 커스텀 모델 설정 상태
+  const [customModelSettings, setCustomModelSettings] = useState<CustomModelSettings>({
+    price: 2000000,
+    title: '커스텀 모델 주문제작',
+    description: '브랜드 전용 AI 모델 개발',
+    features: ['컨셉 기획 및 제안서 제공', '전담 디자이너 배정', '브랜드 맞춤 스타일링', '무제한 수정 지원']
+  });
+  const [isCustomModelSaving, setIsCustomModelSaving] = useState(false);
 
   const ADMIN_PASSWORD = 'xlarge2024';
 
@@ -92,6 +108,8 @@ export default function ArtistManagement() {
   useEffect(() => {
     if (!isAuthenticated) return;
     fetchArtists();
+    // 커스텀 모델 설정 로드
+    getCustomModelSettings().then(setCustomModelSettings).catch(console.error);
   }, [isAuthenticated, fetchArtists]);
 
   // Auto-hide success message
@@ -119,6 +137,20 @@ export default function ArtistManagement() {
     }
   };
 
+  // 커스텀 모델 설정 저장
+  const handleSaveCustomModelSettings = async () => {
+    setIsCustomModelSaving(true);
+    try {
+      await updateCustomModelSettings(customModelSettings);
+      setSuccessMessage('커스텀 모델 설정이 저장되었습니다.');
+    } catch (err) {
+      console.error('Failed to save custom model settings:', err);
+      setError('커스텀 모델 설정 저장에 실패했습니다.');
+    } finally {
+      setIsCustomModelSaving(false);
+    }
+  };
+
   const openCreateModal = () => {
     setEditingArtist(null);
     setFormData(initialFormData);
@@ -141,6 +173,8 @@ export default function ArtistManagement() {
       tags: artist.tags?.join(', ') || '',
       thumbnail_url: artist.thumbnail_url,
       hover_video_url: artist.hover_video_url || '',
+      shorts_url: artist.shorts_url || '',
+      price: artist.price?.toString() || '',
     });
     setIsModalOpen(true);
   };
@@ -201,6 +235,8 @@ export default function ArtistManagement() {
         tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
         thumbnail_url: formData.thumbnail_url,
         hover_video_url: formData.hover_video_url || undefined,
+        shorts_url: formData.shorts_url || undefined,
+        price: formData.price ? parseInt(formData.price.replace(/,/g, ''), 10) : undefined,
         is_active: true,
         sort_order: editingArtist?.sort_order || artists.length + 1,
       };
@@ -449,6 +485,108 @@ export default function ArtistManagement() {
             <p className="text-2xl font-bold text-white mt-1">
               {new Set(artists.map(a => a.category)).size}
             </p>
+          </div>
+        </div>
+
+        {/* 커스텀 모델 설정 섹션 */}
+        <div className="bg-[#0A0A0A] border border-purple-500/30 rounded-2xl p-6 mb-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-white">커스텀 모델 주문제작 설정</h3>
+              <p className="text-sm text-gray-500">주문서에서 표시되는 커스텀 모델 가격 및 설명을 관리합니다.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* 가격 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                가격 (원)
+              </label>
+              <input
+                type="text"
+                value={customModelSettings.price ? customModelSettings.price.toLocaleString('ko-KR') : ''}
+                onChange={(e) => {
+                  const rawValue = e.target.value.replace(/[^\d]/g, '');
+                  setCustomModelSettings(prev => ({ ...prev, price: rawValue ? parseInt(rawValue, 10) : 0 }));
+                }}
+                className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl focus:border-purple-500 focus:outline-none text-white placeholder-gray-600"
+                placeholder="2,000,000"
+              />
+            </div>
+
+            {/* 타이틀 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                타이틀
+              </label>
+              <input
+                type="text"
+                value={customModelSettings.title}
+                onChange={(e) => setCustomModelSettings(prev => ({ ...prev, title: e.target.value }))}
+                className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl focus:border-purple-500 focus:outline-none text-white placeholder-gray-600"
+                placeholder="커스텀 모델 주문제작"
+              />
+            </div>
+
+            {/* 설명 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                간단 설명
+              </label>
+              <input
+                type="text"
+                value={customModelSettings.description}
+                onChange={(e) => setCustomModelSettings(prev => ({ ...prev, description: e.target.value }))}
+                className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl focus:border-purple-500 focus:outline-none text-white placeholder-gray-600"
+                placeholder="브랜드 전용 AI 모델 개발"
+              />
+            </div>
+
+            {/* 특징 리스트 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                특징 (쉼표로 구분)
+              </label>
+              <input
+                type="text"
+                value={customModelSettings.features.join(', ')}
+                onChange={(e) => {
+                  const features = e.target.value.split(',').map(f => f.trim()).filter(Boolean);
+                  setCustomModelSettings(prev => ({ ...prev, features }));
+                }}
+                className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl focus:border-purple-500 focus:outline-none text-white placeholder-gray-600"
+                placeholder="컨셉 기획, 전담 디자이너, 무제한 수정"
+              />
+              <p className="text-xs text-gray-500 mt-1">예: 컨셉 기획 및 제안서 제공, 전담 디자이너 배정</p>
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={handleSaveCustomModelSettings}
+              disabled={isCustomModelSaving}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-purple-500 text-white font-bold rounded-xl hover:bg-purple-600 transition-all disabled:opacity-50"
+            >
+              {isCustomModelSaving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  저장 중...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  설정 저장
+                </>
+              )}
+            </button>
           </div>
         </div>
 
@@ -800,6 +938,44 @@ export default function ArtistManagement() {
                   className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl focus:border-[#00F5A0] focus:outline-none text-white placeholder-gray-600"
                   placeholder="시크, 스트릿, MZ"
                 />
+              </div>
+
+              {/* Price */}
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  출연 가격 (원)
+                </label>
+                <input
+                  type="text"
+                  value={formData.price ? Number(formData.price.replace(/,/g, '')).toLocaleString('ko-KR') : ''}
+                  onChange={(e) => {
+                    // 숫자만 추출하고 쉼표 포맷팅
+                    const rawValue = e.target.value.replace(/[^\d]/g, '');
+                    setFormData(prev => ({ ...prev, price: rawValue }));
+                  }}
+                  className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl focus:border-[#00F5A0] focus:outline-none text-white placeholder-gray-600"
+                  placeholder="3,000,000"
+                />
+                <p className="text-sm text-gray-500 mt-2">
+                  이 모델 출연 시 추가되는 가격입니다.
+                </p>
+              </div>
+
+              {/* Shorts URL (Optional) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  Shorts URL (선택)
+                </label>
+                <input
+                  type="url"
+                  value={formData.shorts_url}
+                  onChange={(e) => setFormData(prev => ({ ...prev, shorts_url: e.target.value }))}
+                  className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl focus:border-[#00F5A0] focus:outline-none text-white placeholder-gray-600"
+                  placeholder="https://youtube.com/shorts/... 또는 https://tiktok.com/..."
+                />
+                <p className="text-sm text-gray-500 mt-2">
+                  유튜브 Shorts 또는 틱톡 URL을 입력하세요. 카드 클릭 시 모달에서 재생됩니다.
+                </p>
               </div>
 
               {/* Hover Video (Optional) */}

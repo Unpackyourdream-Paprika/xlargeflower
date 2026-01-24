@@ -5,6 +5,33 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ScrollReveal from './animations/ScrollReveal';
 import { getArtistModels, ArtistModel, ArtistCategory } from '@/lib/supabase';
 import CustomModelModal from './CustomModelModal';
+import ArtistDetailModal from './ArtistDetailModal';
+
+// 테마 감지 훅
+function useThemeDetector() {
+  const [isLightTheme, setIsLightTheme] = useState(false);
+
+  useEffect(() => {
+    const checkTheme = () => {
+      const theme = document.documentElement.getAttribute('data-theme');
+      setIsLightTheme(theme === 'light');
+    };
+    checkTheme();
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'data-theme') {
+          checkTheme();
+        }
+      });
+    });
+    observer.observe(document.documentElement, { attributes: true });
+
+    return () => observer.disconnect();
+  }, []);
+
+  return isLightTheme;
+}
 
 // 카테고리 탭 정의
 const CATEGORIES: { key: ArtistCategory; label: string; labelKo: string }[] = [
@@ -70,29 +97,20 @@ const PLACEHOLDER_CARDS = [1, 2, 3, 4];
 interface ArtistCardProps {
   artist: ArtistModel;
   index: number;
+  isLightTheme: boolean;
+  onClick: () => void;
 }
 
-function ArtistCard({ artist, index }: ArtistCardProps) {
+function ArtistCard({ artist, index, isLightTheme, onClick }: ArtistCardProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    if (videoRef.current) {
-      if (isHovered && artist.hover_video_url) {
-        videoRef.current.play().catch(() => {});
-      } else {
-        videoRef.current.pause();
-        videoRef.current.currentTime = 0;
-      }
-    }
-  }, [isHovered, artist.hover_video_url]);
 
   return (
     <ScrollReveal delay={index * 0.1} direction="up">
       <motion.div
-        className="group relative cursor-pointer overflow-hidden rounded-2xl bg-[#0A0A0A]"
+        className={`group relative cursor-pointer overflow-hidden rounded-2xl ${isLightTheme ? 'bg-white shadow-lg' : 'bg-[#0A0A0A]'}`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        onClick={onClick}
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.3 }}
       >
@@ -100,11 +118,19 @@ function ArtistCard({ artist, index }: ArtistCardProps) {
         <div
           className={`absolute inset-0 rounded-2xl transition-all duration-500 pointer-events-none z-10 ${
             isHovered
-              ? 'shadow-[0_0_30px_rgba(0,245,160,0.4),inset_0_0_1px_rgba(0,245,160,0.8)]'
+              ? isLightTheme
+                ? 'shadow-[0_0_30px_rgba(139,92,246,0.3),inset_0_0_1px_rgba(139,92,246,0.6)]'
+                : 'shadow-[0_0_30px_rgba(0,245,160,0.4),inset_0_0_1px_rgba(0,245,160,0.8)]'
               : 'shadow-none'
           }`}
           style={{
-            border: isHovered ? '1px solid rgba(0,245,160,0.6)' : '1px solid rgba(255,255,255,0.1)',
+            border: isHovered
+              ? isLightTheme
+                ? '1px solid rgba(139,92,246,0.5)'
+                : '1px solid rgba(0,245,160,0.6)'
+              : isLightTheme
+                ? '1px solid rgba(0,0,0,0.1)'
+                : '1px solid rgba(255,255,255,0.1)',
           }}
         />
 
@@ -120,77 +146,39 @@ function ArtistCard({ artist, index }: ArtistCardProps) {
             }}
           />
 
-          {/* 호버 비디오 (있을 경우) */}
-          {artist.hover_video_url && (
-            <video
-              ref={videoRef}
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
-                isHovered ? 'opacity-100' : 'opacity-0'
-              }`}
-              src={artist.hover_video_url}
-              muted
-              loop
-              playsInline
-            />
-          )}
-
           {/* 그라데이션 오버레이 */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+          <div className={`absolute inset-0 ${isLightTheme ? 'bg-gradient-to-t from-white/95 via-white/30 to-transparent' : 'bg-gradient-to-t from-black/90 via-black/20 to-transparent'}`} />
 
-          {/* 태그들 (호버 시 표시) */}
-          <AnimatePresence>
-            {isHovered && artist.tags && artist.tags.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.3 }}
-                className="absolute top-4 left-4 flex flex-wrap gap-2"
-              >
-                {artist.tags.slice(0, 3).map((tag, i) => (
-                  <span
-                    key={i}
-                    className="px-2 py-1 text-xs font-medium bg-black/60 backdrop-blur-sm rounded-full text-white/80 border border-white/20"
-                  >
-                    #{tag}
-                  </span>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
         {/* 정보 영역 */}
-        <div className="absolute bottom-0 left-0 right-0 p-5">
-          {/* 카테고리 */}
-          <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/50">
-            {artist.category}
-          </span>
+        <div className="absolute bottom-0 left-0 right-0 p-4">
+          {/* 카테고리 태그들 */}
+          <div className="flex flex-wrap gap-1">
+            {artist.category.split(',').map((cat, i) => (
+              <span
+                key={i}
+                className={`inline-block px-2 py-0.5 text-[9px] font-medium tracking-[0.1em] uppercase rounded-md backdrop-blur-sm ${
+                  isLightTheme
+                    ? 'bg-black/20'
+                    : 'bg-white/10'
+                }`}
+                style={{ color: '#FFFFFF' }}
+              >
+                {cat.trim()}
+              </span>
+            ))}
+          </div>
 
           {/* 이름 */}
-          <h3 className="mt-1 text-xl font-bold text-white tracking-tight">
+          <h3 className={`mt-1.5 text-lg font-bold tracking-tight ${isLightTheme ? 'text-gray-900' : 'text-white'}`}>
             {artist.name}
             {artist.name_ko && (
-              <span className="ml-2 text-sm font-normal text-white/60">
+              <span className={`ml-1.5 text-xs font-normal ${isLightTheme ? 'text-gray-900' : 'text-white/60'}`}>
                 {artist.name_ko}
               </span>
             )}
           </h3>
-
-          {/* 설명 (호버 시 표시) */}
-          <AnimatePresence>
-            {isHovered && (
-              <motion.p
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-                className="mt-2 text-sm text-white/70 leading-relaxed"
-              >
-                {artist.description}
-              </motion.p>
-            )}
-          </AnimatePresence>
         </div>
       </motion.div>
     </ScrollReveal>
@@ -234,11 +222,15 @@ function PlaceholderCard({ index }: { index: number }) {
 }
 
 // 커스텀 모델 제작 CTA 카드
-function CustomModelCard({ index, onOpenModal }: { index: number; onOpenModal: () => void }) {
+function CustomModelCard({ index, onOpenModal, isLightTheme }: { index: number; onOpenModal: () => void; isLightTheme: boolean }) {
   return (
     <ScrollReveal delay={index * 0.1} direction="up">
       <motion.div
-        className="group relative cursor-pointer overflow-hidden rounded-2xl bg-gradient-to-b from-[#1a0a2e] to-[#0A0A0A] border border-purple-500/30 hover:border-[#00F5A0]/50 transition-all duration-500"
+        className={`group relative cursor-pointer overflow-hidden rounded-2xl border transition-all duration-500 ${
+          isLightTheme
+            ? 'bg-gradient-to-b from-[#F5F0FF] to-white border-purple-300 hover:border-purple-500'
+            : 'bg-gradient-to-b from-[#1a0a2e] to-[#0A0A0A] border-purple-500/30 hover:border-[#00F5A0]/50'
+        }`}
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.3 }}
         onClick={onOpenModal}
@@ -267,13 +259,13 @@ function CustomModelCard({ index, onOpenModal }: { index: number; onOpenModal: (
           </div>
 
           {/* 텍스트 */}
-          <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-purple-400 mb-2">
+          <span className={`text-[10px] font-bold tracking-[0.2em] uppercase mb-2 ${isLightTheme ? 'text-purple-600' : 'text-purple-400'}`}>
             CUSTOM MODEL
           </span>
-          <h3 className="text-xl font-bold text-white tracking-tight text-center mb-2">
+          <h3 className={`text-xl font-bold tracking-tight text-center mb-2 ${isLightTheme ? 'text-gray-900' : 'text-white'}`}>
             맞춤형 모델 제작
           </h3>
-          <p className="text-sm text-white/60 text-center leading-relaxed mb-4">
+          <p className={`text-sm text-center leading-relaxed mb-4 ${isLightTheme ? 'text-gray-600' : 'text-white/60'}`}>
             원하는 얼굴이 없나요?
             <br />
             브랜드 전용 AI 모델을 만들어 드립니다
@@ -286,10 +278,10 @@ function CustomModelCard({ index, onOpenModal }: { index: number; onOpenModal: (
 
           {/* 특징 태그 */}
           <div className="flex flex-wrap justify-center gap-2 mt-4">
-            <span className="px-2 py-1 text-[10px] font-medium bg-white/5 rounded-full text-white/50">
+            <span className={`px-2 py-1 text-[10px] font-medium rounded-full ${isLightTheme ? 'bg-purple-100 text-purple-600' : 'bg-white/5 text-white/50'}`}>
               독점 라이선스
             </span>
-            <span className="px-2 py-1 text-[10px] font-medium bg-white/5 rounded-full text-white/50">
+            <span className={`px-2 py-1 text-[10px] font-medium rounded-full ${isLightTheme ? 'bg-purple-100 text-purple-600' : 'bg-white/5 text-white/50'}`}>
               수정 3회
             </span>
           </div>
@@ -305,6 +297,8 @@ export default function ArtistLineup() {
   const [isLoading, setIsLoading] = useState(true);
   const [useDemoData, setUseDemoData] = useState(false);
   const [isCustomModelModalOpen, setIsCustomModelModalOpen] = useState(false);
+  const [selectedArtist, setSelectedArtist] = useState<ArtistModel | null>(null);
+  const isLightTheme = useThemeDetector();
 
   useEffect(() => {
     async function fetchArtists() {
@@ -346,24 +340,26 @@ export default function ArtistLineup() {
   const showPlaceholders = filteredArtists.length === 0 && !isLoading;
 
   return (
-    <section id="model-lineup" className="section-spacing relative overflow-hidden lg:pt-24">
-      {/* Deep Violet 그라데이션 배경 */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(ellipse 80% 60% at 50% 100%, rgba(88, 28, 135, 0.15) 0%, rgba(30, 10, 60, 0.08) 40%, transparent 70%)',
-          }}
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(ellipse 60% 40% at 20% 80%, rgba(0, 245, 160, 0.05) 0%, transparent 50%)',
-          }}
-        />
-      </div>
+    <section id="model-lineup" data-section="artist-lineup" className={`section-spacing relative overflow-hidden lg:pt-24 ${isLightTheme ? 'bg-[#FAFAFA]' : ''}`}>
+      {/* Deep Violet 그라데이션 배경 - 다크 모드에서만 표시 */}
+      {!isLightTheme && (
+        <div className="absolute inset-0 pointer-events-none">
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'radial-gradient(ellipse 80% 60% at 50% 100%, rgba(88, 28, 135, 0.15) 0%, rgba(30, 10, 60, 0.08) 40%, transparent 70%)',
+            }}
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'radial-gradient(ellipse 60% 40% at 20% 80%, rgba(0, 245, 160, 0.05) 0%, transparent 50%)',
+            }}
+          />
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         {/* 섹션 헤더 */}
@@ -373,10 +369,12 @@ export default function ArtistLineup() {
             <h2 className="mt-4 text-4xl md:text-5xl font-bold text-white tracking-tight">
               소속 XLARGE 아티스트
             </h2>
-            <p className="mt-4 text-lg text-white/60 max-w-2xl mx-auto">
-              셀러와 브랜드에 최적화된 XLARGE 모델을 선택해보세요.
+            <p className="mt-4 text-white/60 max-w-2xl mx-auto" style={{ wordBreak: 'keep-all' }}>
+              <span className="block sm:inline">셀러와 브랜드에 최적화된</span>{' '}
+              <span className="block sm:inline text-nowrap">XLARGE 모델을 선택해 보세요.</span>
               <br className="hidden md:block" />
-              XLARGE 아티스트는 고유한 페르소나와 전문 분야를 가지고 있습니다.
+              <span className="block sm:inline mt-2 sm:mt-0">XLARGE 아티스트는 고유한 페르소나와</span>{' '}
+              <span className="block sm:inline text-nowrap">전문 분야를 가지고 있습니다.</span>
             </p>
           </div>
         </ScrollReveal>
@@ -436,7 +434,7 @@ export default function ArtistLineup() {
                       exit={{ opacity: 0, scale: 0.9 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <ArtistCard artist={artist} index={index} />
+                      <ArtistCard artist={artist} index={index} isLightTheme={isLightTheme} onClick={() => setSelectedArtist(artist)} />
                     </motion.div>
                   ))}
             </AnimatePresence>
@@ -449,6 +447,7 @@ export default function ArtistLineup() {
             <CustomModelCard
               index={filteredArtists.length}
               onOpenModal={() => setIsCustomModelModalOpen(true)}
+              isLightTheme={isLightTheme}
             />
           </div>
         )}
@@ -465,6 +464,21 @@ export default function ArtistLineup() {
       <CustomModelModal
         isOpen={isCustomModelModalOpen}
         onClose={() => setIsCustomModelModalOpen(false)}
+      />
+
+      {/* Artist Detail Modal */}
+      <ArtistDetailModal
+        artist={selectedArtist}
+        isOpen={!!selectedArtist}
+        onClose={() => setSelectedArtist(null)}
+        isLightTheme={isLightTheme}
+        onStartWithModel={(artistName, noModelNeeded) => {
+          // 커스텀 이벤트를 발생시켜 메인 페이지의 바텀시트를 열기
+          const event = new CustomEvent('openContactWithArtist', {
+            detail: { artistName, noModelNeeded }
+          });
+          window.dispatchEvent(event);
+        }}
       />
     </section>
   );

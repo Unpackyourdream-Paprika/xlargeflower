@@ -2,16 +2,30 @@
 
 import Link from 'next/link';
 import { triggerOpenChat } from '@/components/GlobalChatButton';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const descriptions = [
-  '잘 만든 상품이 묻히지 않도록. 클릭을 부르는 AI 숏폼 소재로, 준비된 상세페이지에 폭발적인 트래픽을 꽂아드립니다.',
-  '100명이 들어와야 1명이 삽니다. 지금 필요한 건 압도적인 노출입니다. 이탈 없는 고효율 AI 광고 소재로 구매할 고객을 사장님 스토어 앞까지 데려다 놓겠습니다.',
-  '아무리 좋은 제품도 클릭하지 않으면 팔리지 않습니다. 평균 클릭률(CTR) 2배 상승. 검증된 AI 퍼포먼스 영상으로 잠재 고객을 쓸어 담으세요.',
+  <>
+    잘 만든 상품이 묻히지 않도록.<br />
+    클릭을 부르는 AI 숏폼 소재로,<br />
+    준비된 상세페이지에 <strong className="text-[#00F5A0]">폭발적인 트래픽</strong>을 꽂아드립니다.
+  </>,
+  <>
+    100명이 들어와도 1명이 살까 말까 한 시대,<br />
+    지금 필요한 건 단순 노출이 아닌 <strong className="text-[#00F5A0]">'압도적인 유입'</strong>입니다.
+    <br /><br />
+    <strong className="text-white">이탈 없는 고효율 AI 광고 소재로</strong><br />
+    <strong className="text-white">구매할 고객을 스토어 앞까지 데려다 놓겠습니다.</strong>
+  </>,
+  <>
+    아무리 좋은 제품도 클릭하지 않으면 팔리지 않습니다.<br />
+    평균 클릭률(CTR) <strong className="text-[#00F5A0]">2배 상승</strong>.<br />
+    검증된 AI 퍼포먼스 영상으로 잠재 고객을 쓸어 담으세요.
+  </>,
 ];
 
 export default function HeroTextContent() {
-  const [currentDescription, setCurrentDescription] = useState(descriptions[0]);
+  const [currentDescription, setCurrentDescription] = useState<React.ReactNode>(descriptions[0]);
 
   useEffect(() => {
     const randomIndex = Math.floor(Math.random() * descriptions.length);

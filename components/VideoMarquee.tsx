@@ -335,6 +335,7 @@ export default function VideoMarquee({ videos }: VideoMarqueeProps) {
   return (
     <section
       ref={containerRef}
+      data-section="video-showcase"
       className="py-16 md:py-24 overflow-hidden bg-[#050505] relative"
     >
       {/* 섹션 헤더 */}
@@ -343,8 +344,9 @@ export default function VideoMarquee({ videos }: VideoMarqueeProps) {
         <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
           모두 이곳에서 만들었습니다
         </h2>
-        <p className="text-white/60 mt-4 max-w-xl mx-auto">
-          촬영 없이, 모델 섭외 없이. 48시간 안에 유입이 시작됩니다.
+        <p className="text-white/60 mt-4 max-w-xl mx-auto" style={{ wordBreak: 'keep-all' }}>
+          <span className="block sm:inline">촬영 없이, 모델 섭외 없이.</span>{' '}
+          <span className="block sm:inline text-nowrap">48시간 안에 유입이 시작됩니다.</span>
         </p>
       </div>
 

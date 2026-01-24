@@ -4,6 +4,8 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import GlobalChatButton from "@/components/GlobalChatButton";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import TrackingProvider from "@/components/TrackingProvider";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -105,14 +107,19 @@ export default function RootLayout({
         </noscript>
       </head>
       <body
-        className={`${geistMono.variable} antialiased bg-[#050505] text-white`}
+        className={`${geistMono.variable} antialiased`}
+        style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
       >
-        <Header />
-        <main className="pt-16">
-          {children}
-        </main>
-        <Footer />
-        <GlobalChatButton />
+        <ThemeProvider>
+          <TrackingProvider>
+            <Header />
+            <main className="pt-16">
+              {children}
+            </main>
+            <Footer />
+            <GlobalChatButton />
+          </TrackingProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -110,6 +110,11 @@ export interface XLargeFlowerOrder {
   status?: 'pending' | 'confirmed' | 'in_progress' | 'review' | 'revision' | 'completed' | 'cancelled';
   selected_pack?: 'READY' | 'FAST' | 'EXCLUSIVE';
   final_price?: number;
+  // 기획안 관련
+  proposal_urls?: string[];
+  proposal_note?: string;
+  proposal_sent_at?: string;
+  // 영상물 관련
   final_video_urls?: string[];
   delivery_note?: string;
   delivered_at?: string;
@@ -203,6 +208,22 @@ export async function updateOrderDelivery(id: string, videoUrls: string[], deliv
       delivery_note: deliveryNote || null,
       status: 'completed',
       delivered_at: new Date().toISOString()
+    })
+    .eq('id', id);
+
+  if (error) throw error;
+  return true;
+}
+
+// 기획안 업로드
+export async function updateOrderProposal(id: string, proposalUrls: string[], proposalNote?: string) {
+  const { error } = await supabase
+    .from('xlarge_flower_orders')
+    .update({
+      proposal_urls: proposalUrls,
+      proposal_note: proposalNote || null,
+      proposal_sent_at: new Date().toISOString(),
+      status: 'review' // 기획안 전송 시 검토중 상태로 변경
     })
     .eq('id', id);
 
@@ -323,8 +344,10 @@ export interface ArtistModel {
   category: ArtistCategory;
   thumbnail_url: string;
   hover_video_url?: string;
+  shorts_url?: string;  // 유튜브/틱톡 숏폼 URL
   description: string;
   tags?: string[];
+  price?: number;  // 출연 가격 (원)
   is_active?: boolean;
   sort_order?: number;
 }
@@ -872,5 +895,65 @@ export async function updatePricingPlanOrders(orders: { id: string; sort_order: 
 
     if (error) throw error;
   }
+  return true;
+}
+
+// ============================================
+// 커스텀 모델 설정
+// ============================================
+
+export interface CustomModelSettings {
+  price: number;
+  title: string;
+  description: string;
+  features: string[];
+}
+
+// 커스텀 모델 설정 조회
+export async function getCustomModelSettings(): Promise<CustomModelSettings> {
+  const { data, error } = await supabase
+    .from('xlarge_flower_settings')
+    .select('value')
+    .eq('key_name', 'custom_model')
+    .single();
+
+  // 기본값
+  const defaultSettings: CustomModelSettings = {
+    price: 2000000,
+    title: '커스텀 모델 주문제작',
+    description: '브랜드 전용 AI 모델 개발',
+    features: [
+      '컨셉 기획 및 제안서 제공',
+      '전담 디자이너 배정',
+      '브랜드 맞춤 스타일링',
+      '무제한 수정 지원'
+    ]
+  };
+
+  if (error || !data) return defaultSettings;
+
+  try {
+    const parsed = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+    return { ...defaultSettings, ...parsed };
+  } catch {
+    return defaultSettings;
+  }
+}
+
+// 커스텀 모델 설정 업데이트
+export async function updateCustomModelSettings(settings: Partial<CustomModelSettings>) {
+  const current = await getCustomModelSettings();
+  const updated = { ...current, ...settings };
+
+  const { error } = await supabase
+    .from('xlarge_flower_settings')
+    .upsert({
+      key_name: 'custom_model',
+      value: JSON.stringify(updated),
+      description: '커스텀 모델 주문제작 설정',
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'key_name' });
+
+  if (error) throw error;
   return true;
 }

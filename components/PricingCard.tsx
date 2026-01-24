@@ -31,17 +31,27 @@ export default function PricingCard({ plan, promotion, paymentType, onPlanSelect
     return price;
   };
 
-  // 원래 가격 (프로모션 없을 때 기준)
+  // 원래 가격 (취소선에 표시할 가격)
+  // - 프로모션이 있으면: 세금계산서 할인만 적용된 가격 (프로모션 할인 전)
+  // - 프로모션이 없고 세금계산서면: 기본 가격 (세금계산서 할인 전)
   const getOriginalPrice = (basePrice: number) => {
-    if (paymentType === 'invoice') {
-      return Math.round(basePrice * 0.9);
+    if (promotion) {
+      // 프로모션 할인 전 가격 (세금계산서 할인은 적용)
+      if (paymentType === 'invoice') {
+        return Math.round(basePrice * 0.9);
+      }
+      return basePrice;
     }
+    // 프로모션 없으면 기본 가격
     return basePrice;
   };
 
   const showStrikethrough = promotion || paymentType === 'invoice';
   const finalPrice = getPrice(plan.price);
   const originalPrice = getOriginalPrice(plan.price);
+
+  // 프로모션 + 세금계산서 둘 다 적용시 원래 가격도 할인 전으로 표시
+  const displayOriginalPrice = promotion ? plan.price : originalPrice;
 
   // 카드 스타일에 따른 클래스
   const getCardClass = () => {
@@ -93,11 +103,12 @@ export default function PricingCard({ plan, promotion, paymentType, onPlanSelect
     } else if (onPlanSelect) {
       // 컨택트 폼으로 스크롤하고 플랜 선택
       onPlanSelect(plan.title);
-      // 컨택트 폼으로 스크롤
-      const contactSection = document.getElementById('contact-form');
-      if (contactSection) {
-        contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+    } else {
+      // onPlanSelect가 없으면 주문 바텀시트 열기 이벤트 발생
+      const event = new CustomEvent('openOrderWithPlan', {
+        detail: { planName: plan.title }
+      });
+      window.dispatchEvent(event);
     }
   };
 
@@ -149,7 +160,7 @@ export default function PricingCard({ plan, promotion, paymentType, onPlanSelect
       <div className="mb-1">
         {showStrikethrough && (
           <span className="text-white/40 text-sm line-through mr-2">
-            ₩{formatPrice(originalPrice)}
+            ₩{formatPrice(displayOriginalPrice)}
           </span>
         )}
         <h3 className="text-2xl font-bold text-white inline">

@@ -118,7 +118,7 @@ export default function MainHeroContainer() {
   }, []);
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section data-section="hero" className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Aurora Background */}
       <AuroraBackground />
 

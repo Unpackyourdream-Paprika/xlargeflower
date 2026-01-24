@@ -1,6 +1,16 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export default function Footer() {
+  const pathname = usePathname();
+
+  // Admin 페이지에서는 Footer 숨기기
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
+
   return (
     <footer className="bg-[#080808] border-t border-white/10">
       <div className="max-w-7xl mx-auto px-6 py-16">
