@@ -69,7 +69,7 @@ function generateEmailContent(type: EmailType, order: Record<string, unknown>, e
   const orderId = order.id as string;
   const customerName = order.customer_name as string || '고객';
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://xlarge.flower';
-  const orderUrl = `${baseUrl}/order/${orderId}`;
+  const orderUrl = `${baseUrl}/track/${orderId}`;
 
   switch (type) {
     case 'order_confirmation':

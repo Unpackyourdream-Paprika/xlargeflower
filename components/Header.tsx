@@ -65,8 +65,8 @@ export default function Header() {
             <Link href="/products" className={getLinkClass('/products')}>
               PRICING
             </Link>
-            <Link href="/order" className={getLinkClass('/order')}>
-              주문조회
+            <Link href="/track" className={getLinkClass('/track')}>
+              TRACK
             </Link>
             <Link href="/contact" className={pathname === '/contact' ? 'btn-primary text-sm py-2 px-5 ring-2 ring-[#00F5A0]/50' : 'btn-primary text-sm py-2 px-5'}>
               CONTACT
@@ -193,11 +193,11 @@ export default function Header() {
                     transition={{ duration: 0.2 }}
                   >
                     <Link
-                      href="/order"
-                      className={`${getLinkClass('/order')} block`}
+                      href="/track"
+                      className={`${getLinkClass('/track')} block`}
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      주문조회
+                      TRACK
                     </Link>
                   </motion.div>
                 </motion.div>

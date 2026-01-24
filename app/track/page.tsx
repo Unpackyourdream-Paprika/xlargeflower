@@ -34,7 +34,7 @@ export default function OrderTrackingPage() {
         return;
       }
 
-      router.push(`/order/${orderNumber.trim()}`);
+      router.push(`/track/${orderNumber.trim()}`);
     } else {
       // 이메일로 조회
       if (!email.trim()) {
@@ -86,7 +86,7 @@ export default function OrderTrackingPage() {
           setError('해당 이메일로 등록된 주문이 없습니다.');
         } else if (data.length === 1) {
           // 주문이 1개면 바로 이동
-          router.push(`/order/${data[0].id}`);
+          router.push(`/track/${data[0].id}`);
         } else {
           // 여러 주문이 있으면 목록 표시
           setOrders(data);
@@ -238,7 +238,7 @@ export default function OrderTrackingPage() {
               {orders.map((order) => (
                 <button
                   key={order.id}
-                  onClick={() => router.push(`/order/${order.id}`)}
+                  onClick={() => router.push(`/track/${order.id}`)}
                   className="w-full p-4 bg-[#111] border border-[#333] rounded-xl text-left hover:border-[#00F5A0]/50 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-2">
